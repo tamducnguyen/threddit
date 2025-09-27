@@ -35,8 +35,8 @@ export class GoogleAuthService {
     );
     this.GOOGLE_CLIENT_IDS = [
       this.configService.getOrThrow('GOOGLE_CLIENT_ID_WEB'),
-      // this.configService.getOrThrow('GOOGLE_CLIENT_ID_ANDROID'),
-      // this.configService.getOrThrow('GOOGLE_CLIENT_ID_IOS'),
+      this.configService.getOrThrow('GOOGLE_CLIENT_ID_ANDROID'),
+      this.configService.getOrThrow('GOOGLE_CLIENT_ID_IOS'),
     ];
   }
   async googleAuth(googleCode: string) {
@@ -102,7 +102,6 @@ export class GoogleAuthService {
    * @returns
    */
   async googleSignIn(response: Response, googleSignInDTO: GoogleSignInDTO) {
-    console.log('đã vào được hàm');
     const { googleCode } = googleSignInDTO;
     const googleData = await this.googleAuth(googleCode);
     const { sub } = googleData;
