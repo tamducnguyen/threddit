@@ -53,7 +53,26 @@ export const message = {
       success: 'Đăng nhập thành công',
     },
   },
+  account: {
+    signout: {
+      success: 'Đăng xuất thành công',
+    },
+    update_password: {
+      passport_same: 'Mật khẩu mới không được giống với mật khẩu cũ',
+      password_mismatch: 'Mật khẩu không khớp',
+      user_not_found: 'Người dùng không tồn tại',
+      password_incorrect: 'Mật khẩu không đúng',
+      success: 'Đổi mật khẩu thành công, vui lòng đăng nhập lại để tiếp tục',
+    },
+    update_username: {
+      username_exist:
+        'Tên người dùng đã tồn tại, vui lòng chọn lại tên người dùng khác',
+      success: 'Đổi tên người dùng thành công',
+    },
+  },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
+    session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',
+    token_not_found: 'Không tìm thấy mã xác minh',
   },
 };

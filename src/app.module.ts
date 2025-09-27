@@ -8,10 +8,12 @@ import { typeORMConfig } from './modules/config/typeorm.config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { throttlerConfig } from './modules/config/throttler.config';
+import { AccountModule } from './modules/account/account.module';
 
 @Module({
   imports: [
     AuthModule,
+    AccountModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
