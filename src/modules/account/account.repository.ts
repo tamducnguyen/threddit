@@ -47,4 +47,10 @@ export class AccountRepository {
   async updateUsername(id: string, username: string) {
     return await this.userRepo.update({ id: id }, { username: username });
   }
+  async selectUserById(id: string) {
+    return await this.userRepo.findOne({
+      where: { id: id },
+      select: { email: true, username: true },
+    });
+  }
 }

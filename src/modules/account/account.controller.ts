@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -15,9 +16,11 @@ import { UpdatePasswordDTO } from './dtos/updatepassword.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { UpdateUsernameDTO } from './dtos/updateusername.dto';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('account')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@SkipThrottle({ public: true })
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
   @HttpCode(HttpStatus.OK)
@@ -46,5 +49,11 @@ export class AccountController {
       currentUser,
       updateUsernameDTO,
     );
+  }
+  @HttpCode(HttpStatus.OK)
+  @SkipThrottle({ write: true })
+  @Get('getuserinfo')
+  async getUserInfo(@CurrentUser() currentUser: AuthUser) {
+    return await this.accountService.getUserInfo(currentUser);
   }
 }
