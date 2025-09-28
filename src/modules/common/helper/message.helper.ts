@@ -69,6 +69,10 @@ export const message = {
         'Tên người dùng đã tồn tại, vui lòng chọn lại tên người dùng khác',
       success: 'Đổi tên người dùng thành công',
     },
+    get_user_info: {
+      user_not_found: 'Người dùng không tồn tại',
+      success: 'Lấy thông tin người dùng thành công',
+    },
   },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',

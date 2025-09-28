@@ -76,4 +76,21 @@ export class AccountService {
     await this.accountRepository.updateUsername(sub, username);
     return sendResponse(HttpStatus.OK, message.account.update_username.success);
   }
+  /**
+   * get user information
+   */
+  async getUserInfo(currentUser: AuthUser) {
+    const { sub } = currentUser;
+    const userFound = await this.accountRepository.selectUserById(sub);
+    if (!userFound) {
+      throw new BadRequestException(
+        message.account.get_user_info.user_not_found,
+      );
+    }
+    return sendResponse(
+      HttpStatus.OK,
+      message.account.get_user_info.success,
+      userFound,
+    );
+  }
 }

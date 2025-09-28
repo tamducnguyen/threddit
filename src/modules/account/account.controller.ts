@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -46,5 +47,10 @@ export class AccountController {
       currentUser,
       updateUsernameDTO,
     );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('getuserinfo')
+  async getUserInfo(@CurrentUser() currentUser: AuthUser) {
+    return await this.accountService.getUserInfo(currentUser);
   }
 }
