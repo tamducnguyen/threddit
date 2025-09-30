@@ -9,14 +9,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
-import { UserEntity } from './entities/user.entity';
+import { UserEntity } from '../entities/user.entity';
 import { GoogleSignUpDTO } from './dtos/googlesignup.dto';
 import { GoogleData } from './interfaces/googledata.interface';
-import { OAuthAccountEntity } from './entities/oauth.entity';
-import { ProviderOauth } from './enum/provideroauth.enum';
+import { OAuthAccountEntity } from '../entities/oauth.entity';
+import { ProviderOauth } from '../enum/provideroauth.enum';
 import { sendResponse } from '../common/helper/response.helper';
 import { GoogleSignInDTO } from './dtos/googlesingin.dto';
-import { SessionEntity } from '../token/session.entity';
+import { SessionEntity } from '../entities/session.entity';
 import { sendCookie } from '../common/helper/cookie.helper';
 import { Response } from 'express';
 @Injectable()

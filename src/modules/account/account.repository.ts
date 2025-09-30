@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from '../auth/entities/user.entity';
+import { UserEntity } from '../entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
-import { SessionEntity } from '../token/session.entity';
-import { CredentialEntity } from '../auth/entities/credential.entity';
+import { SessionEntity } from '../entities/session.entity';
+import { CredentialEntity } from '../entities/credential.entity';
 
 @Injectable()
 export class AccountRepository {

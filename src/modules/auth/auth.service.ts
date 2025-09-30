@@ -14,8 +14,8 @@ import { MailService } from 'src/modules/mail/mail.service';
 import { generateVerificationCode } from '../common/helper/gencode.helper';
 import { sendResponse } from '../common/helper/response.helper';
 import { VerifyAccountDTO } from './dtos/verifyaccount.dto';
-import { UserEntity } from './entities/user.entity';
-import { CredentialEntity } from './entities/credential.entity';
+import { UserEntity } from '../entities/user.entity';
+import { CredentialEntity } from '../entities/credential.entity';
 import { SignUpInfoCache } from './interfaces/signupinfocache.interface';
 import { message } from '../common/helper/message.helper';
 import { SignInDTO } from './dtos/signin.dto';
@@ -25,7 +25,7 @@ import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
-import { SessionEntity } from '../token/session.entity';
+import { SessionEntity } from '../entities/session.entity';
 
 @Injectable()
 export class AuthService {

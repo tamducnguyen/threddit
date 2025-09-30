@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { SessionEntity } from './session.entity';
+import { SessionEntity } from '../entities/session.entity';
 
 @Module({
   providers: [JwtAccessStrategy],

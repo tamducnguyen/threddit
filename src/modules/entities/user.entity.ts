@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { OAuthAccountEntity } from './oauth.entity';
 import { CredentialEntity } from './credential.entity';
-import { SessionEntity } from 'src/modules/token/session.entity';
+import { SessionEntity } from 'src/modules/entities/session.entity';
 
 @Entity('users')
 export class UserEntity {
