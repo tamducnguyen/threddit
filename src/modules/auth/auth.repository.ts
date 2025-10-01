@@ -39,7 +39,7 @@ export class AuthRepository {
   async findUserViaEmail(email: string) {
     return await this.userRepo.findOne({
       where: { email: email },
-      select: { id: true },
+      select: { id: true, email: true, username: true },
       relations: { credential: true },
     });
   }

@@ -19,6 +19,7 @@ import { GoogleSignInDTO } from './dtos/googlesingin.dto';
 import { SessionEntity } from '../entities/session.entity';
 import { sendCookie } from '../common/helper/cookie.helper';
 import { Response } from 'express';
+import { GeneratePayload } from '../common/helper/payload.helper';
 @Injectable()
 export class GoogleAuthService {
   private client: OAuth2Client;
@@ -114,7 +115,7 @@ export class GoogleAuthService {
         message.auth.google_signin.account_not_exists,
       );
     }
-    const payload = { email: oAuthFound.user.email, sub: oAuthFound.user.id };
+    const payload = GeneratePayload(oAuthFound.user);
     const accessToken = await this.jwtService.signAsync(payload);
     const sessionEntity: Partial<SessionEntity> = {
       token: accessToken,

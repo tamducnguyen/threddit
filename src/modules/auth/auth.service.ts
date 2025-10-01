@@ -26,6 +26,7 @@ import { ConfigService } from '@nestjs/config';
 import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
 import { SessionEntity } from '../entities/session.entity';
+import { GeneratePayload } from '../common/helper/payload.helper';
 
 @Injectable()
 export class AuthService {
@@ -167,7 +168,7 @@ export class AuthService {
       throw new BadRequestException(message.auth.signin.credential_incorrect);
     }
     //save token into db
-    const payload = { sub: userFound.id, email: userFound.email };
+    const payload = GeneratePayload(userFound);
     const accessToken = await this.jwtService.signAsync(payload);
     const sessionEntity: Partial<SessionEntity> = {
       user: userFound,
