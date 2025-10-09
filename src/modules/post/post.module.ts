@@ -9,6 +9,7 @@ import { UserEntity } from '../entities/user.entity';
 import { VoteEntity } from '../entities/vote.entity';
 import { SaveEntity } from '../entities/save.entity';
 import { SessionModule } from '../token/session.module';
+import { SessionEntity } from '../entities/session.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SessionModule } from '../token/session.module';
       UserEntity,
       VoteEntity,
       SaveEntity,
+      SessionEntity,
     ]),
     SessionModule,
   ],
