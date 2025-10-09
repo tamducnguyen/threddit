@@ -7,10 +7,11 @@ import { FollowEntity } from '../entities/follow.entity';
 import { FollowRepository } from './follow.repository';
 import { SessionModule } from '../token/session.module';
 import { NotificationModule } from '../notification/notification.module';
+import { SessionEntity } from '../entities/session.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, FollowEntity]),
+    TypeOrmModule.forFeature([UserEntity, SessionEntity, FollowEntity]),
     SessionModule,
     NotificationModule,
   ],

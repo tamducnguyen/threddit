@@ -6,10 +6,11 @@ import { NotificationEntity } from '../entities/notification.entity';
 import { NotificationRepository } from './notification.repository';
 import { SessionModule } from '../token/session.module';
 import { UserEntity } from '../entities/user.entity';
+import { SessionEntity } from '../entities/session.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationEntity, UserEntity]),
+    TypeOrmModule.forFeature([NotificationEntity, SessionEntity, UserEntity]),
     SessionModule,
   ],
   controllers: [NotificationController],
