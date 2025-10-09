@@ -74,6 +74,30 @@ export const message = {
       success: 'Lấy thông tin người dùng thành công',
     },
   },
+  notification: {
+    create_stream: { user_not_found: 'Người dùng không tồn tại' },
+    get_notification: {
+      user_not_found: 'Người dùng không tồn tại',
+      no_content: 'Không có thông báo hoặc đã hết danh sách',
+      success: 'Lấy danh sách thông báo thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    get_unread_notification: {
+      user_not_found: 'Người dùng không tồn tại',
+      no_content: 'Không có thông báo hoặc đã hết danh sách',
+      success: 'Lấy danh sách thông báo chưa đọc thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    post_read_notification: {
+      user_not_found: 'Người dùng không tồn tại',
+      not_found_or_already_read: 'Thông báo không tồn tại hoặc đã đọc',
+      success: 'Đã chuyển trạng thái đọc thành công',
+    },
+    get_count_unread: {
+      user_not_found: 'Người dùng không tồn tại',
+      success: 'Lấy số lượng thông báo chưa đọc thành công',
+    },
+  },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',
