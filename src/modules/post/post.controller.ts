@@ -14,9 +14,10 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { UsernameDTO } from './dtos/username.dto';
 import { CursorDTO } from '../notification/dtos/cursor.dto';
+import { TokenGuard } from '../common/guard/token.guard';
 
 @Controller('post')
-@UseGuards(AuthGuard('jwt'), UserThrottlerGuard)
+@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class PostController {
   constructor(private readonly postService: PostService) {}
