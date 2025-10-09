@@ -42,6 +42,8 @@ export class NotificationService {
               const notification: Partial<NotificationEntity> = {
                 id: notificationRaw.id,
                 createdAt: notificationRaw.createdAt,
+                type: notificationRaw.type,
+                target: notificationRaw.target,
                 isRead: notificationRaw.isRead,
                 content: notificationRaw.content,
               };
