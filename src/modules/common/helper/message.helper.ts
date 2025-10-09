@@ -131,6 +131,20 @@ export const message = {
       sucess: 'Lấy trạng thái theo dõi thành công',
     },
   },
+  post: {
+    get_created_post: {
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có bài đăng hoặc đã hết danh sách',
+      success: 'Lấy danh sách bài đăng thành công',
+    },
+    get_saved_post: {
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có bài đăng hoặc đã hết danh sách',
+      success: 'Lấy danh sách bài đăng đã lưu thành công',
+    },
+  },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',
