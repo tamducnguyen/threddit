@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from './entities/user.entity';
+import { UserEntity } from '../entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
-import { CredentialEntity } from './entities/credential.entity';
-import { SessionEntity } from '../token/session.entity';
-import { OAuthAccountEntity } from './entities/oauth.entity';
-import { ProviderOauth } from './enum/provideroauth.enum';
+import { CredentialEntity } from '../entities/credential.entity';
+import { SessionEntity } from '../entities/session.entity';
+import { OAuthAccountEntity } from '../entities/oauth.entity';
+import { ProviderOauth } from '../enum/provideroauth.enum';
 
 @Injectable()
 export class AuthRepository {
@@ -39,7 +39,7 @@ export class AuthRepository {
   async findUserViaEmail(email: string) {
     return await this.userRepo.findOne({
       where: { email: email },
-      select: { id: true },
+      select: { id: true, email: true, username: true },
       relations: { credential: true },
     });
   }

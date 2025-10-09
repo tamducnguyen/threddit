@@ -74,6 +74,77 @@ export const message = {
       success: 'Lấy thông tin người dùng thành công',
     },
   },
+  notification: {
+    create_stream: { user_not_found: 'Người dùng không tồn tại' },
+    get_notification: {
+      user_not_found: 'Người dùng không tồn tại',
+      no_content: 'Không có thông báo hoặc đã hết danh sách',
+      success: 'Lấy danh sách thông báo thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    get_unread_notification: {
+      user_not_found: 'Người dùng không tồn tại',
+      no_content: 'Không có thông báo hoặc đã hết danh sách',
+      success: 'Lấy danh sách thông báo chưa đọc thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    post_read_notification: {
+      user_not_found: 'Người dùng không tồn tại',
+      not_found_or_already_read: 'Thông báo không tồn tại hoặc đã đọc',
+      success: 'Đã chuyển trạng thái đọc thành công',
+    },
+    get_count_unread: {
+      user_not_found: 'Người dùng không tồn tại',
+      success: 'Lấy số lượng thông báo chưa đọc thành công',
+    },
+  },
+  follow: {
+    get_follow_number: {
+      success: 'Lấy thông tin số lượng theo dõi thành công',
+      user_not_found: 'Người dùng không tồn tại',
+    },
+    get_follower_list: {
+      user_not_found: 'Người dùng không tồn tại',
+      success: 'Lấy danh sách người theo dõi thành công',
+      no_content: 'Không có người theo dõi hoặc đã hết danh sách',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    get_following_list: {
+      user_not_found: 'Người dùng không tồn tại',
+      no_content: 'Không có đang theo dõi hoặc đã hết danh sách',
+      success: 'Lấy danh sách đang theo dõi thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    post_follow: {
+      user_not_found: 'Người dùng không tồn tại',
+      follow_already: 'Đã theo dõi người dùng này',
+      cant_self_follow: 'Không thể follow chính mình',
+      success: 'Theo dõi thành công',
+    },
+    delete_follow: {
+      user_not_found: 'Người dùng không tồn tại',
+      follow_not_found: 'Chưa theo dõi người dùng này',
+      success: 'Hủy theo dõi thành công',
+    },
+    get_follow_state: {
+      user_not_found: 'Người dùng không tồn tại',
+      sucess: 'Lấy trạng thái theo dõi thành công',
+    },
+  },
+  post: {
+    get_created_post: {
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có bài đăng hoặc đã hết danh sách',
+      success: 'Lấy danh sách bài đăng thành công',
+    },
+    get_saved_post: {
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có bài đăng hoặc đã hết danh sách',
+      success: 'Lấy danh sách bài đăng đã lưu thành công',
+    },
+  },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',

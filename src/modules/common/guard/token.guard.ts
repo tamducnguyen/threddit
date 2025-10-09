@@ -6,7 +6,7 @@ import {
 import { Request } from 'express';
 import { message } from '../helper/message.helper';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SessionEntity } from 'src/modules/token/session.entity';
+import { SessionEntity } from 'src/modules/entities/session.entity';
 import { Repository } from 'typeorm';
 export class TokenGuard implements CanActivate {
   constructor(

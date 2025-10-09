@@ -9,11 +9,17 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { throttlerConfig } from './modules/config/throttler.config';
 import { AccountModule } from './modules/account/account.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { FollowModule } from './modules/follow/follow.module';
+import { PostModule } from './modules/post/post.module';
 
 @Module({
   imports: [
     AuthModule,
     AccountModule,
+    NotificationModule,
+    FollowModule,
+    PostModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

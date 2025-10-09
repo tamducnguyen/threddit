@@ -3,8 +3,8 @@ import { AccountService } from './account.service';
 import { AccountController } from './account.controller';
 import { AccountRepository } from './account.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SessionEntity } from '../token/session.entity';
-import { UserEntity } from '../auth/entities/user.entity';
+import { SessionEntity } from '../entities/session.entity';
+import { UserEntity } from '../entities/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([SessionEntity, UserEntity])],
