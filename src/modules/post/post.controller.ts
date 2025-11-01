@@ -27,6 +27,7 @@ import {
   ApiBearerAuth,
   ApiCookieAuth,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -166,6 +167,16 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/pin')
+  @ApiOperation({ summary: 'Ghim bài viết của bản thân' })
+  @ApiOkResponse({ description: 'Ghim bài viết thành cong' })
+  @ApiNotFoundResponse({
+    description: 'Đã ghim bài viết / Bài viết không phải của người dùng',
+  })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async pinSelfPost(
     @CurrentUser('sub') currentUserId: string,
     @Param() postIdDTO: PostIdDTO,
@@ -174,6 +185,15 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Delete(':postId/pin')
+  @ApiOkResponse({ description: 'Hủy ghim bài viết thành cong' })
+  @ApiNotFoundResponse({
+    description: 'Bài viết không phải của người dùng',
+  })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async unpinSelfPost(
     @CurrentUser('sub') currentUserId: string,
     @Param() postIdDTO: PostIdDTO,
@@ -185,6 +205,13 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Post()
+  @ApiOperation({
+    summary: 'Đăng tải bài viết ',
+    description: 'Thông báo cho followers và những followers được đề cập',
+  })
+  @ApiOkResponse({ description: 'Đăng tải bài viết thành công' })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy người dùng hiện tại' })
+  @ApiBadRequestResponse({ description: 'Bài viết có ngôn từ độc hại ' })
   async createPost(
     @CurrentUser() currentUser: AuthUser,
     @Body() postDTO: PostDTO,
@@ -193,6 +220,19 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Delete(':postId')
+  @ApiOperation({ summary: 'Xóa bài viết (chủ bài viết mới có quyền xóa)' })
+  @ApiOkResponse({ description: 'Xóa bài viết thành công' })
+  @ApiNotFoundResponse({
+    description: 'Không tìm thấy người dùng hiện tại/ không tìm thấy bài viết',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Người dùng không có quyền xóa bài viết này',
+  })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async deletePost(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -201,6 +241,18 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/save')
+  @ApiOperation({ summary: 'Lưu bài viết ' })
+  @ApiOkResponse({ description: 'Lưu bài viết thành công' })
+  @ApiBadRequestResponse({ description: 'Đã lưu bài viết ' })
+  @ApiNotFoundResponse({
+    description:
+      'Không tìm thấy người dùng hiện tại / Không tìm thấy bài viết ',
+  })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async savePost(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -209,6 +261,18 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Delete(':postId/save')
+  @ApiOperation({ summary: 'Hủy lưu bài viết ' })
+  @ApiOkResponse({ description: 'Hủy lưu bài viết thành công' })
+  @ApiBadRequestResponse({ description: 'Chưa lưu bài viết ' })
+  @ApiNotFoundResponse({
+    description:
+      'Không tìm thấy người dùng hiện tại / Không tìm thấy bài viết ',
+  })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async unsavePost(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -217,6 +281,22 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/vote/:isUpvote')
+  @ApiOperation({ summary: 'Bình chọn bài viết' })
+  @ApiOkResponse({ description: 'Bình chọn bài viết thành công' })
+  @ApiNotFoundResponse({
+    description: 'Không tìm thấy người dùng hiện tại / Không tìm thấy bài viết',
+  })
+  @ApiBadRequestResponse({ description: 'Đã bình chọn kiểu này' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
+  @ApiParam({
+    name: 'isUpvote',
+    required: true,
+    description: 'trạng thái bình chọn',
+  })
   async votePost(
     @CurrentUser() currentUser: AuthUser,
     @Param() votePostDTO: VotePostDTO,
@@ -225,6 +305,17 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Delete(':postId/vote')
+  @ApiOperation({ summary: 'Hủy bình chọn bài viết' })
+  @ApiOkResponse({ description: 'Hủy bình chọn bài viết thành công' })
+  @ApiNotFoundResponse({
+    description: 'Không tìm thấy người dùng hiện tại / Không tìm thấy bài viết',
+  })
+  @ApiBadRequestResponse({ description: 'Chưa bình chọn bài viết này' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async unvotePost(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
