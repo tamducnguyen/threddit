@@ -9,15 +9,15 @@ export const bullMqConfig = (
   },
   prefix: configService.getOrThrow<string>('PREFIX_BULLMQ'),
   defaultJobOptions: {
-    attempts: configService.getOrThrow<number>('ATTEMPTS_NUMBER'),
+    attempts: Number(configService.getOrThrow<number>('ATTEMPTS_NUMBER')),
     backoff: {
       type: configService.getOrThrow<'exponential' | 'fixed'>('BACKOFF_TYPE'),
-      delay: configService.getOrThrow<number>('DELAY_TIME_JOB'),
+      delay: Number(configService.getOrThrow<number>('DELAY_TIME_JOB')),
     },
     removeOnComplete: {
-      age: configService.getOrThrow<number>('REMOVE_AFTER_TIME'),
-      count: configService.getOrThrow<number>('REMOVE_AFTER_COUNT'),
+      age: Number(configService.getOrThrow<number>('REMOVE_AFTER_TIME')),
+      count: Number(configService.getOrThrow<number>('REMOVE_AFTER_COUNT')),
     },
-    removeOnFail: configService.getOrThrow<boolean>('REMOVE_ONFAIL'),
+    removeOnFail: Boolean(configService.getOrThrow<boolean>('REMOVE_ONFAIL')),
   },
 });
