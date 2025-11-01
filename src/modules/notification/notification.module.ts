@@ -7,14 +7,26 @@ import { NotificationRepository } from './notification.repository';
 import { SessionModule } from '../token/session.module';
 import { UserEntity } from '../entities/user.entity';
 import { SessionEntity } from '../entities/session.entity';
+import { BullModule } from '@nestjs/bullmq';
+import { NotificationWorker } from './notification.worker';
+import { FollowEntity } from '../entities/follow.entity';
+import { NameNotificationQueue } from '../common/helper/notification.helper';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationEntity, SessionEntity, UserEntity]),
+    TypeOrmModule.forFeature([
+      NotificationEntity,
+      SessionEntity,
+      UserEntity,
+      FollowEntity,
+    ]),
     SessionModule,
+    BullModule.registerQueue({
+      name: NameNotificationQueue,
+    }),
   ],
   controllers: [NotificationController],
-  providers: [NotificationService, NotificationRepository],
-  exports: [NotificationService],
+  providers: [NotificationService, NotificationRepository, NotificationWorker],
+  exports: [BullModule],
 })
 export class NotificationModule {}
