@@ -10,16 +10,19 @@ import { sendResponse } from '../common/helper/response.helper';
 import { JwtService } from '@nestjs/jwt';
 import { Cursor } from '../interface/cursor.interface';
 import { FollowEntity } from '../entities/follow.entity';
-import { NotificationService } from '../notification/notification.service';
-import { NotificationEntity } from '../entities/notification.entity';
-import { FollowNotification } from '../common/helper/notification.helper';
-import { NotificationType } from '../enum/notificationtype.enum';
+import {
+  JobNotificationQueue,
+  NameNotificationQueue,
+} from '../common/helper/notification.helper';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 @Injectable()
 export class FollowService {
   constructor(
     private readonly followRepo: FollowRepository,
     private readonly jwtService: JwtService,
-    private readonly notificationService: NotificationService,
+    @InjectQueue(NameNotificationQueue)
+    private readonly notificationQueue: Queue,
   ) {}
   /**
    * get user's follow number
@@ -89,6 +92,12 @@ export class FollowService {
     }
     //mapping data
     const followerList = followerListRaw.map((map) => {
+      if (map.follower.id == currentUserId) {
+        return {
+          follower: map.follower,
+          createdAt: map.createdAt,
+        };
+      }
       return {
         follower: map.follower,
         createdAt: map.createdAt,
@@ -156,6 +165,12 @@ export class FollowService {
     }
     //mapping data
     const followingList = followingListRaw.map((map) => {
+      if (map.followee.id == currentUserId) {
+        return {
+          followee: map.followee,
+          createdAt: map.createdAt,
+        };
+      }
       return {
         followee: map.followee,
         createdAt: map.createdAt,
@@ -211,13 +226,14 @@ export class FollowService {
     };
     await this.followRepo.postFollow(followEntity);
     //notify
-    const notification: Partial<NotificationEntity> = {
-      owner: followeeUserFound,
-      content: FollowNotification(currentUserFound.username),
-      type: NotificationType.FOLLOW,
-      target: currentUserFound.username,
-    };
-    await this.notificationService.notify(notification);
+    await this.notificationQueue.add(
+      JobNotificationQueue.FOLLOW,
+      {
+        currentUser: currentUserFound,
+        followee: followeeUserFound,
+      },
+      { priority: 1 },
+    );
     return sendResponse(HttpStatus.OK, message.follow.post_follow.success);
   }
   /**
