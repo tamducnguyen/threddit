@@ -144,6 +144,50 @@ export const message = {
       no_content: 'Không có bài đăng hoặc đã hết danh sách',
       success: 'Lấy danh sách bài đăng đã lưu thành công',
     },
+    pin_post: {
+      not_found: 'Không tìm thấy bài viết của bạn',
+      success: 'Ghim bài viết thành công',
+    },
+    unpin_post: {
+      not_found: 'Không tìm thấy bài viết của bạn',
+      success: 'Bỏ ghim bài viết thành công',
+    },
+    create_post: {
+      user_not_found: 'Không tìm thấy người dùng',
+      server_error: 'Lỗi máy chủ, thử lại lần nữa',
+      toxic_post: 'Bài viết có ngôn từ nhạy cảm',
+      success: 'Đăng tải bài viết thành công',
+    },
+    delete_post: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      forbidden: 'Không có quyền xóa bài viết',
+      success: 'Xóa bài thành công',
+    },
+    save_post: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      success: 'Lưu bài thành công',
+      already: 'Bạn đã lưu bài viết',
+    },
+    unsave_post: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      success: 'Bỏ lưu bài viết thành công',
+      not_save: 'Bạn chưa lưu bài viết',
+    },
+    vote_post: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      success: 'Bình chọn bài viết thành công',
+      already: 'Đã bình chọn kiểu này',
+    },
+    unvote_post: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      success: 'Hủy bình chọn bài viết thành công',
+      not_vote: 'Bạn chưa bình chọn vài viết này',
+    },
   },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',

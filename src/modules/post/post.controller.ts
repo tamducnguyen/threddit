@@ -1,9 +1,12 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +18,10 @@ import { CurrentUser } from '../token/currentuser.decorator';
 import { UsernameDTO } from './dtos/username.dto';
 import { CursorDTO } from '../notification/dtos/cursor.dto';
 import { TokenGuard } from '../common/guard/token.guard';
+import { PostIdDTO } from './dtos/postid.dto';
+import { PostDTO } from './dtos/createpost.dto';
+import { AuthUser } from '../token/authuser.interface';
+import { VotePostDTO } from './dtos/votepost.dto';
 
 @Controller('post')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -47,5 +54,72 @@ export class PostController {
     @Query() cursorDTO?: CursorDTO,
   ) {
     return await this.postService.getSavedPost(username, cursorDTO?.cursor);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post(':postId/pin')
+  async pinSelfPost(
+    @CurrentUser('sub') currentUserId: string,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.pinSelfPost(currentUserId, postIdDTO.postId);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete(':postId/pin')
+  async unpinSelfPost(
+    @CurrentUser('sub') currentUserId: string,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.unpinSelfPost(
+      currentUserId,
+      postIdDTO.postId,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post()
+  async createPost(
+    @CurrentUser() currentUser: AuthUser,
+    @Body() postDTO: PostDTO,
+  ) {
+    return await this.postService.createPost(currentUser, postDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete(':postId')
+  async deletePost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.deletePost(currentUser, postIdDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post(':postId/save')
+  async savePost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.savePost(currentUser, postIdDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete(':postId/save')
+  async unsavePost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.unsavePost(currentUser, postIdDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post(':postId/vote/:isUpvote')
+  async votePost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() votePostDTO: VotePostDTO,
+  ) {
+    return await this.postService.votePost(currentUser, votePostDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete(':postId/vote')
+  async unvotePost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.unvotePost(currentUser, postIdDTO);
   }
 }
