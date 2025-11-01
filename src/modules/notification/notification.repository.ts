@@ -4,6 +4,7 @@ import { FindOptionsWhere, LessThan, Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { Cursor } from '../interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
+import { FollowEntity } from '../entities/follow.entity';
 
 export class NotificationRepository {
   constructor(
@@ -11,6 +12,8 @@ export class NotificationRepository {
     private readonly notificationRepo: Repository<NotificationEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(FollowEntity)
+    private readonly followRepo: Repository<FollowEntity>,
     private readonly configService: ConfigService,
   ) {}
   async findUserById(id: string) {
@@ -56,5 +59,14 @@ export class NotificationRepository {
     return await this.notificationRepo.count({
       where: { owner: user, isRead: false },
     });
+  }
+  async getAllFollower(followee: UserEntity) {
+    return await this.followRepo.find({
+      where: { followee: followee },
+      relations: { follower: true },
+    });
+  }
+  async findUserByUsername(username: string) {
+    return await this.userRepo.findOne({ where: { username: username } });
   }
 }

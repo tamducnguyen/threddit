@@ -10,9 +10,19 @@ import { VoteEntity } from '../entities/vote.entity';
 import { SaveEntity } from '../entities/save.entity';
 import { SessionModule } from '../token/session.module';
 import { SessionEntity } from '../entities/session.entity';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { HttpModuleConfig } from '../config/httpmodule.config';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
+    HttpModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: HttpModuleConfig,
+    }),
     TypeOrmModule.forFeature([
       PostEntity,
       CommentEntity,

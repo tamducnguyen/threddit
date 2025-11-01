@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cursor } from '../interface/cursor.interface';
 import { PostMetrics } from './interface/postmetric.interface';
 import { SaveEntity } from '../entities/save.entity';
+import { VoteEntity } from '../entities/vote.entity';
 
 export class PostRepository {
   constructor(
@@ -17,6 +18,8 @@ export class PostRepository {
     private readonly datasource: DataSource,
     @InjectRepository(SaveEntity)
     private readonly saveRepo: Repository<SaveEntity>,
+    @InjectRepository(VoteEntity)
+    private readonly voteRepo: Repository<VoteEntity>,
   ) {}
   async getSelfPost(user: UserEntity, cursor?: Cursor) {
     let condition: FindOptionsWhere<PostEntity> = { author: user };
@@ -69,5 +72,54 @@ export class PostRepository {
   }
   async findUserbyUsername(username: string) {
     return await this.userRepo.findOne({ where: { username: username } });
+  }
+  async pinPost(postId: number, currentUserId: string) {
+    return await this.postRepo.update(
+      { id: postId, author: { id: currentUserId } },
+      { isPinned: true },
+    );
+  }
+  async unpinPost(postId: number, currentUserId: string) {
+    return await this.postRepo.update(
+      { id: postId, author: { id: currentUserId } },
+      { isPinned: false },
+    );
+  }
+  async createdPost(postEntity: Partial<PostEntity>) {
+    return await this.postRepo.save(postEntity);
+  }
+  async getPostById(postId: number) {
+    return await this.postRepo.findOne({
+      where: { id: postId },
+      relations: { author: true },
+    });
+  }
+  async deletePost(postId: number) {
+    return await this.postRepo.delete(postId);
+  }
+  async savePost(savedPost: Partial<SaveEntity>) {
+    return await this.saveRepo.save(savedPost);
+  }
+  async findSaveByUserAndPost(postId: number, userId: string) {
+    return await this.saveRepo.findOne({
+      where: { savedPost: { id: postId }, saver: { id: userId } },
+    });
+  }
+  async deleteSavedPost(saveId: number) {
+    return await this.saveRepo.delete(saveId);
+  }
+  async votePost(voteEntity: Partial<VoteEntity>) {
+    return await this.voteRepo.save(voteEntity);
+  }
+  async findVoteByUserAndPost(postId: number, userId: string) {
+    return await this.voteRepo.findOne({
+      where: { post: { id: postId }, voter: { id: userId } },
+    });
+  }
+  async updateVote(voteId: number, isUpvote: boolean) {
+    return await this.voteRepo.update({ id: voteId }, { isUpvote: isUpvote });
+  }
+  async deleteVote(voteId: number) {
+    return await this.voteRepo.delete(voteId);
   }
 }

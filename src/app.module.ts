@@ -12,6 +12,8 @@ import { AccountModule } from './modules/account/account.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { PostModule } from './modules/post/post.module';
+import { BullModule } from '@nestjs/bullmq';
+import { bullMqConfig } from './modules/config/bullmq.config';
 
 @Module({
   imports: [
@@ -36,6 +38,11 @@ import { PostModule } from './modules/post/post.module';
     }),
     CacheModule.register({
       isGlobal: true,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: bullMqConfig,
     }),
   ],
   controllers: [AppController],

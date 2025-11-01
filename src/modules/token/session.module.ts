@@ -16,7 +16,7 @@ import { SessionEntity } from '../entities/session.entity';
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('SECRET'),
         signOptions: {
-          expiresIn: configService.getOrThrow<string>('EXPIRE_IN'),
+          expiresIn: configService.getOrThrow<number>('EXPIRE_IN'),
         },
       }),
     }),
