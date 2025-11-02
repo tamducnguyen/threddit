@@ -223,10 +223,8 @@ export class PostController {
   @ApiOperation({ summary: 'Xóa bài viết (chủ bài viết mới có quyền xóa)' })
   @ApiOkResponse({ description: 'Xóa bài viết thành công' })
   @ApiNotFoundResponse({
-    description: 'Không tìm thấy người dùng hiện tại/ không tìm thấy bài viết',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Người dùng không có quyền xóa bài viết này',
+    description:
+      'Không tìm thấy người dùng hiện tại/ không tìm thấy bài viết của bạn',
   })
   @ApiParam({
     name: 'postId',
