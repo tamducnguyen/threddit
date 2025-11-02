@@ -1,6 +1,12 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostEntity } from '../entities/post.entity';
-import { DataSource, FindOptionsWhere, LessThan, Repository } from 'typeorm';
+import {
+  DataSource,
+  FindOptionsWhere,
+  In,
+  LessThan,
+  Repository,
+} from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { Cursor } from '../interface/cursor.interface';
@@ -121,5 +127,13 @@ export class PostRepository {
   }
   async deleteVote(voteId: number) {
     return await this.voteRepo.delete(voteId);
+  }
+  async findUsersByUsername(usernames: string[]) {
+    return await this.userRepo.find({ where: { username: In(usernames) } });
+  }
+  async findPostByIdAndAuthorId(postId: number, userId: string) {
+    return await this.postRepo.findOne({
+      where: { id: postId, author: { id: userId } },
+    });
   }
 }

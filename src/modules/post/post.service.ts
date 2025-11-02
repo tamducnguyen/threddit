@@ -4,7 +4,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { PostRepository } from './post.repository';
 import { Cursor } from '../interface/cursor.interface';
@@ -227,12 +226,41 @@ export class PostService {
     if (data.type !== 0) {
       throw new BadRequestException(message.post.create_post.toxic_post);
     }
-    //insert post
-    const postEntity: Partial<PostEntity> = {
-      content: content,
-      author: currentUserFound,
-    };
-    const postCreated = await this.postRepo.createdPost(postEntity);
+    //insert and notify
+    let postCreated: PostEntity;
+    // if has mentioned users
+    if (mentionedUser?.length) {
+      const mentionedUserFilter = mentionedUser.filter(
+        (username) => username !== currentUser.username,
+      );
+      //get mentioned users
+      const mentionedUserFound =
+        await this.postRepo.findUsersByUsername(mentionedUserFilter);
+      //insert post
+      const postEntity: Partial<PostEntity> = {
+        content: content,
+        author: currentUserFound,
+        mentionedUser: mentionedUserFound,
+      };
+      postCreated = await this.postRepo.createdPost(postEntity);
+      //notify to mentioned users
+      await this.notificationQueue.add(
+        JobNotificationQueue.MENTION,
+        {
+          currentUser: currentUserFound,
+          mentionedUser: mentionedUserFound,
+          postCreated: postCreated,
+        },
+        { priority: 2 },
+      );
+    } else {
+      //if has no mentioned user
+      const postEntity: Partial<PostEntity> = {
+        content: content,
+        author: currentUserFound,
+      };
+      postCreated = await this.postRepo.createdPost(postEntity);
+    }
     // notify to all follower
     await this.notificationQueue.add(
       JobNotificationQueue.CREATE_POST,
@@ -242,20 +270,35 @@ export class PostService {
       },
       { priority: 3 },
     );
-    // notify to mention user
-    if (mentionedUser) {
-      await this.notificationQueue.add(
-        JobNotificationQueue.MENTION,
-        {
-          currentUser: currentUserFound,
-          mentionedUser: mentionedUser,
-          postCreated: postCreated,
-        },
-        { priority: 2 },
-      );
-    }
     //send ok response
-    return sendResponse(HttpStatus.OK, message.post.create_post.success);
+    return sendResponse(
+      HttpStatus.OK,
+      message.post.create_post.success,
+      postCreated,
+    );
+  }
+  /**
+   * delete post
+   * @param currentUser
+   * @param postIdDTO
+   * @returns
+   */
+  async deletePost(currentUser: AuthUser, postIdDTO: PostIdDTO) {
+    //check if user exist, if not throw a NotFoundException
+    const { username, sub } = currentUser;
+    const currentUserFound = await this.postRepo.findUserbyUsername(username);
+    if (!currentUserFound) {
+      throw new NotFoundException(message.post.delete_post.user_not_found);
+    }
+    //check post if user is post's author
+    const { postId } = postIdDTO;
+    const postFound = await this.postRepo.findPostByIdAndAuthorId(postId, sub);
+    if (!postFound) {
+      throw new NotFoundException(message.post.delete_post.not_found);
+    }
+    //delete post
+    await this.postRepo.deletePost(postFound.id);
+    return sendResponse(HttpStatus.OK, message.post.delete_post.success);
   }
   /**
    * save post
@@ -263,26 +306,6 @@ export class PostService {
    * @param postIdDTO
    * @returns
    */
-  async deletePost(currentUser: AuthUser, postIdDTO: PostIdDTO) {
-    //check if user exist, if not throw a NotFoundException
-    const { username } = currentUser;
-    const currentUserFound = await this.postRepo.findUserbyUsername(username);
-    if (!currentUserFound) {
-      throw new NotFoundException(message.post.delete_post.user_not_found);
-    }
-    //check post if user is post's author
-    const { postId } = postIdDTO;
-    const postFound = await this.postRepo.getPostById(postId);
-    if (!postFound) {
-      throw new NotFoundException(message.post.delete_post.not_found);
-    }
-    if (currentUserFound.id !== postFound.author.id) {
-      throw new UnauthorizedException(message.post.delete_post.forbidden);
-    }
-    //delete post
-    await this.postRepo.deletePost(postFound.id);
-    return sendResponse(HttpStatus.OK, message.post.delete_post.success);
-  }
   async savePost(currentUser: AuthUser, postIdDTO: PostIdDTO) {
     //check if user exist, if not throw a NotFoundException
     const { username } = currentUser;
