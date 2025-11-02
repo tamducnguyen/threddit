@@ -28,7 +28,7 @@ export class PostEntity {
   @OneToMany(() => VoteEntity, (vote) => vote.post)
   votes: VoteEntity;
   @ManyToMany(() => UserEntity)
-  @JoinTable({ name: 'mentioned_people' })
+  @JoinTable({ name: 'mentioned_user' })
   mentionedUser: UserEntity[];
   @OneToMany(() => CommentEntity, (comment) => comment.post)
   comments: CommentEntity[];

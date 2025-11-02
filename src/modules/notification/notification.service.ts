@@ -59,10 +59,7 @@ export class NotificationService {
    * notify user
    * @param notification
    */
-  async notify(notification: Partial<NotificationEntity>) {
-    //store into db
-    const notificationCreated =
-      await this.notificationRepo.saveNotification(notification);
+  notify(notificationCreated: Partial<NotificationEntity>) {
     //notify
     this.bus.next(notificationCreated);
   }

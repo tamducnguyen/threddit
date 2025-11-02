@@ -66,7 +66,13 @@ export class NotificationRepository {
       relations: { follower: true },
     });
   }
-  async findUserByUsername(username: string) {
-    return await this.userRepo.findOne({ where: { username: username } });
+  async insertNotifications(notifications: Partial<NotificationEntity>[]) {
+    return await this.notificationRepo
+      .createQueryBuilder()
+      .insert()
+      .into(NotificationEntity)
+      .values(notifications)
+      .returning(['*'])
+      .execute();
   }
 }

@@ -36,16 +36,21 @@ export class NotificationWorker extends WorkerHost {
         const follows = await this.notificationRepo.getAllFollower(
           data.currentUser,
         );
-        await Promise.all(
-          follows.map(async (follow) => {
-            const notification: Partial<NotificationEntity> = {
+        const notifications: Partial<NotificationEntity>[] = follows.map(
+          (follow) => {
+            return {
               owner: follow.follower,
               content: CreatePostNotification(data.currentUser.username),
               target: String(data.postCreated.id),
               type: NotificationType.CREATE_POST,
             };
-            await this.notificationService.notify(notification);
-          }),
+          },
+        );
+        //insert notification
+        await this.notificationRepo.insertNotifications(notifications);
+        //notify
+        notifications.forEach((notification) =>
+          this.notificationService.notify(notification),
         );
         break;
       }
@@ -53,25 +58,26 @@ export class NotificationWorker extends WorkerHost {
       case String(JobNotificationQueue.MENTION): {
         type SendMentionNotificationInterface = {
           currentUser: UserEntity;
-          mentionedUser: string[];
+          mentionedUser: UserEntity[];
           postCreated: PostEntity;
         };
         const data = job.data as SendMentionNotificationInterface;
-        await Promise.all(
-          data.mentionedUser.map(async (mentionedUser) => {
-            const owner =
-              await this.notificationRepo.findUserByUsername(mentionedUser);
-            if (!owner) {
-              return;
-            }
-            const notification: Partial<NotificationEntity> = {
+        const owners = data.mentionedUser;
+        const notifications: Partial<NotificationEntity>[] = owners
+          .filter((owner) => owner.id !== data.currentUser.id)
+          .map((owner) => {
+            return {
               owner: owner,
               content: MentionNotification(data.currentUser.username),
-              type: NotificationType.MENTION,
               target: String(data.postCreated.id),
+              type: NotificationType.MENTION,
             };
-            await this.notificationService.notify(notification);
-          }),
+          });
+        //insert notification
+        await this.notificationRepo.insertNotifications(notifications);
+        //notify
+        notifications.forEach((notification) =>
+          this.notificationService.notify(notification),
         );
         break;
       }
@@ -88,7 +94,8 @@ export class NotificationWorker extends WorkerHost {
           type: NotificationType.FOLLOW,
           target: data.currentUser.username,
         };
-        await this.notificationService.notify(notification);
+        await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(notification);
         break;
       }
     }

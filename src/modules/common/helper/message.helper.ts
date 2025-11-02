@@ -154,14 +154,13 @@ export const message = {
     },
     create_post: {
       user_not_found: 'Không tìm thấy người dùng',
-      server_error: 'Lỗi máy chủ, thử lại lần nữa',
+      server_error: 'Lỗi máy chủ bên thứ 3, thử lại lần nữa',
       toxic_post: 'Bài viết có ngôn từ nhạy cảm',
       success: 'Đăng tải bài viết thành công',
     },
     delete_post: {
       user_not_found: 'Không tìm thấy người dùng',
-      not_found: 'Không tìm thấy bài viết',
-      forbidden: 'Không có quyền xóa bài viết',
+      not_found: 'Không tìm thấy bài viết của bạn',
       success: 'Xóa bài thành công',
     },
     save_post: {
