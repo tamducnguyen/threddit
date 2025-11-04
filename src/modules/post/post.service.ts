@@ -39,7 +39,11 @@ export class PostService {
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
   ) {}
-  async getCreatedPost(username: string, cursor?: string) {
+  async getCreatedPost(
+    currentUser: AuthUser,
+    username: string,
+    cursor?: string,
+  ) {
     //check if user exist
     const userFound = await this.postRepo.findUserbyUsername(username);
     if (!userFound) {
@@ -73,6 +77,7 @@ export class PostService {
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
     //get neccessary data
     const postMetrics = await this.postRepo.getPostMetrics(
+      currentUser.sub,
       rawPosts.map((post) => post.id),
     );
     const posts = rawPosts.map((post) => {
@@ -84,8 +89,10 @@ export class PostService {
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
         mentionedUser: post.mentionedUser,
+        isUpvote: postMetric.isUpvote,
+        isSave: Boolean(postMetric.isSaved),
         commentNumber: Number(postMetric.commentNumber),
-        saveNumber: Number(postMetric.commentNumber),
+        saveNumber: Number(postMetric.saveNumber),
         upvoteNumber: Number(postMetric.upvoteNumber),
         downvoteNumber: Number(postMetric.downvoteNumber),
       };
@@ -101,7 +108,7 @@ export class PostService {
       data,
     );
   }
-  async getSavedPost(username: string, cursor?: string) {
+  async getSavedPost(currentUser: AuthUser, username: string, cursor?: string) {
     //check if user exist
     const userFound = await this.postRepo.findUserbyUsername(username);
     if (!userFound) {
@@ -136,6 +143,7 @@ export class PostService {
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
     //get neccessary data
     const postMetrics = await this.postRepo.getPostMetrics(
+      currentUser.sub,
       rawPosts.map((post) => post.id),
     );
     const posts = rawPosts.map((post) => {
@@ -147,8 +155,10 @@ export class PostService {
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
         mentionedUser: post.mentionedUser,
+        isUpvote: postMetric.isUpvote,
+        isSave: Boolean(postMetric.isSaved),
         commentNumber: Number(postMetric.commentNumber),
-        saveNumber: Number(postMetric.commentNumber),
+        saveNumber: Number(postMetric.saveNumber),
         upvoteNumber: Number(postMetric.upvoteNumber),
         downvoteNumber: Number(postMetric.downvoteNumber),
       };

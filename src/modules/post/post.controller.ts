@@ -83,10 +83,14 @@ export class PostController {
     type: String,
   })
   async getSelfCreatedPost(
-    @CurrentUser('username') username: string,
+    @CurrentUser() currentUser: AuthUser,
     @Query() cursorDTO?: CursorDTO,
   ) {
-    return await this.postService.getCreatedPost(username, cursorDTO?.cursor);
+    return await this.postService.getCreatedPost(
+      currentUser,
+      currentUser.username,
+      cursorDTO?.cursor,
+    );
   }
   @HttpCode(HttpStatus.OK)
   @Get(':username/createdpost')
@@ -123,10 +127,12 @@ export class PostController {
     type: String,
   })
   async getUserCreatedPost(
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
     @Query() cursorDTO?: CursorDTO,
   ) {
     return await this.postService.getCreatedPost(
+      currentUser,
       usernameDTO.username,
       cursorDTO?.cursor,
     );
@@ -160,10 +166,14 @@ export class PostController {
     type: String,
   })
   async getSavedPost(
-    @CurrentUser('username') username: string,
+    @CurrentUser() currentUser: AuthUser,
     @Query() cursorDTO?: CursorDTO,
   ) {
-    return await this.postService.getSavedPost(username, cursorDTO?.cursor);
+    return await this.postService.getSavedPost(
+      currentUser,
+      currentUser.username,
+      cursorDTO?.cursor,
+    );
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/pin')
