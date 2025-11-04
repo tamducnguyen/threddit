@@ -51,24 +51,31 @@ export class PostRepository {
       order: { id: 'DESC' },
     });
   }
-  async getPostMetrics(postIds: number[]) {
+  async getPostMetrics(currentUserId: string, postIds: number[]) {
     const queryMetrics = `
       SELECT 
         p.id AS "id",
         COUNT(DISTINCT c.id) AS "commentNumber",
         COUNT(DISTINCT s.id) AS "saveNumber",
         COUNT(DISTINCT CASE WHEN v.is_upvote = true THEN v.id END) AS "upvoteNumber",
-        COUNT(DISTINCT CASE WHEN v.is_upvote = false THEN v.id END) AS "downvoteNumber"
+        COUNT(DISTINCT CASE WHEN v.is_upvote = false THEN v.id END) AS "downvoteNumber",
+        uv.is_upvote AS "isUpvote",
+        us AS "isSaved"
       FROM posts p
       LEFT JOIN comments c ON c."postId" = p.id
       LEFT JOIN saves s ON s."savedPostId" = p.id
       LEFT JOIN votes v ON v."postId" = p.id
-      WHERE p.id = ANY($1)        
-      GROUP BY p.id
+      LEFT JOIN votes uv 
+        ON uv."postId" = p.id AND uv."voterId" = $2
+      LEFT JOIN saves us
+        ON us."savedPostId" = p.id AND us."saverId" = $2      
+      WHERE p.id = ANY($1)
+      GROUP BY p.id, uv.is_upvote, us
+      ORDER BY p.id;
     `;
     const postMetricsRaw = await this.datasource.query<PostMetrics[]>(
       queryMetrics,
-      [postIds],
+      [postIds, currentUserId],
     );
     const postMetrics = {};
     for (const postMetric of postMetricsRaw) {
