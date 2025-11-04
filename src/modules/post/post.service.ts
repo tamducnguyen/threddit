@@ -85,7 +85,7 @@ export class PostService {
         updatedAt: post.updatedAt,
         mentionedUser: post.mentionedUser,
         commentNumber: Number(postMetric.commentNumber),
-        saveNumber: Number(postMetric.commentNumber),
+        saveNumber: Number(postMetric.saveNumber),
         upvoteNumber: Number(postMetric.upvoteNumber),
         downvoteNumber: Number(postMetric.downvoteNumber),
       };
@@ -148,7 +148,7 @@ export class PostService {
         updatedAt: post.updatedAt,
         mentionedUser: post.mentionedUser,
         commentNumber: Number(postMetric.commentNumber),
-        saveNumber: Number(postMetric.commentNumber),
+        saveNumber: Number(postMetric.saveNumber),
         upvoteNumber: Number(postMetric.upvoteNumber),
         downvoteNumber: Number(postMetric.downvoteNumber),
       };
