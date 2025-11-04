@@ -259,7 +259,7 @@ export class PostService {
         {
           currentUser: currentUserFound,
           mentionedUser: mentionedUserFound,
-          postCreated: postCreated,
+          post: postCreated,
         },
         { priority: 2 },
       );
