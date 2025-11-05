@@ -26,13 +26,14 @@ export class PostEntity {
   @Column({ name: 'is_pinned', type: 'bool', default: false })
   isPinned: boolean;
   @OneToMany(() => VoteEntity, (vote) => vote.post)
-  votes: VoteEntity;
-  @ManyToMany(() => UserEntity)
+  votes: VoteEntity[];
+  @ManyToMany(() => UserEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinTable({ name: 'mentioned_user' })
   mentionedUser: UserEntity[];
   @OneToMany(() => CommentEntity, (comment) => comment.post)
   comments: CommentEntity[];
   @OneToMany(() => SaveEntity, (save) => save.savedPost)
+  saves: SaveEntity[];
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })

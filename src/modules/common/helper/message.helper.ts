@@ -154,8 +154,6 @@ export const message = {
     },
     create_post: {
       user_not_found: 'Không tìm thấy người dùng',
-      server_error: 'Lỗi máy chủ bên thứ 3, thử lại lần nữa',
-      toxic_post: 'Bài viết có ngôn từ nhạy cảm',
       success: 'Đăng tải bài viết thành công',
     },
     delete_post: {
@@ -192,5 +190,13 @@ export const message = {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',
     token_not_found: 'Không tìm thấy mã xác minh',
+  },
+  http: {
+    check_toxic: {
+      toxic: 'Xuất hiện ngôn từ nhạy cảm, xin hãy văn minh',
+    },
+    common: {
+      time_out: 'Lỗi timeout, xin thử lại',
+    },
   },
 };

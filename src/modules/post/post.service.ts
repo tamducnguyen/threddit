@@ -2,7 +2,6 @@ import {
   BadRequestException,
   HttpStatus,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PostRepository } from './post.repository';
@@ -13,10 +12,6 @@ import { sendResponse } from '../common/helper/response.helper';
 import { PostMetrics } from './interface/postmetric.interface';
 import { PostDTO } from './dtos/createpost.dto';
 import { AuthUser } from '../token/authuser.interface';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
-import { ToxicResponse } from './interface/toxicresponse.interface';
 import { PostEntity } from '../entities/post.entity';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -28,14 +23,14 @@ import { PostIdDTO } from './dtos/postid.dto';
 import { SaveEntity } from '../entities/save.entity';
 import { VotePostDTO } from './dtos/votepost.dto';
 import { VoteEntity } from '../entities/vote.entity';
+import { HttpsService } from '../http/http.service';
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly postRepo: PostRepository,
     private readonly jwtService: JwtService,
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
+    private readonly httpsService: HttpsService,
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
   ) {}
@@ -129,19 +124,19 @@ export class PostService {
     }
     //get create post list
     const saves = await this.postRepo.getSavePost(userFound, cursorDecoded);
-    const rawPosts = saves.map((save) => save.savedPost);
     //check if no content
-    const finalPosts = rawPosts[rawPosts.length - 1];
-    if (!finalPosts) {
+    const finalSave = saves[saves.length - 1];
+    if (!finalSave) {
       return sendResponse(
         HttpStatus.NO_CONTENT,
         message.post.get_saved_post.no_content,
       );
     }
     //sign cursor
-    const cursorPayload = { id: finalPosts.id };
+    const cursorPayload = { id: finalSave.id };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
     //get neccessary data
+    const rawPosts = saves.map((save) => save.savedPost);
     const postMetrics = await this.postRepo.getPostMetrics(
       currentUser.sub,
       rawPosts.map((post) => post.id),
@@ -220,22 +215,9 @@ export class PostService {
     if (!currentUserFound) {
       throw new NotFoundException(message.post.create_post.user_not_found);
     }
-    //check if content is toxic, if toxic throw a BadRequestexception or a InternalServerError
+    //check if content is toxic
     const { content, mentionedUser } = postDTO;
-    const checkToxicResponse = await firstValueFrom(
-      this.httpService.post(this.configService.getOrThrow('URL_AI'), {
-        text: content,
-      }),
-    );
-    if (checkToxicResponse.status !== 200) {
-      throw new InternalServerErrorException(
-        message.post.create_post.server_error,
-      );
-    }
-    const data = checkToxicResponse.data as ToxicResponse;
-    if (data.type !== 0) {
-      throw new BadRequestException(message.post.create_post.toxic_post);
-    }
+    await this.httpsService.checkToxic(content);
     //insert and notify
     let postCreated: PostEntity;
     // if has mentioned users
