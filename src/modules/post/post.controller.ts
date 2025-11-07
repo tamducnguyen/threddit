@@ -29,6 +29,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCookieAuth,
+  ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -225,6 +226,7 @@ export class PostController {
   @ApiOkResponse({ description: 'Đăng tải bài viết thành công' })
   @ApiNotFoundResponse({ description: 'Không tìm thấy người dùng hiện tại' })
   @ApiBadRequestResponse({ description: 'Bài viết có ngôn từ độc hại ' })
+  @ApiInternalServerErrorResponse({ description: 'Server AI timeout' })
   async createPost(
     @CurrentUser() currentUser: AuthUser,
     @Body() postDTO: CreatePostDTO,
@@ -335,6 +337,24 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Patch(':postId')
+  @ApiOperation({
+    summary: 'Cập nhật bài viết chính chủ',
+    description: 'Cập nhật nội dung và người được đề cập',
+  })
+  @ApiOkResponse({
+    description:
+      'Cập nhập bài viết thành công, trả về bài viết đã cập nhật, thông báo cho người dùng mới được đề cập(nếu có)',
+  })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy bài viết của bạn' })
+  @ApiBadRequestResponse({
+    description: 'Bài viết có ngôn từ nhạy cảm',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Server AI timeout' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async updatePost(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -348,6 +368,18 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('detail/:postId')
+  @ApiOperation({
+    summary: 'Lấy chi tiết bài viết',
+    description:
+      'Trả về thông tin của bài viết, trạng thái của người dùng hiện tại đối với bài viết',
+  })
+  @ApiOkResponse({ description: 'Lấy chi tiết bài viết thành công' })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy bài viết' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    description: 'Id bài viết',
+  })
   async getPost(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -356,6 +388,20 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('feed')
+  @ApiOperation({
+    summary: 'Lấy bảng tin',
+    description:
+      'Đề xuất dựa trên bình chọn, lượt lưu, số bình luận' +
+      ', số người mà mà người dùng hiện tại theo dõi bình chọn cho bài viết ' +
+      'Khi lấy bảng tin xong sẽ cache lại để tránh trùng lặp,' +
+      ' tối đa cache 1000 bài viết mới nhất',
+  })
+  @ApiOkResponse({ description: 'Lấy bảng tin thành công, cache ' })
+  @ApiNoContentResponse({
+    description:
+      'Đã lấy hết tất cả các bài viết,' +
+      'chỉ xảy ra khi tổng số bài viết nhỏ hơn 1000',
+  })
   async getFeed(@CurrentUser() currentUser: AuthUser) {
     return await this.postService.getFeed(currentUser);
   }
