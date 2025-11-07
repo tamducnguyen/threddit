@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class CreatePostDTO {
+export class UpdatePostDTO {
   @IsString({ message: 'Nội dung phải là chuỗi hợp lệ' })
   @IsNotEmpty({ message: 'Nội dung không được để trống' })
   content: string;

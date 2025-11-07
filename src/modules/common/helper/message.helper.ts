@@ -154,8 +154,6 @@ export const message = {
     },
     create_post: {
       user_not_found: 'Không tìm thấy người dùng',
-      server_error: 'Lỗi máy chủ bên thứ 3, thử lại lần nữa',
-      toxic_post: 'Bài viết có ngôn từ nhạy cảm',
       success: 'Đăng tải bài viết thành công',
     },
     delete_post: {
@@ -187,10 +185,30 @@ export const message = {
       success: 'Hủy bình chọn bài viết thành công',
       not_vote: 'Bạn chưa bình chọn vài viết này',
     },
+    update_post: {
+      not_found: 'Không tìm thấy bài viết của bạn',
+      success: 'Chỉnh sủa bài viết thành công',
+    },
+    get_post: {
+      success: 'Lấy chi tiết bài viết thành công',
+      not_found: 'Không tìm thấy bài viết',
+    },
+    get_feed: {
+      success: 'Lấy bảng tin thành công',
+      no_content: 'Đã hết cái bài đăng',
+    },
   },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',
     token_not_found: 'Không tìm thấy mã xác minh',
+  },
+  http: {
+    check_toxic: {
+      toxic: 'Xuất hiện ngôn từ nhạy cảm, xin hãy văn minh',
+    },
+    common: {
+      time_out: 'Lỗi timeout, xin thử lại',
+    },
   },
 };

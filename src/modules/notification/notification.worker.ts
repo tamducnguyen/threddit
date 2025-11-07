@@ -59,7 +59,7 @@ export class NotificationWorker extends WorkerHost {
         type SendMentionNotificationInterface = {
           currentUser: UserEntity;
           mentionedUser: UserEntity[];
-          postCreated: PostEntity;
+          post: PostEntity;
         };
         const data = job.data as SendMentionNotificationInterface;
         const owners = data.mentionedUser;
@@ -69,7 +69,7 @@ export class NotificationWorker extends WorkerHost {
             return {
               owner: owner,
               content: MentionNotification(data.currentUser.username),
-              target: String(data.postCreated.id),
+              target: String(data.post.id),
               type: NotificationType.MENTION,
             };
           });
