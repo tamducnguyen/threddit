@@ -3,6 +3,7 @@ export const prefixCache = {
   alreadymail: 'alreadymail:',
   verification: 'verification:',
   attemps: 'attempions:',
+  feedalready: 'feedalready:',
 };
 export const ttlCache = {
   attemps: 5 * 60 * 1000,
@@ -10,4 +11,5 @@ export const ttlCache = {
   info: 5 * 60 * 1000,
   code: 5 * 60 * 1000,
   ban: 5 * 60 * 1000,
+  feedalready: 3 * 24 * 60 * 60 * 1000,
 };

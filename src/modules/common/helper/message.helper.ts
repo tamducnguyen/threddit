@@ -185,6 +185,18 @@ export const message = {
       success: 'Hủy bình chọn bài viết thành công',
       not_vote: 'Bạn chưa bình chọn vài viết này',
     },
+    update_post: {
+      not_found: 'Không tìm thấy bài viết của bạn',
+      success: 'Chỉnh sủa bài viết thành công',
+    },
+    get_post: {
+      success: 'Lấy chi tiết bài viết thành công',
+      not_found: 'Không tìm thấy bài viết',
+    },
+    get_feed: {
+      success: 'Lấy bảng tin thành công',
+      no_content: 'Đã hết cái bài đăng',
+    },
   },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',

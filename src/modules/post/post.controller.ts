@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -19,9 +20,10 @@ import { UsernameDTO } from './dtos/username.dto';
 import { CursorDTO } from '../notification/dtos/cursor.dto';
 import { TokenGuard } from '../common/guard/token.guard';
 import { PostIdDTO } from './dtos/postid.dto';
-import { PostDTO } from './dtos/createpost.dto';
+import { CreatePostDTO } from './dtos/createpost.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { VotePostDTO } from './dtos/votepost.dto';
+import { UpdatePostDTO } from './dtos/updatepost.dto';
 
 @Controller('post')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -88,7 +90,7 @@ export class PostController {
   @Post()
   async createPost(
     @CurrentUser() currentUser: AuthUser,
-    @Body() postDTO: PostDTO,
+    @Body() postDTO: CreatePostDTO,
   ) {
     return await this.postService.createPost(currentUser, postDTO);
   }
@@ -131,5 +133,31 @@ export class PostController {
     @Param() postIdDTO: PostIdDTO,
   ) {
     return await this.postService.unvotePost(currentUser, postIdDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Patch(':postId')
+  async updatePost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+    @Body() updatePostDTO: UpdatePostDTO,
+  ) {
+    return await this.postService.updatePost(
+      currentUser,
+      postIdDTO,
+      updatePostDTO,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('detail/:postId')
+  async getPost(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+  ) {
+    return await this.postService.getPost(currentUser, postIdDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('feed')
+  async getFeed(@CurrentUser() currentUser: AuthUser) {
+    return await this.postService.getFeed(currentUser);
   }
 }
