@@ -16,6 +16,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../common/guard/throttler.guard';
 import { UsernameDTO } from './dtos/username.dto';
 import { TokenGuard } from '../common/guard/token.guard';
+import { AuthUser } from '../token/authuser.interface';
+import { SearchUserDTO } from './dtos/searchuser.dto';
 
 @Controller('follow')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -117,6 +119,19 @@ export class FollowController {
     return await this.followService.getFollowState(
       currentUsername,
       usernameDTO.username,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('search')
+  async getUsersByKey(
+    @CurrentUser() currentUser: AuthUser,
+    @Query() searchPostDTO: SearchUserDTO,
+    @Query() cursorDTO: CursorDTO,
+  ) {
+    return await this.followService.getUsersByKey(
+      currentUser,
+      searchPostDTO,
+      cursorDTO.cursor,
     );
   }
 }

@@ -16,6 +16,10 @@ import {
 } from '../common/helper/notification.helper';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { AuthUser } from '../token/authuser.interface';
+import { SearchUserDTO } from './dtos/searchuser.dto';
+import { SearchedUserDTO } from './dtos/searcheduser.dto';
+import { CursorUsername } from '../interface/cursorusername.interface';
 @Injectable()
 export class FollowService {
   constructor(
@@ -299,6 +303,71 @@ export class FollowService {
     return sendResponse(
       HttpStatus.OK,
       message.follow.get_follow_state.sucess,
+      data,
+    );
+  }
+  /**
+   * search user
+   * @param currentuser
+   * @param searchPostDTO
+   * @param cursor
+   * @returns
+   */
+  async getUsersByKey(
+    currentuser: AuthUser,
+    searchUserDTO: SearchUserDTO,
+    cursor?: string,
+  ) {
+    //check if has cursor
+    let cursorDecoded: CursorUsername | undefined;
+    if (cursor) {
+      try {
+        cursorDecoded =
+          await this.jwtService.verifyAsync<CursorUsername>(cursor);
+      } catch {
+        cursorDecoded = undefined;
+        throw new BadRequestException(
+          message.follow.get_user_by_key.cursor_invalid,
+        );
+      }
+    }
+    //get users with follow state by key
+    const usersFound = await this.followRepo.getUsersByKey(
+      currentuser,
+      searchUserDTO,
+      cursorDecoded,
+    );
+    //check if has any user
+    if (usersFound.length === 0) {
+      return sendResponse(
+        HttpStatus.NO_CONTENT,
+        message.follow.get_user_by_key.no_content,
+      );
+    }
+    //filter self with canFollow is null
+    const filteredUsersFound = usersFound.map((userFound) => {
+      if (userFound.username === currentuser.username) {
+        const userSelf: SearchedUserDTO = {
+          ...userFound,
+          canFollow: null,
+        };
+        return userSelf;
+      } else {
+        return userFound;
+      }
+    });
+    //sign token with payload final username
+    const userFinal = filteredUsersFound[filteredUsersFound.length - 1];
+    const cursorPayload: CursorUsername = { username: userFinal.username };
+    const cursorToken = await this.jwtService.signAsync(cursorPayload);
+    //send response
+    const data = {
+      users: filteredUsersFound,
+      cursor: cursorToken,
+    };
+    return sendResponse(
+      HttpStatus.OK,
+      message.follow.get_user_by_key.success,
       data,
     );
   }

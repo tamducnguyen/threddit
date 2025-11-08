@@ -130,6 +130,11 @@ export const message = {
       user_not_found: 'Người dùng không tồn tại',
       sucess: 'Lấy trạng thái theo dõi thành công',
     },
+    get_user_by_key: {
+      success: 'Tìm kiếm người dùng thành công',
+      no_content: 'Hết danh sách người dùng hoặc là không có',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
   },
   post: {
     get_created_post: {
