@@ -412,6 +412,24 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('following')
+  @ApiOperation({
+    summary:
+      'Lấy danh sách bài viết của những người mà người dùng đang theo dõi',
+  })
+  @ApiOkResponse({
+    description:
+      'Lấy danh sách thành công, trả về những bài viết theo thứ tự gần đây nhất',
+  })
+  @ApiNoContentResponse({
+    description: 'Đã hết danh sách hoặc không có bài viết',
+  })
+  @ApiBadRequestResponse({ description: 'Con trỏ không hợp lệ' })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
   async getFollowingPosts(
     @CurrentUser() currentUser: AuthUser,
     @Query() cursorDTO: CursorDTO,
@@ -423,6 +441,29 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('search')
+  @ApiOperation({
+    summary: 'Tìm kiếm bài viết bằng từ khóa',
+  })
+  @ApiOkResponse({
+    description:
+      'Lấy danh sách thành công, trả về những bài viết khớp với từ khóa và theo thứ tự gần đây nhất',
+  })
+  @ApiNoContentResponse({
+    description: 'Đã hết danh sách hoặc không có bài viết',
+  })
+  @ApiBadRequestResponse({ description: 'Con trỏ không hợp lệ' })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'key',
+    required: true,
+    description: 'Từ khóa để tìm kiếm',
+    type: String,
+  })
   async getPostsByKey(
     @CurrentUser() currentUser: AuthUser,
     @Query() searchPostDTO: SearchPostDTO,
@@ -436,11 +477,32 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Sse(':postId/comment/listen')
+  @ApiOperation({
+    summary: 'Lắng nghe bình luận trên bài viết',
+  })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    type: String,
+    description: 'Mã bài viết',
+  })
   async listenComment(@Param() postIdDTO: PostIdDTO) {
     return await this.postService.listenComment(postIdDTO);
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/comment')
+  @ApiOperation({ summary: 'Bình luận' })
+  @ApiNotFoundResponse({
+    description: 'Không tìm thấy người dùng hoặc không tìm thấy bài viết',
+  })
+  @ApiBadRequestResponse({ description: 'Xuất hiện ngôn từ nhạy cảm' })
+  @ApiOkResponse({ description: 'Bình luận thành công' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    type: String,
+    description: 'Mã bài viết',
+  })
   async createComment(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -454,6 +516,27 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Get(':postId/comment')
+  @ApiOperation({ summary: 'Lấy danh sách bình luận của một bài viết' })
+  @ApiNotFoundResponse({
+    description: 'Không tìm thấy bài viết',
+  })
+  @ApiBadRequestResponse({ description: 'Con trỏ không hợp lệ' })
+  @ApiNoContentResponse({
+    description: 'Đã hết danh sách hoặc không có bài viêt',
+  })
+  @ApiOkResponse({ description: 'Lấy danh sách bình luận thành công' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    type: String,
+    description: 'Mã bài viết',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
   async getComment(
     @CurrentUser() currentUser: AuthUser,
     @Param() postIdDTO: PostIdDTO,
@@ -467,6 +550,21 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Get(':postId/comment/:commentId')
+  @ApiOperation({ summary: 'Lấy chi tiết bình luận' })
+  @ApiOkResponse({ description: 'Lấy thành công' })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy bình luận' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    type: String,
+    description: 'Mã bài viết',
+  })
+  @ApiParam({
+    name: 'commentId',
+    required: true,
+    type: String,
+    description: 'Mã bình luận',
+  })
   async getDetailComment(
     @CurrentUser() currentUser: AuthUser,
     @Param() detailCommentDTO: DetailCommentDTO,
@@ -478,6 +576,22 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Patch(':postId/comment/:commentId')
+  @ApiOperation({ summary: 'Cập nhật bài viết' })
+  @ApiOkResponse({ description: 'Cập nhật thành công' })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy bình luận của bạn' })
+  @ApiBadRequestResponse({ description: 'Xuất hiện ngôn từ nhạy cảm' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    type: String,
+    description: 'Mã bài viết',
+  })
+  @ApiParam({
+    name: 'commentId',
+    required: true,
+    type: String,
+    description: 'Mã bình luận',
+  })
   async updateComment(
     @CurrentUser() currentUser: AuthUser,
     @Param() detailCommentDTO: DetailCommentDTO,
@@ -491,6 +605,21 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Delete(':postId/comment/:commentId')
+  @ApiOperation({ summary: 'Xóa bình luận' })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy bình luận của bạn' })
+  @ApiOkResponse({ description: 'Xóa bình luận thành công' })
+  @ApiParam({
+    name: 'postId',
+    required: true,
+    type: String,
+    description: 'Mã bài viết',
+  })
+  @ApiParam({
+    name: 'commentId',
+    required: true,
+    type: String,
+    description: 'Mã bình luận',
+  })
   async deleteComment(
     @CurrentUser() currentUser: AuthUser,
     @Param() detailCommentDTO: DetailCommentDTO,
