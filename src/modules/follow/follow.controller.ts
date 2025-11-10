@@ -334,6 +334,25 @@ export class FollowController {
   }
   @HttpCode(HttpStatus.OK)
   @Get('search')
+  @ApiOperation({ summary: 'Tìm kiếm người dùng theo từ khóa ' })
+  @ApiOkResponse({
+    description:
+      'Tìm kiếm người dùng thành công, trả về danh sách người dùng khớp với kết quả tìm kiếm',
+  })
+  @ApiNoContentResponse({
+    description: 'Không có kết quả nào khớp hoặc là đã hết danh sách',
+  })
+  @ApiBadRequestResponse({ description: 'Con trỏ không hợp lệ' })
+  @ApiQuery({
+    name: 'key',
+    required: true,
+    description: 'Từ khóa để tìm kiếm',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Con trỏ để phân trang cuộn',
+  })
   async getUsersByKey(
     @CurrentUser() currentUser: AuthUser,
     @Query() searchPostDTO: SearchUserDTO,
