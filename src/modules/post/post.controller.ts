@@ -17,13 +17,14 @@ import { UserThrottlerGuard } from '../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { UsernameDTO } from './dtos/username.dto';
-import { CursorDTO } from '../notification/dtos/cursor.dto';
+import { CursorDTO } from '../post/dtos/cursor.dto';
 import { TokenGuard } from '../common/guard/token.guard';
 import { PostIdDTO } from './dtos/postid.dto';
 import { CreatePostDTO } from './dtos/createpost.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { VotePostDTO } from './dtos/votepost.dto';
 import { UpdatePostDTO } from './dtos/updatepost.dto';
+import { SearchPostDTO } from './dtos/searchpost.dto';
 
 @Controller('post')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -159,5 +160,29 @@ export class PostController {
   @Get('feed')
   async getFeed(@CurrentUser() currentUser: AuthUser) {
     return await this.postService.getFeed(currentUser);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('following')
+  async getFollowingPosts(
+    @CurrentUser() currentUser: AuthUser,
+    @Query() cursorDTO: CursorDTO,
+  ) {
+    return await this.postService.getFollowingPosts(
+      currentUser,
+      cursorDTO.cursor,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get('search')
+  async getPostsByKey(
+    @CurrentUser() currentUser: AuthUser,
+    @Query() searchPostDTO: SearchPostDTO,
+    @Query() cursorDTO: CursorDTO,
+  ) {
+    return await this.postService.getPostsByKey(
+      currentUser,
+      searchPostDTO,
+      cursorDTO.cursor,
+    );
   }
 }

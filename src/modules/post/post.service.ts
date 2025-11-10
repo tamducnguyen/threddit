@@ -31,6 +31,7 @@ import { UserEntity } from '../entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { prefixCache, ttlCache } from '../config/cache.config';
 import { ConfigService } from '@nestjs/config';
+import { SearchPostDTO } from './dtos/searchpost.dto';
 
 @Injectable()
 export class PostService {
@@ -593,5 +594,105 @@ export class PostService {
       );
     }
     return sendResponse(HttpStatus.OK, message.post.get_feed.success, feed);
+  }
+  /**
+   * get post created by current user's followee users
+   * @param currentUser
+   * @param cursor
+   * @returns
+   */
+  async getFollowingPosts(currentUser: AuthUser, cursor?: string) {
+    //check if has cursor
+    let cursorDecoded: Cursor | undefined;
+    if (cursor) {
+      try {
+        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
+      } catch {
+        throw new BadRequestException(
+          message.post.get_following_post.cursor_invalid,
+        );
+      }
+    } else {
+      cursorDecoded = undefined;
+    }
+    //get post created by current user's followee users
+    const followingPosts = await this.postRepo.getFollowingPosts(
+      currentUser,
+      cursorDecoded,
+    );
+    //check if has any post
+    if (followingPosts.length === 0) {
+      return sendResponse(
+        HttpStatus.NO_CONTENT,
+        message.post.get_following_post.no_content,
+      );
+    }
+    //sign token with payload final post id
+    const finalPost = followingPosts[followingPosts.length - 1];
+    const cursorPayload = { id: finalPost.id };
+    const cursorToken = await this.jwtService.signAsync(cursorPayload);
+    //send response
+    const data = {
+      posts: followingPosts,
+      cursor: cursorToken,
+    };
+    return sendResponse(
+      HttpStatus.OK,
+      message.post.get_following_post.success,
+      data,
+    );
+  }
+  /**
+   * search post by key
+   * @param currentUser
+   * @param searchPostDTO
+   * @param cursor
+   * @returns
+   */
+  async getPostsByKey(
+    currentUser: AuthUser,
+    searchPostDTO: SearchPostDTO,
+    cursor?: string,
+  ) {
+    //check if has cursor
+    let cursorDecoded: Cursor | undefined;
+    if (cursor) {
+      try {
+        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
+      } catch {
+        throw new BadRequestException(
+          message.post.get_post_by_key.cursor_invalid,
+        );
+      }
+    } else {
+      cursorDecoded = undefined;
+    }
+    //get posts by key
+    const postsByKey = await this.postRepo.getPostsByKey(
+      currentUser,
+      searchPostDTO,
+      cursorDecoded,
+    );
+    //check if has any post
+    if (postsByKey.length === 0) {
+      return sendResponse(
+        HttpStatus.NO_CONTENT,
+        message.post.get_post_by_key.no_content,
+      );
+    }
+    //sign token with payload final post id
+    const finalPost = postsByKey[postsByKey.length - 1];
+    const cursorPayload = { id: finalPost.id };
+    const cursorToken = await this.jwtService.signAsync(cursorPayload);
+    //send response
+    const data = {
+      posts: postsByKey,
+      cursor: cursorToken,
+    };
+    return sendResponse(
+      HttpStatus.OK,
+      message.post.get_post_by_key.success,
+      data,
+    );
   }
 }

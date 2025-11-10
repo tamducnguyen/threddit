@@ -202,6 +202,16 @@ export const message = {
       success: 'Lấy bảng tin thành công',
       no_content: 'Đã hết cái bài đăng',
     },
+    get_following_post: {
+      success: 'Lấy bảng tin từ người bạn đang theo dõi thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Đã hết danh sách bài đăng hoặc không có bài đăng nào',
+    },
+    get_post_by_key: {
+      success: 'Tìm kiếm bài đăng thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Đã hết danh sách bài đăng hoặc không có bài đăng nào',
+    },
   },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',

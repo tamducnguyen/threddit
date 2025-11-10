@@ -14,6 +14,8 @@ import { PostMetrics } from './interface/postmetric.interface';
 import { SaveEntity } from '../entities/save.entity';
 import { VoteEntity } from '../entities/vote.entity';
 import { PostDTO } from './dtos/post.dto';
+import { AuthUser } from '../token/authuser.interface';
+import { SearchPostDTO } from './dtos/searchpost.dto';
 
 export class PostRepository {
   constructor(
@@ -263,5 +265,120 @@ export class PostRepository {
     `;
     const feed = await this.datasource.query<PostDTO[]>(queryGetFeed, params);
     return feed;
+  }
+  async getFollowingPosts(currentUser: AuthUser, cursor?: Cursor) {
+    let followingPostQuery = `
+      SELECT 
+        p.id AS "id",
+        p.content AS "content",
+        p.is_pinned AS "isPinned",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt",
+        COUNT(DISTINCT c.id) AS "commentNumber",
+        COUNT(DISTINCT s.id) AS "saveNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = true THEN v.id END) AS "upvoteNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = false THEN v.id END) AS "downvoteNumber",
+        uv.is_upvote AS "isUpvote",
+        EXISTS (
+          SELECT 1
+          FROM saves 
+          WHERE saves."savedPostId" = p.id
+          AND saves."saverId" = $1
+        ) AS "isSaved",
+        row_to_json(author) AS "author",
+        json_agg(DISTINCT mu) AS "mentionedUser"
+      FROM posts p
+      LEFT JOIN comments c ON c."postId" = p.id
+      LEFT JOIN saves s ON s."savedPostId" = p.id
+      LEFT JOIN votes v ON v."postId" = p.id
+      LEFT JOIN votes uv 
+        ON uv."postId" = p.id AND uv."voterId" = $1
+      LEFT JOIN users author
+        ON author.id = p."authorId"
+      LEFT JOIN mentioned_user muid
+        ON muid."postsId" = p.id
+      LEFT JOIN users mu
+        ON mu.id = muid."usersId"
+      LEFT JOIN follows fl 
+        ON fl."followerId" = $1
+      WHERE p."authorId" = fl."followeeId"
+    `;
+    //get post item limit number
+    const limit = this.configService.getOrThrow<number>('LIMIT_POST_ITEM');
+    //init params
+    const params = [currentUser.sub, limit];
+    if (cursor) {
+      params.push(cursor.id);
+      followingPostQuery += `AND p.id < $3`;
+    }
+    followingPostQuery += `
+      GROUP BY p.id, uv.is_upvote, author.id
+      ORDER BY p.id DESC
+      LIMIT $2
+    `;
+    const followingPosts = await this.datasource.query<PostDTO[]>(
+      followingPostQuery,
+      params,
+    );
+    return followingPosts;
+  }
+  async getPostsByKey(
+    currentUser: AuthUser,
+    searchPostDTO: SearchPostDTO,
+    cursor?: Cursor,
+  ) {
+    let postsByKeyQuery = `
+    SELECT 
+        p.id AS "id",
+        p.content AS "content",
+        p.is_pinned AS "isPinned",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt",
+        COUNT(DISTINCT c.id) AS "commentNumber",
+        COUNT(DISTINCT s.id) AS "saveNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = true THEN v.id END) AS "upvoteNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = false THEN v.id END) AS "downvoteNumber",
+        uv.is_upvote AS "isUpvote",
+        EXISTS (
+          SELECT 1
+          FROM saves 
+          WHERE saves."savedPostId" = p.id
+          AND saves."saverId" = $1
+        ) AS "isSaved",
+        row_to_json(author) AS "author",
+        json_agg(DISTINCT mu) AS "mentionedUser"
+      FROM posts p
+      LEFT JOIN comments c ON c."postId" = p.id
+      LEFT JOIN saves s ON s."savedPostId" = p.id
+      LEFT JOIN votes v ON v."postId" = p.id
+      LEFT JOIN votes uv 
+        ON uv."postId" = p.id AND uv."voterId" = $1
+      LEFT JOIN users author
+        ON author.id = p."authorId"
+      LEFT JOIN mentioned_user muid
+        ON muid."postsId" = p.id
+      LEFT JOIN users mu
+        ON mu.id = muid."usersId"
+      WHERE (p.content ILIKE $3
+      OR author.username ILIKE $3)
+    `;
+    //get post item limit number
+    const limit = this.configService.getOrThrow<number>('LIMIT_POST_ITEM');
+    //init params
+    const params = [currentUser.sub, limit, `%${searchPostDTO.key}%`];
+    if (cursor) {
+      params.push(cursor.id);
+      postsByKeyQuery += `AND p.id < $4`;
+    }
+    postsByKeyQuery += `
+      GROUP BY p.id, uv.is_upvote, author.id
+      ORDER BY p.id DESC
+      LIMIT $2
+    `;
+    const postsByKey = await this.datasource.query<PostDTO[]>(
+      postsByKeyQuery,
+      params,
+    );
+    return postsByKey;
   }
 }
