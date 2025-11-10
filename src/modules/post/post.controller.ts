@@ -10,6 +10,7 @@ import {
   Patch,
   Query,
   UseGuards,
+  Sse,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -25,6 +26,9 @@ import { AuthUser } from '../token/authuser.interface';
 import { VotePostDTO } from './dtos/votepost.dto';
 import { UpdatePostDTO } from './dtos/updatepost.dto';
 import { SearchPostDTO } from './dtos/searchpost.dto';
+import { CreateCommentDTO } from './dtos/createcomment.dto';
+import { DetailCommentDTO } from './dtos/detailcomment.dto';
+import { UpdateCommentDTO } from './dtos/updatecomment.dto';
 
 @Controller('post')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -184,5 +188,68 @@ export class PostController {
       searchPostDTO,
       cursorDTO.cursor,
     );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Sse(':postId/comment/listen')
+  async listenComment(@Param() postIdDTO: PostIdDTO) {
+    return await this.postService.listenComment(postIdDTO);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post(':postId/comment')
+  async createComment(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+    @Body() createCommentDTO: CreateCommentDTO,
+  ) {
+    return await this.postService.createComment(
+      currentUser,
+      postIdDTO,
+      createCommentDTO,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get(':postId/comment')
+  async getComment(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() postIdDTO: PostIdDTO,
+    @Query() cursorDTO: CursorDTO,
+  ) {
+    return await this.postService.getComments(
+      currentUser,
+      postIdDTO,
+      cursorDTO.cursor,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get(':postId/comment/:commentId')
+  async getDetailComment(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() detailCommentDTO: DetailCommentDTO,
+  ) {
+    return await this.postService.getDetailComment(
+      currentUser,
+      detailCommentDTO,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Patch(':postId/comment/:commentId')
+  async updateComment(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() detailCommentDTO: DetailCommentDTO,
+    @Body() updateCommentDTO: UpdateCommentDTO,
+  ) {
+    return await this.postService.updateComment(
+      currentUser,
+      detailCommentDTO,
+      updateCommentDTO,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete(':postId/comment/:commentId')
+  async deleteComment(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() detailCommentDTO: DetailCommentDTO,
+  ) {
+    return await this.postService.deleteComment(currentUser, detailCommentDTO);
   }
 }

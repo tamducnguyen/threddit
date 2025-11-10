@@ -200,7 +200,7 @@ export const message = {
     },
     get_feed: {
       success: 'Lấy bảng tin thành công',
-      no_content: 'Đã hết cái bài đăng',
+      no_content: 'Đã hết bài đăng',
     },
     get_following_post: {
       success: 'Lấy bảng tin từ người bạn đang theo dõi thành công',
@@ -211,6 +211,32 @@ export const message = {
       success: 'Tìm kiếm bài đăng thành công',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Đã hết danh sách bài đăng hoặc không có bài đăng nào',
+    },
+    listen_comment: {
+      post_not_found: 'Không tìm thấy bài viết',
+    },
+    comment: {
+      post_not_found: 'Không tìm thấy bài viết',
+      user_not_found: 'Không tìm thấy người dùng',
+      success: 'Bình luận bài viết thành công',
+    },
+    get_comment: {
+      post_not_found: 'Không tìm thấy bài viết',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Đã hết bình luận hoặc không có bình luận',
+      success: 'Lấy danh sách bình luận thành công',
+    },
+    delete_comment: {
+      not_found: 'Không tìm thấy bình luận của bạn',
+      success: 'Xóa bình luận thành công',
+    },
+    get_detail_comment: {
+      not_found: 'Không tìm thấy bình luận',
+      success: 'Lấy bình luận thành công',
+    },
+    update_comment: {
+      not_found: 'Không tìm thấy bình luận của bạn',
+      success: 'Cập nhật bình luận thành công',
     },
   },
   common: {

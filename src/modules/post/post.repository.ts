@@ -16,6 +16,8 @@ import { VoteEntity } from '../entities/vote.entity';
 import { PostDTO } from './dtos/post.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { SearchPostDTO } from './dtos/searchpost.dto';
+import { CommentEntity } from '../entities/comment.entity';
+import { CommentDTO } from './dtos/comment.dto';
 
 export class PostRepository {
   constructor(
@@ -29,6 +31,8 @@ export class PostRepository {
     private readonly saveRepo: Repository<SaveEntity>,
     @InjectRepository(VoteEntity)
     private readonly voteRepo: Repository<VoteEntity>,
+    @InjectRepository(CommentEntity)
+    private readonly commentRepo: Repository<CommentEntity>,
   ) {}
   async getSelfPost(user: UserEntity, cursor?: Cursor) {
     let condition: FindOptionsWhere<PostEntity> = { author: user };
@@ -380,5 +384,123 @@ export class PostRepository {
       params,
     );
     return postsByKey;
+  }
+  async findPostById(postId: number) {
+    return await this.postRepo.findOne({
+      where: { id: postId },
+      relations: { author: true },
+    });
+  }
+  async createComment(
+    content: string,
+    postEntity: PostEntity,
+    userEntity: UserEntity,
+    mentionedUser?: UserEntity[],
+  ) {
+    const commentEntity: Partial<CommentEntity> = {
+      commenter: userEntity,
+      post: postEntity,
+      content: content,
+      mentionedUser: mentionedUser,
+    };
+    return await this.commentRepo.save(commentEntity);
+  }
+  async findComment(commentId: number, commenterId: string, postId: number) {
+    return await this.commentRepo.findOne({
+      where: {
+        id: commentId,
+        commenter: { id: commenterId },
+        post: { id: postId },
+      },
+      relations: { mentionedUser: true, commenter: true, post: true },
+    });
+  }
+  async deleteComment(commentId: number) {
+    return await this.commentRepo.delete(commentId);
+  }
+  async getCommentsByPostId(
+    postId: number,
+    currentUser: AuthUser,
+    cursor?: Cursor,
+  ) {
+    let commentsByPostIdQuery = `
+      SELECT 
+      c.id AS "id",
+      c.content AS "content",
+      c.created_at AS "createdAt",
+      c.updated_at AS "updatedAt",
+      json_agg(mentionedUser) AS "mentionedUser",
+      row_to_json(commenter) AS "commenter",
+      row_to_json(p) AS "post",
+      (c."commenterId" = $2) AS "isCommenter"
+      FROM comments c
+      LEFT JOIN users commenter
+        ON commenter.id = c."commenterId"
+      LEFT JOIN mentioned_user_comment muc
+        ON c.id = muc."commentsId"
+      LEFT JOIN users mentionedUser
+        ON mentionedUser.id = muc."usersId"
+      LEFT JOIN posts p
+        ON p.id = c."postId"
+      WHERE c."postId" = $1
+    `;
+    //get limit item
+    const limit = this.configService.getOrThrow<number>('LIMIT_COMMENT_ITEM');
+    //init param
+    const params = [postId, currentUser.sub, limit];
+    //if has cursor
+    if (cursor) {
+      params.push(cursor.id);
+      commentsByPostIdQuery += `
+        AND c.id < $4
+      `;
+    }
+    commentsByPostIdQuery += `
+      GROUP BY c.id, commenter.id, p.id
+      ORDER BY c.id DESC
+      LIMIT $3
+    `;
+    const comments = await this.datasource.query<CommentDTO[]>(
+      commentsByPostIdQuery,
+      params,
+    );
+    return comments;
+  }
+  async getDetailComment(
+    commentId: number,
+    postId: number,
+    currentUser: AuthUser,
+  ) {
+    const commentByPostIdQuery = `
+      SELECT 
+      c.id AS "id",
+      c.content AS "content",
+      c.created_at AS "createdAt",
+      c.updated_at AS "updatedAt",
+      json_agg(mentionedUser) AS "mentionedUser",
+      row_to_json(commenter) AS "commenter",
+      row_to_json(p) AS "post",
+      (c."commenterId" = $3) AS "isCommenter"
+      FROM comments c
+      LEFT JOIN users commenter
+        ON commenter.id = c."commenterId"
+      LEFT JOIN mentioned_user_comment muc
+        ON c.id = muc."commentsId"
+      LEFT JOIN users mentionedUser
+        ON mentionedUser.id = muc."usersId"
+      LEFT JOIN posts p
+        ON p.id = c."postId"
+      WHERE c.id = $1 AND c."postId" = $2
+      GROUP BY c.id, p.id, commenter.id
+      LIMIT 1
+    `;
+    const comment = await this.datasource.query<CommentDTO[]>(
+      commentByPostIdQuery,
+      [commentId, postId, currentUser.sub],
+    );
+    return comment[0];
+  }
+  async updateComment(commentEntity: CommentEntity) {
+    return await this.commentRepo.save(commentEntity);
   }
 }

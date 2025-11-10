@@ -32,6 +32,11 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { prefixCache, ttlCache } from '../config/cache.config';
 import { ConfigService } from '@nestjs/config';
 import { SearchPostDTO } from './dtos/searchpost.dto';
+import { Observable, Subject } from 'rxjs';
+import { CommentEntity } from '../entities/comment.entity';
+import { CreateCommentDTO } from './dtos/createcomment.dto';
+import { DetailCommentDTO } from './dtos/detailcomment.dto';
+import { UpdateCommentDTO } from './dtos/updatecomment.dto';
 
 @Injectable()
 export class PostService {
@@ -44,6 +49,7 @@ export class PostService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService,
   ) {}
+  private commentBus = new Subject<Partial<CommentEntity>>();
   async getCreatedPost(
     currentUser: AuthUser,
     username: string,
@@ -694,5 +700,249 @@ export class PostService {
       message.post.get_post_by_key.success,
       data,
     );
+  }
+  /**
+   * listen comment
+   * @param postIdDTO
+   * @returns
+   */
+  async listenComment(postIdDTO: PostIdDTO) {
+    const postFound = await this.postRepo.findPostById(postIdDTO.postId);
+    if (!postFound) {
+      throw new NotFoundException(message.post.listen_comment.post_not_found);
+    }
+    return new Observable((commentSubscriber) => {
+      const listenedComment = this.commentBus.subscribe(
+        (commentEntity: CommentEntity) => {
+          if (commentEntity.post.id === postFound.id)
+            commentSubscriber.next({ data: commentEntity });
+        },
+      );
+      return () => listenedComment.unsubscribe();
+    });
+  }
+  /**
+   * comment
+   * @param currentUser
+   * @param postIdDTO
+   * @param commentPostDTO
+   * @returns
+   */
+  async createComment(
+    currentUser: AuthUser,
+    postIdDTO: PostIdDTO,
+    createCommentDTO: CreateCommentDTO,
+  ) {
+    //check if user exist
+    const userFound = await this.postRepo.findUserbyUsername(
+      currentUser.username,
+    );
+    if (!userFound) {
+      throw new NotFoundException(message.post.comment.user_not_found);
+    }
+    //check if post exist
+    const postFound = await this.postRepo.findPostById(postIdDTO.postId);
+    if (!postFound) {
+      throw new NotFoundException(message.post.comment.post_not_found);
+    }
+    //check if content is toxic
+    const { content, mentionedUser } = createCommentDTO;
+    await this.httpsService.checkToxic(content);
+    //filter self
+    const mentionedUserFilter = mentionedUser.filter(
+      (username) => username !== currentUser.username,
+    );
+    //find mentioned users in db
+    const mentionedUsersFound =
+      await this.postRepo.findUsersByUsername(mentionedUserFilter);
+    //create comment
+    const createdComment = await this.postRepo.createComment(
+      content,
+      postFound,
+      userFound,
+      mentionedUsersFound,
+    );
+    //return to listen
+    this.commentBus.next(createdComment);
+    //notify to author, if commenter is author don't notify
+    if (createdComment.commenter.id != postFound.author.id) {
+      await this.notificationQueue.add(
+        String(JobNotificationQueue.COMMENT),
+        {
+          comment: createdComment,
+        },
+        { priority: 4 },
+      );
+    }
+    //if has mentioned user, notify to all mentioned user
+    if (mentionedUsersFound.length > 0) {
+      await this.notificationQueue.add(
+        String(JobNotificationQueue.MENTION_COMMENT),
+        {
+          mentionedUser: mentionedUsersFound,
+          comment: createdComment,
+        },
+        { priority: 5 },
+      );
+    }
+    //send response
+    return sendResponse(HttpStatus.OK, message.post.comment.success);
+  }
+  /**
+   * get comment
+   */
+  async getComments(
+    currentUser: AuthUser,
+    postIdDTO: PostIdDTO,
+    cursor?: string,
+  ) {
+    const { postId } = postIdDTO;
+    //check if post exist
+    const postFound = await this.postRepo.findPostById(postId);
+    if (!postFound) {
+      throw new NotFoundException(message.post.get_comment.post_not_found);
+    }
+    //check if has cursor
+    let cursorDecoded: Cursor | undefined;
+    if (cursor) {
+      try {
+        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
+      } catch {
+        throw new BadRequestException(message.post.get_comment.cursor_invalid);
+      }
+    } else {
+      cursorDecoded = undefined;
+    }
+    //get comment
+    const comments = await this.postRepo.getCommentsByPostId(
+      postId,
+      currentUser,
+      cursorDecoded,
+    );
+    //check if has any comment
+    if (comments.length == 0) {
+      return sendResponse(
+        HttpStatus.NO_CONTENT,
+        message.post.get_comment.no_content,
+      );
+    }
+    //sign token
+    const finalComment = comments[comments.length - 1];
+    const cursorPayload = { id: finalComment.id };
+    const cursorToken = await this.jwtService.signAsync(cursorPayload);
+    const data = { comments: comments, cursor: cursorToken };
+    //send response
+    return sendResponse(HttpStatus.OK, message.post.get_comment.success, data);
+  }
+  /**
+   * get detail comment
+   */
+  async getDetailComment(
+    currentUser: AuthUser,
+    detailCommentDTO: DetailCommentDTO,
+  ) {
+    const { commentId, postId } = detailCommentDTO;
+    //get comment
+    const commentFound = await this.postRepo.getDetailComment(
+      commentId,
+      postId,
+      currentUser,
+    );
+    if (!commentFound) {
+      throw new NotFoundException(message.post.get_detail_comment.not_found);
+    }
+    //send response
+    return sendResponse(
+      HttpStatus.OK,
+      message.post.get_detail_comment.success,
+      commentFound,
+    );
+  }
+  /**
+   * update comment
+   */
+  async updateComment(
+    currentUser: AuthUser,
+    detailCommentDTO: DetailCommentDTO,
+    updateCommentDTO: UpdateCommentDTO,
+  ) {
+    const { sub } = currentUser;
+    const { commentId, postId } = detailCommentDTO;
+    //check if comment exist right post right commenter
+    const commentFound = await this.postRepo.findComment(
+      commentId,
+      sub,
+      postId,
+    );
+    if (!commentFound) {
+      throw new NotFoundException(message.post.update_comment.not_found);
+    }
+    //check toxic
+    const { mentionedUser, content } = updateCommentDTO;
+    await this.httpsService.checkToxic(content);
+    //filter self
+    let mentionedUserFilter: string[] = [];
+    if (mentionedUser) {
+      mentionedUserFilter = mentionedUser.filter(
+        (username) => username !== currentUser.username,
+      );
+    }
+    //get mentioned user in db
+    const mentionedUserFound =
+      await this.postRepo.findUsersByUsername(mentionedUserFilter);
+    //update comment
+    const commentEntity: CommentEntity = {
+      ...commentFound,
+      content: content,
+      mentionedUser: mentionedUserFound,
+    };
+    const updatedComment = await this.postRepo.updateComment(commentEntity);
+    //filter new mentioned user
+    const oldMentionedUserIds = new Set(
+      (commentFound.mentionedUser ?? []).map((u) => u.id),
+    );
+    const newMentionUser = mentionedUserFound.filter(
+      (user) => !oldMentionedUserIds.has(user.id),
+    );
+    //notify to new mentioned user
+    if (newMentionUser.length > 0) {
+      await this.notificationQueue.add(
+        String(JobNotificationQueue.MENTION_COMMENT),
+        {
+          mentionedUser: newMentionUser,
+          comment: updatedComment,
+        },
+        { priority: 5 },
+      );
+    }
+    //send response
+    return sendResponse(
+      HttpStatus.OK,
+      message.post.update_comment.success,
+      updatedComment,
+    );
+  }
+  /**
+   * delete comment
+   */
+  async deleteComment(
+    currentUser: AuthUser,
+    detailCommentDTO: DetailCommentDTO,
+  ) {
+    const { sub } = currentUser;
+    const { commentId, postId } = detailCommentDTO;
+    //check if comment exist, right commenter, right post
+    const commentFound = await this.postRepo.findComment(
+      commentId,
+      sub,
+      postId,
+    );
+    if (!commentFound) {
+      throw new NotFoundException(message.post.delete_comment.not_found);
+    }
+    //delete comment
+    await this.postRepo.deleteComment(commentFound.id);
+    //send response
+    return sendResponse(HttpStatus.OK, message.post.delete_comment.success);
   }
 }

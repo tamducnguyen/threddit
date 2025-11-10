@@ -7,12 +7,15 @@ import { NotificationRepository } from './notification.repository';
 import { NotificationEntity } from '../entities/notification.entity';
 import { NotificationType } from '../enum/notificationtype.enum';
 import {
+  CommentNotification,
   CreatePostNotification,
   FollowNotification,
   JobNotificationQueue,
+  MentionCommentNotification,
   MentionNotification,
   NameNotificationQueue,
 } from '../common/helper/notification.helper';
+import { CommentEntity } from '../entities/comment.entity';
 
 @Processor(NameNotificationQueue, {
   concurrency: parseInt(process.env.NOTIFICATION_CONCURRENCY || '5', 10),
@@ -97,6 +100,63 @@ export class NotificationWorker extends WorkerHost {
         await this.notificationRepo.saveNotification(notification);
         this.notificationService.notify(notification);
         break;
+      }
+      //send notification comment to author
+      case String(JobNotificationQueue.COMMENT): {
+        type SendCommentNotifcationInterface = {
+          comment: CommentEntity;
+        };
+        const data = job.data as SendCommentNotifcationInterface;
+        const notification: Partial<NotificationEntity> = {
+          owner: data.comment.post.author,
+          content: CommentNotification(
+            data.comment.commenter.username,
+            data.comment.content,
+          ),
+          type: NotificationType.COMMENT,
+          target: {
+            postId: String(data.comment.post.id),
+            commentId: String(data.comment.id),
+          },
+        };
+        await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(notification);
+        break;
+      }
+      //send notification to mentioned comment user
+      case String(JobNotificationQueue.MENTION_COMMENT): {
+        type SendMentionCommentNotificationInterface = {
+          comment: CommentEntity;
+          mentionedUser: UserEntity[];
+        };
+        const data = job.data as SendMentionCommentNotificationInterface;
+        const owners = data.mentionedUser;
+        const notifications: Partial<NotificationEntity>[] = owners.map(
+          (owner) => {
+            return {
+              owner: owner,
+              content: MentionCommentNotification(
+                data.comment.commenter.username,
+                data.comment.content,
+              ),
+              target: {
+                postId: String(data.comment.post.id),
+                commentId: String(data.comment.id),
+              },
+              type: NotificationType.MENTION_COMMENT,
+            };
+          },
+        );
+        //insert notification
+        await this.notificationRepo.insertNotifications(notifications);
+        //notify
+        notifications.forEach((notification) =>
+          this.notificationService.notify(notification),
+        );
+        break;
+      }
+      default: {
+        console.log(`Job ${job.id} Not match any job cases`);
       }
     }
   }
