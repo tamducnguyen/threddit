@@ -22,8 +22,8 @@ export class NotificationEntity {
   content: string;
   @Column({ name: 'type', type: 'enum', enum: NotificationType })
   type: string;
-  @Column({ name: 'target', type: 'varchar' })
-  target: string;
+  @Column({ name: 'target', type: 'jsonb' })
+  target: any;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }

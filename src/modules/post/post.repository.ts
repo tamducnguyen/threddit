@@ -14,6 +14,10 @@ import { PostMetrics } from './interface/postmetric.interface';
 import { SaveEntity } from '../entities/save.entity';
 import { VoteEntity } from '../entities/vote.entity';
 import { PostDTO } from './dtos/post.dto';
+import { AuthUser } from '../token/authuser.interface';
+import { SearchPostDTO } from './dtos/searchpost.dto';
+import { CommentEntity } from '../entities/comment.entity';
+import { CommentDTO } from './dtos/comment.dto';
 
 export class PostRepository {
   constructor(
@@ -27,6 +31,8 @@ export class PostRepository {
     private readonly saveRepo: Repository<SaveEntity>,
     @InjectRepository(VoteEntity)
     private readonly voteRepo: Repository<VoteEntity>,
+    @InjectRepository(CommentEntity)
+    private readonly commentRepo: Repository<CommentEntity>,
   ) {}
   async getSelfPost(user: UserEntity, cursor?: Cursor) {
     let condition: FindOptionsWhere<PostEntity> = { author: user };
@@ -263,5 +269,238 @@ export class PostRepository {
     `;
     const feed = await this.datasource.query<PostDTO[]>(queryGetFeed, params);
     return feed;
+  }
+  async getFollowingPosts(currentUser: AuthUser, cursor?: Cursor) {
+    let followingPostQuery = `
+      SELECT 
+        p.id AS "id",
+        p.content AS "content",
+        p.is_pinned AS "isPinned",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt",
+        COUNT(DISTINCT c.id) AS "commentNumber",
+        COUNT(DISTINCT s.id) AS "saveNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = true THEN v.id END) AS "upvoteNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = false THEN v.id END) AS "downvoteNumber",
+        uv.is_upvote AS "isUpvote",
+        EXISTS (
+          SELECT 1
+          FROM saves 
+          WHERE saves."savedPostId" = p.id
+          AND saves."saverId" = $1
+        ) AS "isSaved",
+        row_to_json(author) AS "author",
+        json_agg(DISTINCT mu) AS "mentionedUser"
+      FROM posts p
+      LEFT JOIN comments c ON c."postId" = p.id
+      LEFT JOIN saves s ON s."savedPostId" = p.id
+      LEFT JOIN votes v ON v."postId" = p.id
+      LEFT JOIN votes uv 
+        ON uv."postId" = p.id AND uv."voterId" = $1
+      LEFT JOIN users author
+        ON author.id = p."authorId"
+      LEFT JOIN mentioned_user muid
+        ON muid."postsId" = p.id
+      LEFT JOIN users mu
+        ON mu.id = muid."usersId"
+      LEFT JOIN follows fl 
+        ON fl."followerId" = $1
+      WHERE p."authorId" = fl."followeeId"
+    `;
+    //get post item limit number
+    const limit = this.configService.getOrThrow<number>('LIMIT_POST_ITEM');
+    //init params
+    const params = [currentUser.sub, limit];
+    if (cursor) {
+      params.push(cursor.id);
+      followingPostQuery += `AND p.id < $3`;
+    }
+    followingPostQuery += `
+      GROUP BY p.id, uv.is_upvote, author.id
+      ORDER BY p.id DESC
+      LIMIT $2
+    `;
+    const followingPosts = await this.datasource.query<PostDTO[]>(
+      followingPostQuery,
+      params,
+    );
+    return followingPosts;
+  }
+  async getPostsByKey(
+    currentUser: AuthUser,
+    searchPostDTO: SearchPostDTO,
+    cursor?: Cursor,
+  ) {
+    let postsByKeyQuery = `
+    SELECT 
+        p.id AS "id",
+        p.content AS "content",
+        p.is_pinned AS "isPinned",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt",
+        COUNT(DISTINCT c.id) AS "commentNumber",
+        COUNT(DISTINCT s.id) AS "saveNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = true THEN v.id END) AS "upvoteNumber",
+        COUNT(DISTINCT CASE WHEN v.is_upvote = false THEN v.id END) AS "downvoteNumber",
+        uv.is_upvote AS "isUpvote",
+        EXISTS (
+          SELECT 1
+          FROM saves 
+          WHERE saves."savedPostId" = p.id
+          AND saves."saverId" = $1
+        ) AS "isSaved",
+        row_to_json(author) AS "author",
+        json_agg(DISTINCT mu) AS "mentionedUser"
+      FROM posts p
+      LEFT JOIN comments c ON c."postId" = p.id
+      LEFT JOIN saves s ON s."savedPostId" = p.id
+      LEFT JOIN votes v ON v."postId" = p.id
+      LEFT JOIN votes uv 
+        ON uv."postId" = p.id AND uv."voterId" = $1
+      LEFT JOIN users author
+        ON author.id = p."authorId"
+      LEFT JOIN mentioned_user muid
+        ON muid."postsId" = p.id
+      LEFT JOIN users mu
+        ON mu.id = muid."usersId"
+      WHERE (p.content ILIKE $3
+      OR author.username ILIKE $3)
+    `;
+    //get post item limit number
+    const limit = this.configService.getOrThrow<number>('LIMIT_POST_ITEM');
+    //init params
+    const params = [currentUser.sub, limit, `%${searchPostDTO.key}%`];
+    if (cursor) {
+      params.push(cursor.id);
+      postsByKeyQuery += `AND p.id < $4`;
+    }
+    postsByKeyQuery += `
+      GROUP BY p.id, uv.is_upvote, author.id
+      ORDER BY p.id DESC
+      LIMIT $2
+    `;
+    const postsByKey = await this.datasource.query<PostDTO[]>(
+      postsByKeyQuery,
+      params,
+    );
+    return postsByKey;
+  }
+  async findPostById(postId: number) {
+    return await this.postRepo.findOne({
+      where: { id: postId },
+      relations: { author: true },
+    });
+  }
+  async createComment(
+    content: string,
+    postEntity: PostEntity,
+    userEntity: UserEntity,
+    mentionedUser?: UserEntity[],
+  ) {
+    const commentEntity: Partial<CommentEntity> = {
+      commenter: userEntity,
+      post: postEntity,
+      content: content,
+      mentionedUser: mentionedUser,
+    };
+    return await this.commentRepo.save(commentEntity);
+  }
+  async findComment(commentId: number, commenterId: string, postId: number) {
+    return await this.commentRepo.findOne({
+      where: {
+        id: commentId,
+        commenter: { id: commenterId },
+        post: { id: postId },
+      },
+      relations: { mentionedUser: true, commenter: true, post: true },
+    });
+  }
+  async deleteComment(commentId: number) {
+    return await this.commentRepo.delete(commentId);
+  }
+  async getCommentsByPostId(
+    postId: number,
+    currentUser: AuthUser,
+    cursor?: Cursor,
+  ) {
+    let commentsByPostIdQuery = `
+      SELECT 
+      c.id AS "id",
+      c.content AS "content",
+      c.created_at AS "createdAt",
+      c.updated_at AS "updatedAt",
+      json_agg(mentionedUser) AS "mentionedUser",
+      row_to_json(commenter) AS "commenter",
+      row_to_json(p) AS "post",
+      (c."commenterId" = $2) AS "isCommenter"
+      FROM comments c
+      LEFT JOIN users commenter
+        ON commenter.id = c."commenterId"
+      LEFT JOIN mentioned_user_comment muc
+        ON c.id = muc."commentsId"
+      LEFT JOIN users mentionedUser
+        ON mentionedUser.id = muc."usersId"
+      LEFT JOIN posts p
+        ON p.id = c."postId"
+      WHERE c."postId" = $1
+    `;
+    //get limit item
+    const limit = this.configService.getOrThrow<number>('LIMIT_COMMENT_ITEM');
+    //init param
+    const params = [postId, currentUser.sub, limit];
+    //if has cursor
+    if (cursor) {
+      params.push(cursor.id);
+      commentsByPostIdQuery += `
+        AND c.id < $4
+      `;
+    }
+    commentsByPostIdQuery += `
+      GROUP BY c.id, commenter.id, p.id
+      ORDER BY c.id DESC
+      LIMIT $3
+    `;
+    const comments = await this.datasource.query<CommentDTO[]>(
+      commentsByPostIdQuery,
+      params,
+    );
+    return comments;
+  }
+  async getDetailComment(
+    commentId: number,
+    postId: number,
+    currentUser: AuthUser,
+  ) {
+    const commentByPostIdQuery = `
+      SELECT 
+      c.id AS "id",
+      c.content AS "content",
+      c.created_at AS "createdAt",
+      c.updated_at AS "updatedAt",
+      json_agg(mentionedUser) AS "mentionedUser",
+      row_to_json(commenter) AS "commenter",
+      row_to_json(p) AS "post",
+      (c."commenterId" = $3) AS "isCommenter"
+      FROM comments c
+      LEFT JOIN users commenter
+        ON commenter.id = c."commenterId"
+      LEFT JOIN mentioned_user_comment muc
+        ON c.id = muc."commentsId"
+      LEFT JOIN users mentionedUser
+        ON mentionedUser.id = muc."usersId"
+      LEFT JOIN posts p
+        ON p.id = c."postId"
+      WHERE c.id = $1 AND c."postId" = $2
+      GROUP BY c.id, p.id, commenter.id
+      LIMIT 1
+    `;
+    const comment = await this.datasource.query<CommentDTO[]>(
+      commentByPostIdQuery,
+      [commentId, postId, currentUser.sub],
+    );
+    return comment[0];
+  }
+  async updateComment(commentEntity: CommentEntity) {
+    return await this.commentRepo.save(commentEntity);
   }
 }
