@@ -191,8 +191,11 @@ export class PostController {
   }
   @HttpCode(HttpStatus.OK)
   @Sse(':postId/comment/listen')
-  async listenComment(@Param() postIdDTO: PostIdDTO) {
-    return await this.postService.listenComment(postIdDTO);
+  async listenComment(
+    @Param() postIdDTO: PostIdDTO,
+    @CurrentUser() currentUser: AuthUser,
+  ) {
+    return await this.postService.listenComment(postIdDTO, currentUser);
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/comment')

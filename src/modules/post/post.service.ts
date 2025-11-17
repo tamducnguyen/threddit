@@ -706,16 +706,25 @@ export class PostService {
    * @param postIdDTO
    * @returns
    */
-  async listenComment(postIdDTO: PostIdDTO) {
+  async listenComment(postIdDTO: PostIdDTO, currentUser: AuthUser) {
     const postFound = await this.postRepo.findPostById(postIdDTO.postId);
     if (!postFound) {
       throw new NotFoundException(message.post.listen_comment.post_not_found);
     }
     return new Observable((commentSubscriber) => {
       const listenedComment = this.commentBus.subscribe(
-        (commentEntity: CommentEntity) => {
-          if (commentEntity.post.id === postFound.id)
-            commentSubscriber.next({ data: commentEntity });
+        (comment: CommentEntity) => {
+          if (comment.post.id === postFound.id) {
+            //get detail comment
+            this.postRepo
+              .getDetailComment(comment.id, postFound.id, currentUser)
+              .then((detailComment) => {
+                commentSubscriber.next({ data: detailComment });
+              })
+              .catch((err) => {
+                commentSubscriber.error(err);
+              });
+          }
         },
       );
       return () => listenedComment.unsubscribe();
