@@ -486,8 +486,11 @@ export class PostController {
     type: String,
     description: 'Mã bài viết',
   })
-  async listenComment(@Param() postIdDTO: PostIdDTO) {
-    return await this.postService.listenComment(postIdDTO);
+  async listenComment(
+    @Param() postIdDTO: PostIdDTO,
+    @CurrentUser() currentUser: AuthUser,
+  ) {
+    return await this.postService.listenComment(postIdDTO, currentUser);
   }
   @HttpCode(HttpStatus.OK)
   @Post(':postId/comment')
