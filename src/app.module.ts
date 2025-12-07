@@ -14,6 +14,8 @@ import { FollowModule } from './modules/follow/follow.module';
 import { PostModule } from './modules/post/post.module';
 import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
+import { ApiKeyGuard } from './modules/common/guard/apikey.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -46,6 +48,12 @@ import { bullMqConfig } from './modules/config/bullmq.config';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
+    },
+  ],
 })
 export class AppModule {}
