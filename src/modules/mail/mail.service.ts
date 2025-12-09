@@ -3,12 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as sgMail from '@sendgrid/mail';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
+  transporter: nodemailer.Transporter;
   constructor(private readonly configService: ConfigService) {
-    sgMail.setApiKey(this.configService.getOrThrow<string>('SENDGRID_API_KEY'));
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.configService.getOrThrow<string>('GMAIL_USER'),
+        pass: this.configService.getOrThrow<string>('GMAIL_APP_PASSWORD'),
+      },
+    });
     Handlebars.registerPartial(
       'header',
       fs.readFileSync(
@@ -36,21 +43,19 @@ export class MailService {
     subject: string,
     html: string,
   ): Promise<boolean> {
-    const fromEmail = this.configService.getOrThrow<string>(
-      'SENDGRID_FROM_EMAIL',
-    );
-    const msg = {
+    const fromEmail = this.configService.getOrThrow<string>('GMAIL_USER');
+    const msg: nodemailer.SendMailOptions = {
       to: toEmail,
-      from: { email: fromEmail, name: 'Threddit' },
+      from: `Threddit <${fromEmail}>`,
       subject,
       html,
     };
 
     try {
-      await sgMail.send(msg);
+      await this.transporter.sendMail(msg);
       return true;
     } catch (error) {
-      console.error('SendGrid error:', error);
+      console.error('Send mail error:', error);
       return false;
     }
   }
