@@ -16,6 +16,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
 import { ApiKeyGuard } from './modules/common/guard/apikey.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { cacheConfig } from './modules/config/cache.config';
 
 @Module({
   imports: [
@@ -38,8 +39,11 @@ import { APP_GUARD } from '@nestjs/core';
       inject: [ConfigService],
       useFactory: typeORMConfig,
     }),
-    CacheModule.register({
+    CacheModule.registerAsync({
       isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: cacheConfig,
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
