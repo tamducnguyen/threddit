@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    env_file:
+      - src/.env.development
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redis_insight
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      - '5540:5540'
+    volumes:
+      - redisinsight_data:/data
+
+  web:
+    build: .
+    container_name: threddit_web
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - src/.env.development
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/threddit
+    command: ['npm', 'run', 'start:prod']
+
+volumes:
+  postgres_data:
+  redis_data:
+  redisinsight_data:
