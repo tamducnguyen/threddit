@@ -17,6 +17,7 @@ import { AuthUser } from '../token/authuser.interface';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { UpdateUsernameDTO } from './dtos/updateusername.dto';
 import { SkipThrottle } from '@nestjs/throttler';
+import { DeleteAccountDTO } from './dtos/deleteaccount.dto';
 
 @Controller('account')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -55,5 +56,21 @@ export class AccountController {
   @Get('getuserinfo')
   async getUserInfo(@CurrentUser() currentUser: AuthUser) {
     return await this.accountService.getUserInfo(currentUser);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post('deleteaccount/request')
+  async requestDeleteAccount(@CurrentUser() currentUser: AuthUser) {
+    return await this.accountService.requestDeleteAccount(currentUser);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post('deleteaccount/verify')
+  async verifyDeleteAccount(
+    @CurrentUser() currentUser: AuthUser,
+    @Body() deleteAccountDTO: DeleteAccountDTO,
+  ) {
+    return await this.accountService.verifyDeleteAccount(
+      currentUser,
+      deleteAccountDTO,
+    );
   }
 }

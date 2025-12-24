@@ -6,6 +6,9 @@ export const prefixCache = {
   alreadymail: 'alreadymail:',
   verification: 'verification:',
   attemps: 'attempions:',
+  deleteaccount_mail: 'deleteaccount_mail:',
+  deleteaccount_code: 'deleteaccount_code:',
+  deleteaccount_attemps: 'deleteaccount_attemps:',
   feedalready: 'feedalready:',
 };
 export const ttlCache = {

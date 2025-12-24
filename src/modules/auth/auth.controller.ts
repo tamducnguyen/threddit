@@ -16,8 +16,8 @@ import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
 import { UserThrottlerGuard } from '../common/guard/throttler.guard';
 import { GoogleAuthService } from './google.service';
-import { GoogleSignUpDTO } from './dtos/googlesignup.dto';
-import { GoogleSignInDTO } from './dtos/googlesingin.dto';
+import { ResendVerifyDTO } from './dtos/resendverify.dto';
+import { GoogleCodeDTO } from './dtos/googlecode.dto';
 
 @Controller('auth')
 @UseGuards(UserThrottlerGuard)
@@ -57,16 +57,16 @@ export class AuthController {
     return await this.authService.verifyResetPassword(verifyResetPasswordDTO);
   }
   @HttpCode(HttpStatus.OK)
-  @Post('signup/google')
-  async googleSignUp(@Body() googleSignUpDTO: GoogleSignUpDTO) {
-    return await this.googleAuthService.googleSignUp(googleSignUpDTO);
+  @Post('resendverify')
+  async resendVerify(@Body() resendVerifyDTO: ResendVerifyDTO) {
+    return await this.authService.resendVerify(resendVerifyDTO);
   }
   @HttpCode(HttpStatus.OK)
-  @Post('signin/google')
-  async googleSignIn(
-    @Res({ passthrough: true }) response: Response,
-    @Body() googleSignInDTO: GoogleSignInDTO,
+  @Post('google')
+  async googleCode(
+    @Res({ passthrough: true }) res: Response,
+    @Body() googleCodeDTO: GoogleCodeDTO,
   ) {
-    return await this.googleAuthService.googleSignIn(response, googleSignInDTO);
+    return await this.googleAuthService.googleCode(res, googleCodeDTO);
   }
 }

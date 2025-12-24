@@ -72,11 +72,28 @@ export class MailService {
     toEmail: string,
     verifyCode: string,
   ): Promise<boolean> {
-    const htmlWelcome = this.compileTemplate('content/forgotpassword.hbs', {
-      name: toEmail,
-      code: verifyCode,
-    });
+    const htmlForgotPassword = this.compileTemplate(
+      'content/forgotpassword.hbs',
+      {
+        name: toEmail,
+        code: verifyCode,
+      },
+    );
     const subject = 'Đặt lại mật khẩu';
-    return await this.sendEmail(toEmail, subject, htmlWelcome);
+    return await this.sendEmail(toEmail, subject, htmlForgotPassword);
+  }
+  async sendDeleteAccount(
+    toEmail: string,
+    verifyCode: string,
+  ): Promise<boolean> {
+    const htmlDeleteAccount = this.compileTemplate(
+      'content/deleteaccount.hbs',
+      {
+        name: toEmail,
+        code: verifyCode,
+      },
+    );
+    const subject = 'Xác minh xóa tài khoản';
+    return await this.sendEmail(toEmail, subject, htmlDeleteAccount);
   }
 }

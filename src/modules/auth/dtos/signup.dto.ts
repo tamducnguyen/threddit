@@ -1,10 +1,14 @@
+import { Type } from 'class-transformer';
 import {
+  IsDate,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
-  Length,
+  Matches,
 } from 'class-validator';
+import { Gender } from 'src/modules/enum/gender.enum';
 
 export class SignUpDTO {
   @IsEmail({}, { message: 'Email không hợp lệ' })
@@ -13,8 +17,21 @@ export class SignUpDTO {
 
   @IsString({ message: 'Tên người dùng phải là chuỗi' })
   @IsNotEmpty({ message: 'Tên người dùng không được để trống' })
-  @Length(8, 32, { message: 'Tên người dùng phải từ 8 đến 32 ký tự' })
+  @Matches(/^\S+$/, { message: 'Tên người dùng không được chứa dấu cách' })
   username: string;
+
+  @IsString({ message: 'Tên hiển thị phải là chuỗi' })
+  @IsNotEmpty({ message: 'Tên hiển thị không được để trống' })
+  displayName: string;
+
+  @IsEnum(Gender, { message: 'Giới tính không hợp lệ' })
+  @IsNotEmpty({ message: 'Giới tính không được để trống' })
+  gender: Gender;
+
+  @Type(() => Date)
+  @IsDate({ message: 'Ngày sinh không hợp lệ' })
+  @IsNotEmpty({ message: 'Ngày sinh không được để trống' })
+  dateOfBirth: Date;
 
   @IsStrongPassword(
     {},

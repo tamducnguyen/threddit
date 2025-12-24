@@ -10,16 +10,15 @@ import {
 } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
 import { UserEntity } from '../entities/user.entity';
-import { GoogleSignUpDTO } from './dtos/googlesignup.dto';
 import { GoogleData } from './interfaces/googledata.interface';
-import { OAuthAccountEntity } from '../entities/oauth.entity';
-import { ProviderOauth } from '../enum/provideroauth.enum';
 import { sendResponse } from '../common/helper/response.helper';
-import { GoogleSignInDTO } from './dtos/googlesingin.dto';
 import { SessionEntity } from '../entities/session.entity';
-import { sendCookie } from '../common/helper/cookie.helper';
+import { cookieOptions, sendCookie } from '../common/helper/cookie.helper';
 import { Response } from 'express';
 import { GeneratePayload } from '../common/helper/payload.helper';
+import { GoogleCodeDTO } from './dtos/googlecode.dto';
+import { AuthMethod } from '../enum/authmethod.enum';
+import { generateUniqueUsername } from '../common/helper/username.helper';
 @Injectable()
 export class GoogleAuthService {
   private client: OAuth2Client;
@@ -29,11 +28,13 @@ export class GoogleAuthService {
     private readonly configService: ConfigService,
     private readonly authRepository: AuthRepository,
   ) {
+    // Initialize Google OAuth client for exchanging code and verifying id_token.
     this.client = new OAuth2Client(
       this.configService.getOrThrow('GOOGLE_CLIENT_ID_WEB'),
       this.configService.getOrThrow('GOOGLE_SECRET_WEB'),
       this.configService.getOrThrow('GOOGLE_REDIRECT_URI_WEB'),
     );
+    // Accept tokens issued for any supported client (web/android/ios).
     this.GOOGLE_CLIENT_IDS = [
       this.configService.getOrThrow('GOOGLE_CLIENT_ID_WEB'),
       this.configService.getOrThrow('GOOGLE_CLIENT_ID_ANDROID'),
@@ -41,13 +42,14 @@ export class GoogleAuthService {
     ];
   }
   async googleAuth(googleCode: string) {
-    //validate token and get payload
+    // Exchange authorization code for tokens and validate id_token.
     const { tokens } = await this.client.getToken(googleCode);
     if (!tokens.id_token) {
       throw new UnauthorizedException(
         message.auth.google_auth.id_token_missing,
       );
     }
+    // Verify token audience and extract payload.
     const ticket = await this.client.verifyIdToken({
       idToken: tokens.id_token,
       audience: this.GOOGLE_CLIENT_IDS,
@@ -56,74 +58,89 @@ export class GoogleAuthService {
     if (!payload || !payload.email) {
       throw new UnauthorizedException(message.auth.google_auth.invalid_token);
     }
+    // Only allow verified Google emails.
     if (!payload.email_verified) {
       throw new UnauthorizedException(
         message.auth.google_auth.email_not_verified,
       );
     }
+    // Return minimal Google identity info for later steps.
     const googleData: GoogleData = { email: payload.email, sub: payload.sub };
     return googleData;
   }
   /**
-   *
-   * @param googleSignUpDTO sign up with google
-   * @returns
+   * sign in / sign up with google code
    */
-  async googleSignUp(googleSignUpDTO: GoogleSignUpDTO) {
-    const { username, googleCode } = googleSignUpDTO;
+  async googleCode(response: Response, googleCodeDTO: GoogleCodeDTO) {
+    const { googleCode } = googleCodeDTO;
+    // Validate Google code and extract identity.
     const googleData = await this.googleAuth(googleCode);
     const { email, sub } = googleData;
-    //check if email exist
-    const isEmailExist = await this.authRepository.checkEmailExist(email);
-    if (isEmailExist) {
-      throw new BadRequestException(message.auth.google_signup.email_exists);
+    // If user already exists, issue token and return.
+    const userFound = await this.authRepository.findUser(email);
+    if (userFound) {
+      if (userFound.authMethod == AuthMethod.CREDENTIAL) {
+        throw new BadRequestException(
+          message.auth.google_auth.already_auth_method,
+        );
+      }
+      if (userFound.isActivate == false) {
+        throw new BadRequestException(
+          message.auth.google_auth.account_not_activate,
+        );
+      }
+      // Create session and set auth cookie.
+      const payload = GeneratePayload(userFound);
+      const accessToken = await this.jwtService.signAsync(payload);
+      const sessionEntity: Partial<SessionEntity> = {
+        user: userFound,
+        token: accessToken,
+      };
+      await this.authRepository.saveSession(sessionEntity);
+      sendCookie(
+        response,
+        this.configService,
+        cookieOptions.name.THREDDIT_AUTH,
+        accessToken,
+      );
+      return sendResponse(HttpStatus.OK, message.auth.google_auth.success, {
+        THREDDIT_AUTH: accessToken,
+      });
     }
-    //check if username exist
-    const isUsernameExist =
-      await this.authRepository.checkUsernameExist(username);
-    if (isUsernameExist) {
-      throw new BadRequestException(message.auth.google_signup.username_exists);
-    }
-    //save user with oauth account
+    // Generate a globally unique username from email prefix.
+    const baseUsername = email.split('@')[0];
+    const username = await generateUniqueUsername(
+      baseUsername,
+      async (candidate) =>
+        await this.authRepository.checkUsernameExist(candidate),
+    );
+    // Create a new user using Google identity and mark as activated.
     const userEntity: Partial<UserEntity> = {
       email: email,
       username: username,
+      displayName: username,
+      authMethod: AuthMethod.GOOGLE,
+      authMethodKey: sub,
+      isActivate: true,
     };
-    const oAuthAccountEntity: Partial<OAuthAccountEntity> = {
-      provider: ProviderOauth.GOOGLE,
-      providerAccountId: sub,
-    };
-    await this.authRepository.saveUserOAuth(userEntity, oAuthAccountEntity);
-    return sendResponse(HttpStatus.OK, message.auth.google_signup.success);
-  }
-  /**
-   * sign in with google
-   * @param response
-   * @param googleSignInDTO
-   * @returns
-   */
-  async googleSignIn(response: Response, googleSignInDTO: GoogleSignInDTO) {
-    const { googleCode } = googleSignInDTO;
-    const googleData = await this.googleAuth(googleCode);
-    const { sub } = googleData;
-    const oAuthFound = await this.authRepository.findOAuthAccount(
-      ProviderOauth.GOOGLE,
-      sub,
-    );
-    if (!oAuthFound) {
-      throw new BadRequestException(
-        message.auth.google_signin.account_not_exists,
-      );
-    }
-    const payload = GeneratePayload(oAuthFound.user);
+    const userCreated = await this.authRepository.createUser(userEntity);
+    // Issue token and save session for the new user.
+    const payload = GeneratePayload(userCreated as UserEntity);
     const accessToken = await this.jwtService.signAsync(payload);
     const sessionEntity: Partial<SessionEntity> = {
+      user: userCreated as UserEntity,
       token: accessToken,
     };
     await this.authRepository.saveSession(sessionEntity);
-    sendCookie(response, this.configService, 'accessToken', accessToken);
-    return sendResponse(HttpStatus.OK, message.auth.google_signin.success, {
+    sendCookie(
+      response,
+      this.configService,
+      cookieOptions.name.THREDDIT_AUTH,
       accessToken,
+    );
+    return sendResponse(HttpStatus.OK, message.auth.google_auth.success, {
+      AUTH_METHOD: userCreated.authMethod,
+      THREDDIT_AUTH: accessToken,
     });
   }
 }

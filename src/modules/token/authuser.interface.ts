@@ -1,10 +1,10 @@
 export class AuthUser {
-  constructor(sub: string, email: string, username: string) {
+  constructor(sub: number, email: string, username: string) {
     this.sub = sub;
     this.email = email;
     this.username = username;
   }
-  sub: string;
+  sub: number;
   email: string;
   username: string;
 }
