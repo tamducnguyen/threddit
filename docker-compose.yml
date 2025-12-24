@@ -41,8 +41,6 @@ services:
       - .env.production
     ports:
       - '3000:3000'
-    volumes:
-      - .:/threddit
     command: ['npm', 'run', 'start:prod']
 
   nginx:
