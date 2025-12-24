@@ -45,6 +45,18 @@ services:
       - .:/threddit
     command: ['npm', 'run', 'start:prod']
 
+  nginx:
+    image: nginx:alpine
+    container_name: threddit_nginx
+    restart: always
+    depends_on:
+      - web
+    ports:
+      - '80:80'
+      # - "443:443"   # nếu sau này làm SSL
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
 volumes:
   postgres_data:
   redis_data:
