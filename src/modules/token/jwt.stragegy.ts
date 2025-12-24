@@ -5,7 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthUser } from './authuser.interface';
 import { Request } from 'express';
 function cookieExtractor(req: Request): string {
-  return req?.cookies?.accessToken as string;
+  return req?.cookies?.THREDDIT_AUTH as string;
 }
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(Strategy) {

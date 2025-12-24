@@ -15,18 +15,19 @@ import { generateVerificationCode } from '../common/helper/gencode.helper';
 import { sendResponse } from '../common/helper/response.helper';
 import { VerifyAccountDTO } from './dtos/verifyaccount.dto';
 import { UserEntity } from '../entities/user.entity';
-import { CredentialEntity } from '../entities/credential.entity';
-import { SignUpInfoCache } from './interfaces/signupinfocache.interface';
 import { message } from '../common/helper/message.helper';
 import { SignInDTO } from './dtos/signin.dto';
 import { JwtService } from '@nestjs/jwt';
-import { sendCookie } from '../common/helper/cookie.helper';
+import { cookieOptions, sendCookie } from '../common/helper/cookie.helper';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
 import { SessionEntity } from '../entities/session.entity';
 import { GeneratePayload } from '../common/helper/payload.helper';
+import { AuthMethod } from '../enum/authmethod.enum';
+import { QueryFailedError } from 'typeorm';
+import { ResendVerifyDTO } from './dtos/resendverify.dto';
 
 @Injectable()
 export class AuthService {
@@ -38,7 +39,15 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
   async signUp(signUpDTO: SignUpDTO) {
-    const { email, username, password, confirmedPassword } = signUpDTO;
+    const {
+      email,
+      username,
+      displayName,
+      gender,
+      dateOfBirth,
+      password,
+      confirmedPassword,
+    } = signUpDTO;
     //get attemp number and check if user got banned
     const keyAttemps = prefixCache.attemps + email;
     const attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
@@ -58,25 +67,39 @@ export class AuthService {
     if (password !== confirmedPassword) {
       throw new BadRequestException(message.auth.signup.password_mismatch);
     }
-    //check exist email, username
-    const isEmailExist = await this.authRepository.checkEmailExist(email);
-    if (isEmailExist) {
-      throw new BadRequestException(message.auth.signup.email_exists);
-    }
-    const isUsernameExist =
-      await this.authRepository.checkUsernameExist(username);
-    if (isUsernameExist) {
-      throw new BadRequestException(message.auth.signup.username_exists);
-    }
-    //hash and cache sign up information
+    //hash password
     const hashedPassword = await HashHelper.hash(password);
-    const signUpInfor: SignUpInfoCache = {
+    const userEntity: Partial<UserEntity> = {
       email: email,
       username: username,
-      hashedPassword: hashedPassword,
+      displayName: displayName,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      authMethod: AuthMethod.CREDENTIAL,
+      authMethodKey: hashedPassword,
+      isActivate: false,
     };
-    const keySignUp = prefixCache.inforsignup + email;
-    await this.cacheManager.set(keySignUp, signUpInfor, ttlCache.info);
+    try {
+      await this.authRepository.createUser(userEntity);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error as { driverError?: { code?: string } })?.driverError?.code ===
+          '23505'
+      ) {
+        const isEmailExistNow =
+          await this.authRepository.checkEmailExist(email);
+        if (isEmailExistNow) {
+          throw new BadRequestException(message.auth.signup.email_exists);
+        }
+        const isUsernameExistNow =
+          await this.authRepository.checkUsernameExist(username);
+        if (isUsernameExistNow) {
+          throw new BadRequestException(message.auth.signup.username_exists);
+        }
+      }
+      throw error;
+    }
     //generate and send verification code via mail, cache to avoid brute force
     const verificationCode = generateVerificationCode();
     const isSent = await this.mailService.sendVerifyCode(
@@ -84,6 +107,7 @@ export class AuthService {
       verificationCode,
     );
     if (!isSent) {
+      await this.authRepository.deleteUserByEmail(email);
       throw new BadRequestException(message.auth.signup.mail_failed);
     }
     const keyAlreadyMail = prefixCache.alreadymail + email;
@@ -104,9 +128,15 @@ export class AuthService {
     if (attemps >= 5) {
       throw new BadRequestException(message.auth.verify.too_many_attempts);
     }
-    //check if email exist in db
-    const isEmailExist = await this.authRepository.checkEmailExist(email);
-    if (isEmailExist) {
+    //check user exist
+    const userFound = await this.authRepository.findUserCredential(email);
+    if (!userFound) {
+      throw new BadRequestException(
+        message.auth.verify.invalid_or_expired_code,
+      );
+    }
+    //check if already activate
+    if (userFound.isActivate) {
       throw new BadRequestException(message.auth.verify.already_verified);
     }
     //check if email exist in cache-memory
@@ -125,28 +155,72 @@ export class AuthService {
         message.auth.verify.invalid_or_expired_code,
       );
     }
-    //store user's information
-    const keySignUp = prefixCache.inforsignup + email;
-    const signUpInfor = await this.cacheManager.get<SignUpInfoCache>(keySignUp);
-    if (!signUpInfor) {
-      throw new BadRequestException(
-        message.auth.verify.invalid_or_expired_code,
-      );
-    }
-    const userEntity: Partial<UserEntity> = {
-      email: signUpInfor.email,
-      username: signUpInfor.username,
-    };
-    const credentialEntity: Partial<CredentialEntity> = {
-      hashedPassword: signUpInfor.hashedPassword,
-    };
+    //update user activation
+    await this.authRepository.updateUserActivation(userFound.id, true);
     //del cache
-    await this.authRepository.saveUserCredential(userEntity, credentialEntity);
     await this.cacheManager.del(prefixCache.alreadymail + email);
-    await this.cacheManager.del(prefixCache.inforsignup + email);
     await this.cacheManager.del(prefixCache.attemps + email);
     await this.cacheManager.del(prefixCache.verification + email);
     return sendResponse(HttpStatus.OK, message.auth.verify.success);
+  }
+  async resendVerify(resendVerifyDTO: ResendVerifyDTO) {
+    const { email } = resendVerifyDTO;
+    //get attemp number and check if user got banned
+    const keyAttemps = prefixCache.attemps + email;
+    const attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
+    if (attemps >= 5) {
+      throw new BadRequestException(
+        message.auth.resend_verification_code.too_many_attempts,
+      );
+    }
+    //check if already send verification via mail
+    const isAlreadySendMail = await this.cacheManager.get<boolean>(
+      prefixCache.alreadymail + email,
+    );
+    if (isAlreadySendMail) {
+      throw new BadRequestException(
+        message.auth.resend_verification_code.mail_throttled,
+      );
+    }
+    //check if credential exists
+    const userFound = await this.authRepository.findUserCredential(email);
+    if (!userFound) {
+      throw new BadRequestException(
+        message.auth.resend_verification_code.email_not_exists,
+      );
+    }
+    //check if activate
+    if (userFound.isActivate) {
+      throw new BadRequestException(
+        message.auth.resend_verification_code.already_verified,
+      );
+    }
+    //delete key already sent mail cache if have
+    const keyVerificationCode = prefixCache.verification + email;
+    await this.cacheManager.del(keyVerificationCode);
+    //send verfication code
+    const verificationCode = generateVerificationCode();
+    const isSent = await this.mailService.sendVerifyCode(
+      email,
+      verificationCode,
+    );
+    if (!isSent) {
+      throw new BadRequestException(
+        message.auth.resend_verification_code.mail_failed,
+      );
+    }
+    //cache key already sent mail
+    const keyAlreadyMail = prefixCache.alreadymail + email;
+    await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
+    await this.cacheManager.set(
+      keyVerificationCode,
+      verificationCode,
+      ttlCache.code,
+    );
+    return sendResponse(
+      HttpStatus.OK,
+      message.auth.resend_verification_code.success,
+    );
   }
   /**
    * sign in
@@ -154,31 +228,47 @@ export class AuthService {
    */
   async signIn(res: Response, signInDTO: SignInDTO) {
     const { email, password } = signInDTO;
-    //check if email exist
-    const userFound = await this.authRepository.findUserViaEmail(email);
-    if (!userFound || !userFound.credential) {
+    //find user with email
+    const userFound = await this.authRepository.findUserCredential(email);
+    //check if credential information is correct
+    if (
+      !userFound ||
+      userFound.authMethod !== AuthMethod.CREDENTIAL ||
+      !userFound.authMethodKey
+    ) {
       throw new BadRequestException(message.auth.signin.credential_incorrect);
     }
-    //check if password correct
+    //check if user account is activate
+    if (userFound.isActivate == false) {
+      throw new BadRequestException(message.auth.signin.account_not_activate);
+    }
+    //compare password
     const isMatchPassword = await HashHelper.compare(
       password,
-      userFound.credential.hashedPassword,
+      userFound.authMethodKey,
     );
     if (!isMatchPassword) {
       throw new BadRequestException(message.auth.signin.credential_incorrect);
     }
-    //save token into db
+    //gen token
     const payload = GeneratePayload(userFound);
     const accessToken = await this.jwtService.signAsync(payload);
     const sessionEntity: Partial<SessionEntity> = {
       user: userFound,
       token: accessToken,
     };
+    //save session
     await this.authRepository.saveSession(sessionEntity);
     //send token
-    sendCookie(res, this.configService, 'accessToken', accessToken);
-    return sendResponse(HttpStatus.OK, message.auth.signin.success, {
+    sendCookie(
+      res,
+      this.configService,
+      cookieOptions.name.THREDDIT_AUTH,
       accessToken,
+    );
+    return sendResponse(HttpStatus.OK, message.auth.signin.success, {
+      AUTH_METHOD: userFound.authMethod,
+      THREDDIT_AUTH: accessToken,
     });
   }
   /**
@@ -204,8 +294,12 @@ export class AuthService {
       throw new BadRequestException(message.auth.reset_password.mail_throttled);
     }
     //check if email exists
-    const userFound = await this.authRepository.findUserViaEmail(email);
-    if (!userFound || !userFound.credential) {
+    const userFound = await this.authRepository.findUserCredential(email);
+    if (
+      !userFound ||
+      userFound.authMethod !== AuthMethod.CREDENTIAL ||
+      !userFound.isActivate
+    ) {
       throw new BadRequestException(
         message.auth.reset_password.email_not_exists,
       );
@@ -252,8 +346,12 @@ export class AuthService {
       );
     }
     //check if email exists
-    const userFound = await this.authRepository.findUserViaEmail(email);
-    if (!userFound || !userFound.credential) {
+    const userFound = await this.authRepository.findUserCredential(email);
+    if (
+      !userFound ||
+      userFound.authMethod !== AuthMethod.CREDENTIAL ||
+      !userFound.isActivate
+    ) {
       throw new BadRequestException(
         message.auth.verify_reset_password.email_not_exists,
       );
@@ -276,9 +374,8 @@ export class AuthService {
     //update password
     const hashedPassword = await HashHelper.hash(newPassword);
     await this.authRepository.updatePasswordAndRevokeAllToken(
-      userFound.credential.id,
+      userFound.id,
       hashedPassword,
-      userFound,
     );
     //delete cache
     await this.cacheManager.del(keyAttemps);

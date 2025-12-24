@@ -15,3 +15,8 @@ export function sendCookie(
     maxAge: configService.getOrThrow<number>('COOKIE_MAXAGE'),
   });
 }
+export const cookieOptions = {
+  name: {
+    THREDDIT_AUTH: 'THREDDIT_AUTH',
+  },
+};

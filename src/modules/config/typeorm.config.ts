@@ -1,15 +1,13 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import * as path from 'path';
 
 export const typeORMConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => ({
   type: 'postgres',
   url: configService.getOrThrow<string>('DB_URL'),
-  ssl: configService.getOrThrow<boolean>('DB_SSL')
-    ? { rejectUnauthorized: false }
-    : false,
   // logging: ['error', 'warn', 'query'],
   synchronize: process.env.NODE_ENV === 'development' ? true : false,
-  autoLoadEntities: true,
+  entities: [path.join(__dirname, '..', 'entities', '*.entity{.ts,.js}')],
 });

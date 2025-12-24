@@ -16,8 +16,8 @@ import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
 import { UserThrottlerGuard } from '../common/guard/throttler.guard';
 import { GoogleAuthService } from './google.service';
-import { GoogleSignUpDTO } from './dtos/googlesignup.dto';
-import { GoogleSignInDTO } from './dtos/googlesingin.dto';
+import { ResendVerifyDTO } from './dtos/resendverify.dto';
+import { GoogleCodeDTO } from './dtos/googlecode.dto';
 import {
   ApiBadRequestResponse,
   ApiOkResponse,
@@ -138,46 +138,17 @@ export class AuthController {
     return await this.authService.verifyResetPassword(verifyResetPasswordDTO);
   }
   @HttpCode(HttpStatus.OK)
-  @Post('signup/google')
-  @ApiOperation({
-    summary: 'Đăng ký bằng Google',
-    description:
-      'Người dùng đăng ký tài khoản mới thông qua Google. ' +
-      'Hệ thống sẽ nhận mã xác thực từ Google, kiểm tra tính hợp lệ và lấy thông tin email đã xác minh. ' +
-      'Nếu email hoặc tên người dùng chưa tồn tại, hệ thống sẽ tạo tài khoản kèm theo hồ sơ liên kết Google.',
-  })
-  @ApiOkResponse({
-    description: 'Đăng ký Google thành công.',
-  })
-  @ApiBadRequestResponse({
-    description:
-      'Thất bại: email đã tồn tại, tên người dùng đã tồn tại, hoặc mã Google không hợp lệ.',
-  })
-  async googleSignUp(@Body() googleSignUpDTO: GoogleSignUpDTO) {
-    return await this.googleAuthService.googleSignUp(googleSignUpDTO);
+  @Post('resendverify')
+  async resendVerify(@Body() resendVerifyDTO: ResendVerifyDTO) {
+    return await this.authService.resendVerify(resendVerifyDTO);
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('signin/google')
-  @ApiOperation({
-    summary: 'Đăng nhập bằng Google',
-    description:
-      'Người dùng đăng nhập bằng tài khoản Google. ' +
-      'Hệ thống sẽ xác thực mã nhận được từ Google và tìm tài khoản đã được liên kết trước đó. ' +
-      'Nếu hợp lệ, hệ thống sẽ tạo phiên đăng nhập, cấp access token và gửi lại cho người dùng qua body kèm cookie bảo mật.',
-  })
-  @ApiOkResponse({
-    description:
-      'Đăng nhập Google thành công. Access token được trả về lưu trong cookie bảo mật (HttpOnly) với web và body với mobile.',
-  })
-  @ApiBadRequestResponse({
-    description:
-      'Thất bại: tài khoản Google chưa được liên kết hoặc mã Google không hợp lệ.',
-  })
-  async googleSignIn(
-    @Res({ passthrough: true }) response: Response,
-    @Body() googleSignInDTO: GoogleSignInDTO,
+  @Post('google')
+  async googleCode(
+    @Res({ passthrough: true }) res: Response,
+    @Body() googleCodeDTO: GoogleCodeDTO,
   ) {
-    return await this.googleAuthService.googleSignIn(response, googleSignInDTO);
+    return await this.googleAuthService.googleCode(res, googleCodeDTO);
   }
 }

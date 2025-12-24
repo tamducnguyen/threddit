@@ -13,8 +13,8 @@ export const AccessToken = createParamDecorator(
         return token;
       }
     }
-    if (request.cookies?.accessToken) {
-      return request.cookies.accessToken as string;
+    if (request.cookies?.THREDDIT_AUTH) {
+      return request.cookies.THREDDIT_AUTH as string;
     }
 
     return null;

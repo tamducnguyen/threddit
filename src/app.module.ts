@@ -9,19 +9,22 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { throttlerConfig } from './modules/config/throttler.config';
 import { AccountModule } from './modules/account/account.module';
-import { NotificationModule } from './modules/notification/notification.module';
-import { FollowModule } from './modules/follow/follow.module';
-import { PostModule } from './modules/post/post.module';
+// import { NotificationModule } from './modules/notification/notification.module';
+// import { FollowModule } from './modules/follow/follow.module';
+// import { PostModule } from './modules/post/post.module';
 import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
+import { ApiKeyGuard } from './modules/common/guard/apikey.guard';
+import { APP_GUARD } from '@nestjs/core';
+import { cacheConfig } from './modules/config/cache.config';
 
 @Module({
   imports: [
     AuthModule,
     AccountModule,
-    NotificationModule,
-    FollowModule,
-    PostModule,
+    // NotificationModule,
+    // FollowModule,
+    // PostModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,15 +32,18 @@ import { bullMqConfig } from './modules/config/bullmq.config';
     }),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`src/.env.${process.env.NODE_ENV}`],
+      envFilePath: [`.env.${process.env.NODE_ENV}`],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: typeORMConfig,
     }),
-    CacheModule.register({
+    CacheModule.registerAsync({
       isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: cacheConfig,
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -46,6 +52,12 @@ import { bullMqConfig } from './modules/config/bullmq.config';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
+    },
+  ],
 })
 export class AppModule {}
