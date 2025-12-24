@@ -77,7 +77,7 @@ export class AccountController {
   @ApiBadRequestResponse({
     description:
       'Thất bại: mật khẩu cũ không đúng, mật khẩu mới trùng với mật khẩu cũ, không phải là mật khẩu mạnh' +
-      ' hoặc xác nhập mật khẩu mới không khớp.',
+      ' hoặc xác nhập mật khẩu mới không khớp./ Sai phương thức đăng nhập',
   })
   async updatePassword(
     @CurrentUser() currentUser: AuthUser,
@@ -117,8 +117,7 @@ export class AccountController {
   @Get('getuserinfo')
   @ApiOperation({
     summary: 'Lấy thông tin tài khoản',
-    description:
-      'Trả về thông tin hồ sơ của người dùng đã xác thực (hiện tại gồm email và username).',
+    description: 'Trả về thông tin hồ sơ của người dùng đã xác thực.',
   })
   @ApiOkResponse({
     description: 'Lấy thông tin người dùng thành công.',
@@ -129,11 +128,33 @@ export class AccountController {
   async getUserInfo(@CurrentUser() currentUser: AuthUser) {
     return await this.accountService.getUserInfo(currentUser);
   }
+  @ApiOperation({
+    summary: 'Yêu cầu xóa tài khoản (gửi mã xác minh qua email)',
+    description:
+      'Gửi mã xác minh xóa tài khoản về email của người dùng đang đăng nhập. ' +
+      'Có giới hạn số lần thử (tối đa 5) và chống spam gửi mail theo TTL.',
+  })
+  @ApiOkResponse({ description: 'Đã gửi mail mã xác minh xóa tài khoản' })
+  @ApiBadRequestResponse({
+    description:
+      'Có thể xảy ra: không tìm thấy user, quá nhiều lần yêu cầu, bị throttle do vừa gửi mail, gửi mail thất bại.',
+  })
   @HttpCode(HttpStatus.OK)
   @Post('deleteaccount/request')
   async requestDeleteAccount(@CurrentUser() currentUser: AuthUser) {
     return await this.accountService.requestDeleteAccount(currentUser);
   }
+  @ApiOperation({
+    summary: 'Xác minh xóa tài khoản',
+    description:
+      'Nhập mã xác minh đã gửi qua email để xóa tài khoản. ' +
+      'Giới hạn số lần thử (tối đa 5). Nếu mã đúng: xóa user và toàn bộ session, đồng thời dọn cache liên quan.',
+  })
+  @ApiOkResponse({ description: 'Xác minh thành công và đã xóa tài khoản' })
+  @ApiBadRequestResponse({
+    description:
+      'Có thể xảy ra: không tìm thấy user, quá nhiều lần thử, mã không hợp lệ/hết hạn.',
+  })
   @HttpCode(HttpStatus.OK)
   @Post('deleteaccount/verify')
   async verifyDeleteAccount(

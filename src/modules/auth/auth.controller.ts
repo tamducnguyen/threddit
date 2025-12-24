@@ -24,6 +24,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiTooManyRequestsResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 @ApiTags('Auth')
@@ -80,11 +81,11 @@ export class AuthController {
   @ApiOperation({
     summary: 'Đăng nhập',
     description:
-      'Xác thực email và mật khẩu. Nếu hợp lệ, hệ thống tạo access token, lưu session và gửi kèm cookie `accessToken` (HttpOnly) trong phản hồi đối với web và trả về body đối với mobile.',
+      'Xác thực email và mật khẩu. Nếu hợp lệ, hệ thống tạo access token, lưu session và gửi kèm cookie `THREDDIT_AUTH` (HttpOnly) trong phản hồi đối với web và trả về body đối với mobile.',
   })
   @ApiOkResponse({
     description:
-      'Đăng nhập thành công. Access token được trả về trong body và đồng thời được set vào cookie `accessToken` (HttpOnly). và trả về body đối với mobile.',
+      'Đăng nhập thành công. Access token được trả về trong body và đồng thời được set vào cookie `THREDDIT_AUTH` (HttpOnly). và trả về body đối với mobile.',
   })
   @ApiBadRequestResponse({
     description:
@@ -137,12 +138,45 @@ export class AuthController {
   ) {
     return await this.authService.verifyResetPassword(verifyResetPasswordDTO);
   }
+  @ApiOperation({
+    summary: 'Gửi lại mã xác minh email',
+    description:
+      'Gửi lại mã xác minh qua email cho tài khoản đăng ký bằng credential và chưa kích hoạt. ' +
+      'Có giới hạn số lần thử (tối đa 5) và chống spam theo TTL mail.',
+  })
+  @ApiOkResponse({
+    description: 'Gửi lại mã xác minh thành công',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Gửi lại mã xác minh thành công',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Các lỗi có thể xảy ra: vượt quá số lần thử, bị throttle do vừa gửi mail, email không tồn tại, đã xác minh rồi, gửi mail thất bại.',
+  })
   @HttpCode(HttpStatus.OK)
   @Post('resendverify')
   async resendVerify(@Body() resendVerifyDTO: ResendVerifyDTO) {
     return await this.authService.resendVerify(resendVerifyDTO);
   }
-
+  @ApiOperation({
+    summary: 'Đăng nhập/Đăng ký bằng Google (Authorization Code)',
+    description:
+      'Nhận Google authorization code, xác thực với Google, rồi tạo session + set cookie THREDDIT_AUTH. ' +
+      'Nếu user đã tồn tại (Google) thì đăng nhập; nếu chưa tồn tại thì tạo user mới (authMethod=GOOGLE, isActivate=true).',
+  })
+  @ApiOkResponse({ description: 'Thành công (đã set cookie THREDDIT_AUTH)' })
+  @ApiUnauthorizedResponse({
+    description:
+      'Không hợp lệ: thiếu id_token / token sai / email Google chưa được verify',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Không hợp lệ: email đã tồn tại nhưng authMethod=CREDENTIAL / tài khoản chưa activate / gửi logic khác theo business',
+  })
   @HttpCode(HttpStatus.OK)
   @Post('google')
   async googleCode(
