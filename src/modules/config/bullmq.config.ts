@@ -18,6 +18,9 @@ export const bullMqConfig = (
       age: Number(configService.getOrThrow<number>('REMOVE_AFTER_TIME')),
       count: Number(configService.getOrThrow<number>('REMOVE_AFTER_COUNT')),
     },
-    removeOnFail: Boolean(configService.getOrThrow<boolean>('REMOVE_ONFAIL')),
+    removeOnFail:
+      configService.getOrThrow<string>('REMOVE_ONFAIL') === 'true'
+        ? true
+        : false,
   },
 });
