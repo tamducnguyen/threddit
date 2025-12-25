@@ -7,8 +7,14 @@ export function sendCookie(
   value: any,
 ) {
   res.cookie(name, value, {
-    httpOnly: configService.getOrThrow<boolean>('COOKIE_HTTPONLY'),
-    secure: configService.getOrThrow<boolean>('COOKIE_SECURE'),
+    httpOnly:
+      configService.getOrThrow<string>('COOKIE_HTTPONLY') === 'true'
+        ? true
+        : false,
+    secure:
+      configService.getOrThrow<string>('COOKIE_SECURE') === 'true'
+        ? true
+        : false,
     sameSite: configService.getOrThrow<'lax' | 'strict' | 'none'>(
       'COOKIE_SAMESITE',
     ),
