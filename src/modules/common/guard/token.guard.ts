@@ -1,10 +1,13 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { message } from '../helper/message.helper';
+import { sendResponse } from '../helper/response.helper';
+import { errorCode } from '../helper/errorcode.helper';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SessionEntity } from 'src/modules/entities/session.entity';
 import { Repository } from 'typeorm';
@@ -24,13 +27,34 @@ export class TokenGuard implements CanActivate {
       relations: { user: true },
     });
     if (!validateInfo) {
-      throw new UnauthorizedException(message.common.token_not_found);
+      throw new UnauthorizedException(
+        sendResponse(
+          HttpStatus.UNAUTHORIZED,
+          message.common.token_not_found,
+          undefined,
+          errorCode.common.token_not_found,
+        ),
+      );
     }
     if (validateInfo.isRevoked != false) {
-      throw new UnauthorizedException(message.common.session_revoked);
+      throw new UnauthorizedException(
+        sendResponse(
+          HttpStatus.UNAUTHORIZED,
+          message.common.session_revoked,
+          undefined,
+          errorCode.common.session_revoked,
+        ),
+      );
     }
     if (validateInfo.user.isActivate != true) {
-      throw new UnauthorizedException(message.common.account_not_activate);
+      throw new UnauthorizedException(
+        sendResponse(
+          HttpStatus.UNAUTHORIZED,
+          message.common.account_not_activate,
+          undefined,
+          errorCode.common.account_not_activate,
+        ),
+      );
     }
   }
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -48,6 +72,13 @@ export class TokenGuard implements CanActivate {
       await this.validateTokenAndUser(token);
       return true;
     }
-    throw new UnauthorizedException(message.common.token_not_found);
+    throw new UnauthorizedException(
+      sendResponse(
+        HttpStatus.UNAUTHORIZED,
+        message.common.token_not_found,
+        undefined,
+        errorCode.common.token_not_found,
+      ),
+    );
   }
 }

@@ -16,6 +16,7 @@ import { sendResponse } from '../common/helper/response.helper';
 import { VerifyAccountDTO } from './dtos/verifyaccount.dto';
 import { UserEntity } from '../entities/user.entity';
 import { message } from '../common/helper/message.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 import { SignInDTO } from './dtos/signin.dto';
 import { JwtService } from '@nestjs/jwt';
 import { cookieOptions, sendCookie } from '../common/helper/cookie.helper';
@@ -52,20 +53,41 @@ export class AuthService {
     const keyAttemps = prefixCache.attemps + email;
     const attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
     if (attemps >= 5) {
-      throw new BadRequestException(message.auth.verify.too_many_attempts);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify.too_many_attempts,
+          undefined,
+          errorCode.auth.signup.too_many_attempts,
+        ),
+      );
     }
     //check if already send verification via mail
     const isAlreadySendMail = await this.cacheManager.get<boolean>(
       prefixCache.alreadymail + email,
     );
     if (isAlreadySendMail) {
-      throw new BadRequestException(message.auth.signup.mail_throttled);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.signup.mail_throttled,
+          undefined,
+          errorCode.auth.signup.mail_throttled,
+        ),
+      );
     }
     const keyVerificationCode = prefixCache.verification + email;
     await this.cacheManager.del(keyVerificationCode);
     //check if password and confirmed one match
     if (password !== confirmedPassword) {
-      throw new BadRequestException(message.auth.signup.password_mismatch);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.signup.password_mismatch,
+          undefined,
+          errorCode.auth.signup.password_mismatch,
+        ),
+      );
     }
     //hash password
     const hashedPassword = await HashHelper.hash(password);
@@ -90,12 +112,26 @@ export class AuthService {
         const isEmailExistNow =
           await this.authRepository.checkEmailExist(email);
         if (isEmailExistNow) {
-          throw new BadRequestException(message.auth.signup.email_exists);
+          throw new BadRequestException(
+            sendResponse(
+              HttpStatus.BAD_REQUEST,
+              message.auth.signup.email_exists,
+              undefined,
+              errorCode.auth.signup.email_exists,
+            ),
+          );
         }
         const isUsernameExistNow =
           await this.authRepository.checkUsernameExist(username);
         if (isUsernameExistNow) {
-          throw new BadRequestException(message.auth.signup.username_exists);
+          throw new BadRequestException(
+            sendResponse(
+              HttpStatus.BAD_REQUEST,
+              message.auth.signup.username_exists,
+              undefined,
+              errorCode.auth.signup.username_exists,
+            ),
+          );
         }
       }
       throw error;
@@ -108,7 +144,14 @@ export class AuthService {
     );
     if (!isSent) {
       await this.authRepository.deleteUserByEmail(email);
-      throw new BadRequestException(message.auth.signup.mail_failed);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.signup.mail_failed,
+          undefined,
+          errorCode.auth.signup.mail_failed,
+        ),
+      );
     }
     const keyAlreadyMail = prefixCache.alreadymail + email;
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
@@ -126,18 +169,37 @@ export class AuthService {
     const keyAttemps = prefixCache.attemps + email;
     let attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
     if (attemps >= 5) {
-      throw new BadRequestException(message.auth.verify.too_many_attempts);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify.too_many_attempts,
+          undefined,
+          errorCode.auth.verify.too_many_attempts,
+        ),
+      );
     }
     //check user exist
     const userFound = await this.authRepository.findUserCredential(email);
     if (!userFound) {
       throw new BadRequestException(
-        message.auth.verify.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify.invalid_or_expired_code,
+          undefined,
+          errorCode.auth.verify.invalid_or_expired_code,
+        ),
       );
     }
     //check if already activate
     if (userFound.isActivate) {
-      throw new BadRequestException(message.auth.verify.already_verified);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify.already_verified,
+          undefined,
+          errorCode.auth.verify.already_verified,
+        ),
+      );
     }
     //check if email exist in cache-memory
     const keyVerificationCode = prefixCache.verification + email;
@@ -145,14 +207,24 @@ export class AuthService {
       await this.cacheManager.get<string>(keyVerificationCode);
     if (!verificationCodeCached) {
       throw new BadRequestException(
-        message.auth.verify.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify.invalid_or_expired_code,
+          undefined,
+          errorCode.auth.verify.invalid_or_expired_code,
+        ),
       );
     }
     //compare verification code
     if (String(verificationCode) !== String(verificationCodeCached)) {
       await this.cacheManager.set(keyAttemps, ++attemps, ttlCache.attemps);
       throw new BadRequestException(
-        message.auth.verify.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify.invalid_or_expired_code,
+          undefined,
+          errorCode.auth.verify.invalid_or_expired_code,
+        ),
       );
     }
     //update user activation
@@ -170,7 +242,12 @@ export class AuthService {
     const attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
     if (attemps >= 5) {
       throw new BadRequestException(
-        message.auth.resend_verification_code.too_many_attempts,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.resend_verification_code.too_many_attempts,
+          undefined,
+          errorCode.auth.resend_verification_code.too_many_attempts,
+        ),
       );
     }
     //check if already send verification via mail
@@ -179,20 +256,35 @@ export class AuthService {
     );
     if (isAlreadySendMail) {
       throw new BadRequestException(
-        message.auth.resend_verification_code.mail_throttled,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.resend_verification_code.mail_throttled,
+          undefined,
+          errorCode.auth.resend_verification_code.mail_throttled,
+        ),
       );
     }
     //check if credential exists
     const userFound = await this.authRepository.findUserCredential(email);
     if (!userFound) {
       throw new BadRequestException(
-        message.auth.resend_verification_code.email_not_exists,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.resend_verification_code.email_not_exists,
+          undefined,
+          errorCode.auth.resend_verification_code.email_not_exists,
+        ),
       );
     }
     //check if activate
     if (userFound.isActivate) {
       throw new BadRequestException(
-        message.auth.resend_verification_code.already_verified,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.resend_verification_code.already_verified,
+          undefined,
+          errorCode.auth.resend_verification_code.already_verified,
+        ),
       );
     }
     //delete key already sent mail cache if have
@@ -206,7 +298,12 @@ export class AuthService {
     );
     if (!isSent) {
       throw new BadRequestException(
-        message.auth.resend_verification_code.mail_failed,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.resend_verification_code.mail_failed,
+          undefined,
+          errorCode.auth.resend_verification_code.mail_failed,
+        ),
       );
     }
     //cache key already sent mail
@@ -236,11 +333,25 @@ export class AuthService {
       userFound.authMethod !== AuthMethod.CREDENTIAL ||
       !userFound.authMethodKey
     ) {
-      throw new BadRequestException(message.auth.signin.credential_incorrect);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.signin.credential_incorrect,
+          undefined,
+          errorCode.auth.signin.credential_incorrect,
+        ),
+      );
     }
     //check if user account is activate
     if (userFound.isActivate == false) {
-      throw new BadRequestException(message.auth.signin.account_not_activate);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.signin.account_not_activate,
+          undefined,
+          errorCode.auth.signin.account_not_activate,
+        ),
+      );
     }
     //compare password
     const isMatchPassword = await HashHelper.compare(
@@ -248,7 +359,14 @@ export class AuthService {
       userFound.authMethodKey,
     );
     if (!isMatchPassword) {
-      throw new BadRequestException(message.auth.signin.credential_incorrect);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.signin.credential_incorrect,
+          undefined,
+          errorCode.auth.signin.credential_incorrect,
+        ),
+      );
     }
     //gen token
     const payload = GeneratePayload(userFound);
@@ -283,7 +401,12 @@ export class AuthService {
     const attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
     if (attemps >= 5) {
       throw new BadRequestException(
-        message.auth.verify_reset_password.too_many_attempts,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify_reset_password.too_many_attempts,
+          undefined,
+          errorCode.auth.reset_password.too_many_attempts,
+        ),
       );
     }
     //check if already sent mail
@@ -291,7 +414,14 @@ export class AuthService {
     const isAlreadySendMail =
       await this.cacheManager.get<boolean>(keyAlreadyMail);
     if (isAlreadySendMail) {
-      throw new BadRequestException(message.auth.reset_password.mail_throttled);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.reset_password.mail_throttled,
+          undefined,
+          errorCode.auth.reset_password.mail_throttled,
+        ),
+      );
     }
     //check if email exists
     const userFound = await this.authRepository.findUserCredential(email);
@@ -301,7 +431,12 @@ export class AuthService {
       !userFound.isActivate
     ) {
       throw new BadRequestException(
-        message.auth.reset_password.email_not_exists,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.reset_password.email_not_exists,
+          undefined,
+          errorCode.auth.reset_password.email_not_exists,
+        ),
       );
     }
     //delete previous verfication code if have
@@ -314,7 +449,14 @@ export class AuthService {
       verificationCode,
     );
     if (!isEmailSent) {
-      throw new BadRequestException(message.auth.reset_password.mail_failed);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.reset_password.mail_failed,
+          undefined,
+          errorCode.auth.reset_password.mail_failed,
+        ),
+      );
     }
     //cache mail and verification code
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
@@ -336,13 +478,23 @@ export class AuthService {
     let attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
     if (attemps >= 5) {
       throw new BadRequestException(
-        message.auth.verify_reset_password.too_many_attempts,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify_reset_password.too_many_attempts,
+          undefined,
+          errorCode.auth.verify_reset_password.too_many_attempts,
+        ),
       );
     }
     //check if password is match
     if (newPassword !== confirmedNewPassword) {
       throw new BadRequestException(
-        message.auth.verify_reset_password.password_mismatch,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify_reset_password.password_mismatch,
+          undefined,
+          errorCode.auth.verify_reset_password.password_mismatch,
+        ),
       );
     }
     //check if email exists
@@ -353,7 +505,12 @@ export class AuthService {
       !userFound.isActivate
     ) {
       throw new BadRequestException(
-        message.auth.verify_reset_password.email_not_exists,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify_reset_password.email_not_exists,
+          undefined,
+          errorCode.auth.verify_reset_password.email_not_exists,
+        ),
       );
     }
     //check if verification code in cache memory and compare verification code
@@ -362,13 +519,23 @@ export class AuthService {
       await this.cacheManager.get<string>(keyVerificationCode);
     if (!verificationCodeCached) {
       throw new BadRequestException(
-        message.auth.verify_reset_password.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify_reset_password.invalid_or_expired_code,
+          undefined,
+          errorCode.auth.verify_reset_password.invalid_or_expired_code,
+        ),
       );
     }
     if (String(verificationCode) !== String(verificationCodeCached)) {
       await this.cacheManager.set(keyAttemps, ++attemps, ttlCache.attemps);
       throw new BadRequestException(
-        message.auth.verify_reset_password.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.auth.verify_reset_password.invalid_or_expired_code,
+          undefined,
+          errorCode.auth.verify_reset_password.invalid_or_expired_code,
+        ),
       );
     }
     //update password
