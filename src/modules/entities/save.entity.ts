@@ -5,16 +5,16 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { PostEntity } from './post.entity';
+import { ContentEntity } from './content.entity';
 import { UserEntity } from './user.entity';
 
 @Entity('saves')
-@Index(['savedPost', 'saver'], { unique: true })
+@Index(['savedContent', 'saver'], { unique: true })
 export class SaveEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
-  @ManyToOne(() => PostEntity, { onDelete: 'CASCADE' })
-  savedPost: PostEntity;
+  @ManyToOne(() => ContentEntity, { onDelete: 'CASCADE' })
+  savedContent: ContentEntity;
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   saver: UserEntity;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

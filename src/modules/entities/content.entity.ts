@@ -12,27 +12,27 @@ import {
 } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { CommentEntity } from './comment.entity';
-import { VoteEntity } from './vote.entity';
 import { SaveEntity } from './save.entity';
-@Entity('posts')
-@Index(['author', 'id', 'content'])
-export class PostEntity {
+import { ContentType } from '../enum/contenttype.enum';
+@Entity('contents')
+@Index(['author', 'text'])
+export class ContentEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   author: UserEntity;
-  @Column({ name: 'content', type: 'text' })
-  content: string;
+  @Column({ name: 'text', type: 'text', nullable: true })
+  text: string;
+  @Column({ name: 'type', type: 'enum', enum: ContentType })
+  type: ContentType;
   @Column({ name: 'is_pinned', type: 'bool', default: false })
   isPinned: boolean;
-  @OneToMany(() => VoteEntity, (vote) => vote.post)
-  votes: VoteEntity[];
   @ManyToMany(() => UserEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-  @JoinTable({ name: 'mentioned_user' })
+  @JoinTable({ name: 'mentioned_user_content' })
   mentionedUser: UserEntity[];
-  @OneToMany(() => CommentEntity, (comment) => comment.post)
+  @OneToMany(() => CommentEntity, (comment) => comment.content)
   comments: CommentEntity[];
-  @OneToMany(() => SaveEntity, (save) => save.savedPost)
+  @OneToMany(() => SaveEntity, (save) => save.savedContent)
   saves: SaveEntity[];
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

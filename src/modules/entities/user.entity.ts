@@ -7,12 +7,15 @@ import {
 } from 'typeorm';
 import { SessionEntity } from 'src/modules/entities/session.entity';
 import { FollowEntity } from './follow.entity';
-import { PostEntity } from './post.entity';
 import { NotificationEntity } from './notification.entity';
-import { VoteEntity } from './vote.entity';
-import { SaveEntity } from './save.entity';
 import { Gender } from '../enum/gender.enum';
 import { AuthMethod } from '../enum/authmethod.enum';
+import { FriendshipEntity } from './friendship.entity';
+import { ContentEntity } from './content.entity';
+import { SaveEntity } from './save.entity';
+import { CommentEntity } from './comment.entity';
+import { BlockEntity } from './block.entity';
+import { ReactionEntity } from './reaction.entity';
 
 @Entity('users')
 @Index(['username', 'id'])
@@ -26,7 +29,7 @@ export class UserEntity {
   @Column({ name: 'display_name', type: 'varchar' })
   displayName: string;
   @Column({ type: 'enum', enum: Gender, name: 'gender', nullable: true })
-  gender: string;
+  gender: Gender;
   @Column({ type: 'date', name: 'date_of_birth', nullable: true })
   dateOfBirth: Date;
   @Column({
@@ -53,12 +56,22 @@ export class UserEntity {
   followers: FollowEntity[];
   @OneToMany(() => FollowEntity, (follow) => follow.follower)
   following: FollowEntity[];
-  @OneToMany(() => PostEntity, (post) => post.author)
-  createdPost: PostEntity[];
+  @OneToMany(() => ContentEntity, (content) => content.author)
+  createdContents: ContentEntity[];
   @OneToMany(() => NotificationEntity, (notification) => notification.owner)
   notifications: NotificationEntity[];
   @OneToMany(() => SaveEntity, (save) => save.saver)
-  savedPost: PostEntity[];
-  @OneToMany(() => VoteEntity, (vote) => vote.voter)
-  votes: VoteEntity[];
+  saves: SaveEntity[];
+  @OneToMany(() => FriendshipEntity, (friendship) => friendship.requester)
+  sentFriendships: FriendshipEntity[];
+  @OneToMany(() => FriendshipEntity, (friendship) => friendship.recipient)
+  receivedFriendship: FriendshipEntity[];
+  @OneToMany(() => CommentEntity, (comment) => comment.commenter)
+  createdComments: CommentEntity[];
+  @OneToMany(() => BlockEntity, (block) => block.blocker)
+  sentBlocks: BlockEntity[];
+  @OneToMany(() => BlockEntity, (block) => block.blockedUser)
+  receivedBlocks: BlockEntity[];
+  @OneToMany(() => ReactionEntity, (reaction) => reaction.reacter)
+  createdReactions: ReactionEntity[];
 }

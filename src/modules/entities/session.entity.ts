@@ -15,10 +15,10 @@ export class SessionEntity {
   @ManyToOne(() => UserEntity, (user) => user.sessions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
-  @Column({ name: 'token' })
+  @Column({ name: 'token', type: 'varchar' })
   token: string;
   @Column({ name: 'is_revoked', default: false })
   isRevoked: boolean;
-  @CreateDateColumn({ name: 'create_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }
