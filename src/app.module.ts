@@ -17,6 +17,7 @@ import { bullMqConfig } from './modules/config/bullmq.config';
 import { ApiKeyGuard } from './modules/common/guard/apikey.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { cacheConfig } from './modules/config/cache.config';
+import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { cacheConfig } from './modules/config/cache.config';
     // NotificationModule,
     // FollowModule,
     // PostModule,
+    ProfileModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -61,6 +61,28 @@ export const errorCode = {
       invalid_or_expired_code: '43',
     },
   },
+  profile: {
+    get_profile: {
+      user_not_found: '44',
+    },
+    update_profile: {
+      no_field_to_update: '47',
+      user_not_found: '45',
+      username_exist: '46',
+    },
+    update_avatar: {
+      invalid_key: '54',
+      upload_not_found: '55',
+      invalid_size: '56',
+      upload_too_large: '57',
+    },
+    update_background: {
+      invalid_key: '58',
+      upload_not_found: '59',
+      invalid_size: '60',
+      upload_too_large: '61',
+    },
+  },
   storage: {
     invalid_content_type: '48',
     invalid_key: '62',
