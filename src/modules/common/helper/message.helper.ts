@@ -96,6 +96,11 @@ export const message = {
       success: 'Lấy thông tin người dùng thành công',
     },
   },
+  storage: {
+    invalid_content_type: 'Loại tập tin không hợp lệ',
+    invalid_key: 'Key lưu trữ không hợp lệ',
+    object_not_found: 'Không tìm thấy đối tượng lưu trữ',
+  },
   notification: {
     create_stream: { user_not_found: 'Người dùng không tồn tại' },
     get_notification: {

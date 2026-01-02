@@ -61,6 +61,11 @@ export const errorCode = {
       invalid_or_expired_code: '43',
     },
   },
+  storage: {
+    invalid_content_type: '48',
+    invalid_key: '62',
+    object_not_found: '63',
+  },
   common: {
     token_not_found: '50',
     session_revoked: '51',
