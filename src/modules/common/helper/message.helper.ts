@@ -96,6 +96,39 @@ export const message = {
       success: 'Lấy thông tin người dùng thành công',
     },
   },
+  profile: {
+    get_profile: {
+      success: 'Lấy hồ sơ người dùng thành công',
+      user_not_found: 'Người dùng không tồn tại',
+    },
+    update_profile: {
+      no_field_to_update: 'Không có trường thông tin nào để cập nhật',
+      user_not_found: 'Người dùng không tồn tại',
+      success: 'Cập nhật hồ sơ người dùng thành công',
+      username_exist: 'Tên người dùng đã tồn tại',
+    },
+    update_avatar: {
+      presign_success: 'Tạo presign avatar thành công',
+      invalid_key: 'Key avatar không hợp lệ',
+      upload_not_found: 'Không tìm thấy avatar đã upload',
+      success: 'Cập nhật avatar thành công',
+      invalid_size: 'Kích thước vượt quá giới hạn dung lượng',
+      upload_too_large: 'Avatar vượt quá giới hạn dung lượng',
+    },
+    update_background: {
+      presign_success: 'Tạo presign background thành công',
+      invalid_key: 'Key background không hợp lệ',
+      upload_not_found: 'Không tìm thấy background đã upload',
+      invalid_size: 'Kích thước vượt quá giới hạn dung lượng',
+      upload_too_large: 'Background vượt quá giới hạn dung lượng',
+      success: 'Cập nhật background thành công',
+    },
+  },
+  storage: {
+    invalid_content_type: 'Loại tập tin không hợp lệ',
+    invalid_key: 'Key lưu trữ không hợp lệ',
+    object_not_found: 'Không tìm thấy đối tượng lưu trữ',
+  },
   notification: {
     create_stream: { user_not_found: 'Người dùng không tồn tại' },
     get_notification: {

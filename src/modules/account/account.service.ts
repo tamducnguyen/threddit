@@ -7,6 +7,7 @@ import {
 import { AccountRepository } from './account.repository';
 import { sendResponse } from '../common/helper/response.helper';
 import { message } from '../common/helper/message.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 import { UpdatePasswordDTO } from './dtos/updatepassword.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { HashHelper } from '../common/helper/hash.helper';
@@ -42,24 +43,44 @@ export class AccountService {
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
       throw new BadRequestException(
-        message.account.update_password.user_not_found,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_password.user_not_found,
+          undefined,
+          errorCode.account.update_password.user_not_found,
+        ),
       );
     }
     if (userFound.authMethod != AuthMethod.CREDENTIAL) {
       throw new BadRequestException(
-        message.account.update_password.not_support_this_auth_method,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_password.not_support_this_auth_method,
+          undefined,
+          errorCode.account.update_password.not_support_this_auth_method,
+        ),
       );
     }
     //compare old password and new password
     if (oldPassword === newPassword) {
       throw new BadRequestException(
-        message.account.update_password.passport_same,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_password.passport_same,
+          undefined,
+          errorCode.account.update_password.passport_same,
+        ),
       );
     }
     //compare new password and confirmed one
     if (newPassword !== confirmedNewPassword) {
       throw new BadRequestException(
-        message.account.update_password.password_mismatch,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_password.password_mismatch,
+          undefined,
+          errorCode.account.update_password.password_mismatch,
+        ),
       );
     }
     //compare old password with stored one
@@ -69,7 +90,12 @@ export class AccountService {
     );
     if (!isCorrectPassword) {
       throw new BadRequestException(
-        message.account.update_password.password_incorrect,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_password.password_incorrect,
+          undefined,
+          errorCode.account.update_password.password_incorrect,
+        ),
       );
     }
     //change password and revoke all session
@@ -90,12 +116,22 @@ export class AccountService {
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
       throw new BadRequestException(
-        message.account.update_username.user_not_found,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_username.user_not_found,
+          undefined,
+          errorCode.account.update_username.user_not_found,
+        ),
       );
     }
     if (username == userFound.username) {
       throw new BadRequestException(
-        message.account.update_username.username_duplicate,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.update_username.username_duplicate,
+          undefined,
+          errorCode.account.update_username.username_duplicate,
+        ),
       );
     }
     //update username
@@ -108,7 +144,12 @@ export class AccountService {
           '23505'
       ) {
         throw new BadRequestException(
-          message.account.update_username.username_exist,
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.account.update_username.username_exist,
+            undefined,
+            errorCode.account.update_username.username_exist,
+          ),
         );
       }
       throw error;
@@ -123,7 +164,12 @@ export class AccountService {
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
       throw new BadRequestException(
-        message.account.get_user_info.user_not_found,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.get_user_info.user_not_found,
+          undefined,
+          errorCode.account.get_user_info.user_not_found,
+        ),
       );
     }
     const accountinfo = {
@@ -143,7 +189,12 @@ export class AccountService {
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
       throw new BadRequestException(
-        message.account.delete_account.user_not_found,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.user_not_found,
+          undefined,
+          errorCode.account.delete_account.user_not_found,
+        ),
       );
     }
     // Rate limit attemp verification by email.
@@ -151,7 +202,12 @@ export class AccountService {
     const attempts = (await this.cacheManager.get<number>(keyAttempts)) || 0;
     if (attempts >= 5) {
       throw new BadRequestException(
-        message.account.delete_account.too_many_attempts,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.too_many_attempts,
+          undefined,
+          errorCode.account.delete_account.too_many_attempts,
+        ),
       );
     }
     // Throttle repeated mail sends.
@@ -160,7 +216,12 @@ export class AccountService {
       await this.cacheManager.get<boolean>(keyAlreadyMail);
     if (isAlreadySendMail) {
       throw new BadRequestException(
-        message.account.delete_account.mail_throttled,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.mail_throttled,
+          undefined,
+          errorCode.account.delete_account.mail_throttled,
+        ),
       );
     }
     // Replace any previous code with a fresh one.
@@ -174,7 +235,14 @@ export class AccountService {
       verificationCode,
     );
     if (!isSent) {
-      throw new BadRequestException(message.account.delete_account.mail_failed);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.mail_failed,
+          undefined,
+          errorCode.account.delete_account.mail_failed,
+        ),
+      );
     }
     // Cache throttle + code with TTL.
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
@@ -198,7 +266,12 @@ export class AccountService {
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
       throw new BadRequestException(
-        message.account.delete_account.user_not_found,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.user_not_found,
+          undefined,
+          errorCode.account.delete_account.user_not_found,
+        ),
       );
     }
     // Rate limit verification attempts.
@@ -206,7 +279,12 @@ export class AccountService {
     let attempts = (await this.cacheManager.get<number>(keyAttempts)) || 0;
     if (attempts >= 5) {
       throw new BadRequestException(
-        message.account.delete_account.too_many_attempts,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.too_many_attempts,
+          undefined,
+          errorCode.account.delete_account.too_many_attempts,
+        ),
       );
     }
     // Validate cached verification code.
@@ -216,14 +294,24 @@ export class AccountService {
       await this.cacheManager.get<string>(keyVerificationCode);
     if (!verificationCodeCached) {
       throw new BadRequestException(
-        message.account.delete_account.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.invalid_or_expired_code,
+          undefined,
+          errorCode.account.delete_account.invalid_or_expired_code,
+        ),
       );
     }
     if (String(verificationCode) !== String(verificationCodeCached)) {
       // Count bad attempts to slow brute force.
       await this.cacheManager.set(keyAttempts, ++attempts, ttlCache.attemps);
       throw new BadRequestException(
-        message.account.delete_account.invalid_or_expired_code,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.account.delete_account.invalid_or_expired_code,
+          undefined,
+          errorCode.account.delete_account.invalid_or_expired_code,
+        ),
       );
     }
     // Delete user and sessions after successful verification.

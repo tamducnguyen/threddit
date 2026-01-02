@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { sendResponse } from '../helper/response.helper';
 import { message } from '../helper/message.helper';
+import { errorCode } from '../helper/errorcode.helper';
 
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
@@ -19,6 +20,8 @@ export class UserThrottlerGuard extends ThrottlerGuard {
       sendResponse(
         HttpStatus.TOO_MANY_REQUESTS,
         message.common.too_many_requests,
+        undefined,
+        errorCode.common.too_many_requests,
       ),
       HttpStatus.TOO_MANY_REQUESTS,
     );
