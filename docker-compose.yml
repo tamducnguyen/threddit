@@ -50,10 +50,11 @@ services:
     depends_on:
       - web
     ports:
-      - '80:80'
-      # - "443:443"   # nếu sau này làm SSL
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 volumes:
   postgres_data:
