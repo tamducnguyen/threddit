@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -16,11 +17,12 @@ export class NotificationEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   owner: UserEntity;
   @Column({ name: 'is_read', type: 'boolean', default: false })
   isRead: boolean;
-  @Column({ name: 'content', type: 'text' })
-  content: string;
+  @Column({ name: 'message', type: 'text' })
+  message: string;
   @Column({ name: 'type', type: 'enum', enum: NotificationType })
   type: NotificationType;
   @Column({ name: 'target', type: 'jsonb' })

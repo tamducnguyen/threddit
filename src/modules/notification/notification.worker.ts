@@ -2,103 +2,183 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { NotificationService } from './notification.service';
 import { UserEntity } from '../entities/user.entity';
-import { PostEntity } from '../entities/post.entity';
+import { ContentEntity } from '../entities/content.entity';
 import { NotificationRepository } from './notification.repository';
 import { NotificationEntity } from '../entities/notification.entity';
 import { NotificationType } from '../enum/notificationtype.enum';
 import {
-  CommentNotification,
-  CreatePostNotification,
-  FollowNotification,
+  CommentNotificationMessage,
+  FollowingContentCreationNotificationMessage,
+  FollowNotificationMessage,
+  FriendContentCreationNotificationMessage,
   JobNotificationQueue,
-  MentionCommentNotification,
-  MentionNotification,
+  MentionInCommentNotificationMessage,
+  MentionInContentNotificationMessage,
   NameNotificationQueue,
-} from '../common/helper/notification.helper';
+} from './helper/notification.helper';
 import { CommentEntity } from '../entities/comment.entity';
+import { NotificationTarget } from '../enum/notificationtarger.type';
+import { ConfigService } from '@nestjs/config';
 
 @Processor(NameNotificationQueue, {
   concurrency: parseInt(process.env.NOTIFICATION_CONCURRENCY || '5', 10),
 })
 export class NotificationWorker extends WorkerHost {
+  private STORAGE_URL: string;
   constructor(
     private readonly notificationService: NotificationService,
     private readonly notificationRepo: NotificationRepository,
+    private readonly configService: ConfigService,
   ) {
     super();
+    this.STORAGE_URL = this.configService.getOrThrow('STORAGE_URL');
   }
   async process(job: Job) {
     switch (job.name) {
-      //send notification to all followers
-      case String(JobNotificationQueue.CREATE_POST): {
+      //send content creation notification to all friends and followers
+      case String(JobNotificationQueue.CONTENT_CREATION): {
         type SendPostNotificationInterface = {
           currentUser: UserEntity;
-          postCreated: PostEntity;
+          createdContent: ContentEntity;
         };
         const data = job.data as SendPostNotificationInterface;
-        const follows = await this.notificationRepo.getAllFollower(
+        //get all friends
+        const friends = await this.notificationRepo.getAllFriends(
           data.currentUser,
         );
-        const notifications: Partial<NotificationEntity>[] = follows.map(
-          (follow) => {
+        //get all followers
+        const followers = await this.notificationRepo.getAllFollowers(
+          data.currentUser,
+        );
+        //filter followers who are friend
+        const friendIds = new Set(friends.map((f) => f.id));
+        const pureFollowers = followers.filter(
+          (follower) => !friendIds.has(follower.id),
+        );
+        //create notifications for friends
+        const friendNotifications: Partial<NotificationEntity>[] = friends.map(
+          (friend) => {
+            const actorAvatarUrl =
+              this.STORAGE_URL + data.currentUser.avatarRelativePath;
+            const target: NotificationTarget = {
+              type: 'FRIEND_CONTENT_CREATION',
+              contentId: data.createdContent.id,
+              contentType: data.createdContent.type,
+              actorAvatarUrl: actorAvatarUrl,
+              actorDisplayName: data.currentUser.displayName,
+              actorUsername: data.currentUser.username,
+            };
             return {
-              owner: follow.follower,
-              content: CreatePostNotification(data.currentUser.username),
-              target: String(data.postCreated.id),
-              type: NotificationType.CREATE_POST,
+              owner: friend,
+              message: FriendContentCreationNotificationMessage(
+                data.currentUser.displayName,
+                data.createdContent.type,
+              ),
+              target: target,
+              type: NotificationType.FRIEND_CONTENT_CREATION,
             };
           },
         );
-        //insert notification
-        await this.notificationRepo.insertNotifications(notifications);
-        //notify
-        notifications.forEach((notification) =>
-          this.notificationService.notify(notification),
-        );
-        break;
-      }
-      //send notification to mentioned user
-      case String(JobNotificationQueue.MENTION): {
-        type SendMentionNotificationInterface = {
-          currentUser: UserEntity;
-          mentionedUser: UserEntity[];
-          post: PostEntity;
-        };
-        const data = job.data as SendMentionNotificationInterface;
-        const owners = data.mentionedUser;
-        const notifications: Partial<NotificationEntity>[] = owners
-          .filter((owner) => owner.id !== data.currentUser.id)
-          .map((owner) => {
+        //create notifications for followers
+        const followerNotifications: Partial<NotificationEntity>[] =
+          pureFollowers.map((follower) => {
+            const actorAvatarUrl =
+              this.STORAGE_URL + data.currentUser.avatarRelativePath;
+            const target: NotificationTarget = {
+              type: 'FOLLOWING_CONTENT_CREATION',
+              contentId: data.createdContent.id,
+              contentType: data.createdContent.type,
+              actorAvatarUrl: actorAvatarUrl,
+              actorDisplayName: data.currentUser.displayName,
+              actorUsername: data.currentUser.username,
+            };
             return {
-              owner: owner,
-              content: MentionNotification(data.currentUser.username),
-              target: String(data.post.id),
-              type: NotificationType.MENTION,
+              owner: follower,
+              message: FollowingContentCreationNotificationMessage(
+                data.currentUser.displayName,
+                data.createdContent.type,
+              ),
+              target: target,
+              type: NotificationType.FOLLOWING_CONTENT_CREATION,
             };
           });
         //insert notification
-        await this.notificationRepo.insertNotifications(notifications);
+        const notifications = [
+          ...friendNotifications,
+          ...followerNotifications,
+        ];
+        const insertedNotifications =
+          await this.notificationRepo.insertNotifications(notifications);
         //notify
-        notifications.forEach((notification) =>
-          this.notificationService.notify(notification),
+        insertedNotifications.forEach((insertedNotification) =>
+          this.notificationService.notify(insertedNotification),
         );
         break;
       }
-      //send notification to followee
+      //send notification to mentioned friends in content
+      case String(JobNotificationQueue.MENTION_IN_CONTENT): {
+        type SendMentionNotificationInterface = {
+          currentUser: UserEntity;
+          mentionedFriends: UserEntity[];
+          mentioningContent: ContentEntity;
+        };
+        const data = job.data as SendMentionNotificationInterface;
+        const friends = data.mentionedFriends;
+        //should check if mentioned user are friends and not self
+        const target: NotificationTarget = {
+          type: 'MENTION_IN_CONTENT',
+          contentId: data.mentioningContent.id,
+          contentType: data.mentioningContent.type,
+          actorAvatarUrl:
+            this.STORAGE_URL + data.currentUser.avatarRelativePath,
+          actorDisplayName: data.currentUser.displayName,
+          actorUsername: data.currentUser.username,
+        };
+        const notifications: Partial<NotificationEntity>[] = friends
+          .filter((friend) => friend.id !== data.currentUser.id)
+          .map((friend) => {
+            return {
+              owner: friend,
+              message: MentionInContentNotificationMessage(
+                data.currentUser.displayName,
+                data.mentioningContent.type,
+              ),
+              target: target,
+              type: NotificationType.MENTION_IN_CONTENT,
+            };
+          });
+        //insert notification
+        const insertedNotifications =
+          await this.notificationRepo.insertNotifications(notifications);
+        //notify
+        insertedNotifications.forEach((insertedNotification) =>
+          this.notificationService.notify(insertedNotification),
+        );
+        break;
+      }
+      //send follow notification to followee
       case String(JobNotificationQueue.FOLLOW): {
         type SendFollowNotificationInterface = {
           currentUser: UserEntity;
           followee: UserEntity;
         };
         const data = job.data as SendFollowNotificationInterface;
+        const target: NotificationTarget = {
+          type: 'FOLLOW',
+          actorAvatarUrl:
+            this.STORAGE_URL + data.currentUser.avatarRelativePath,
+          actorDisplayName: data.currentUser.displayName,
+          actorUsername: data.currentUser.username,
+        };
         const notification: Partial<NotificationEntity> = {
           owner: data.followee,
-          content: FollowNotification(data.currentUser.username),
+          message: FollowNotificationMessage(data.currentUser.displayName),
           type: NotificationType.FOLLOW,
-          target: data.currentUser.username,
+          target: target,
         };
-        await this.notificationRepo.saveNotification(notification);
-        this.notificationService.notify(notification);
+        const insertedNotification =
+          await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(insertedNotification);
         break;
       }
       //send notification comment to author
@@ -107,51 +187,62 @@ export class NotificationWorker extends WorkerHost {
           comment: CommentEntity;
         };
         const data = job.data as SendCommentNotifcationInterface;
+        const target: NotificationTarget = {
+          type: 'COMMENT',
+          contentId: data.comment.content.id,
+          commentId: data.comment.id,
+          actorAvatarUrl:
+            this.STORAGE_URL + data.comment.commenter.avatarRelativePath,
+          actorDisplayName: data.comment.commenter.displayName,
+          actorUsername: data.comment.commenter.username,
+        };
         const notification: Partial<NotificationEntity> = {
-          owner: data.comment.post.author,
-          content: CommentNotification(
-            data.comment.commenter.username,
-            data.comment.content,
+          owner: data.comment.content.author,
+          message: CommentNotificationMessage(
+            data.comment.commenter.displayName,
           ),
           type: NotificationType.COMMENT,
-          target: {
-            postId: String(data.comment.post.id),
-            commentId: String(data.comment.id),
-          },
+          target: target,
         };
-        await this.notificationRepo.saveNotification(notification);
-        this.notificationService.notify(notification);
+        const insertNotification =
+          await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(insertNotification);
         break;
       }
       //send notification to mentioned comment user
-      case String(JobNotificationQueue.MENTION_COMMENT): {
+      case String(JobNotificationQueue.MENTION_IN_COMMENT): {
         type SendMentionCommentNotificationInterface = {
           comment: CommentEntity;
-          mentionedUser: UserEntity[];
+          mentionedFriends: UserEntity[];
         };
         const data = job.data as SendMentionCommentNotificationInterface;
-        const owners = data.mentionedUser;
-        const notifications: Partial<NotificationEntity>[] = owners.map(
-          (owner) => {
+        const mentionedFriends = data.mentionedFriends;
+        const target: NotificationTarget = {
+          type: 'MENTION_IN_COMMENT',
+          contentId: data.comment.content.id,
+          commentId: data.comment.id,
+          actorAvatarUrl:
+            this.STORAGE_URL + data.comment.commenter.avatarRelativePath,
+          actorDisplayName: data.comment.commenter.displayName,
+          actorUsername: data.comment.commenter.username,
+        };
+        const notifications: Partial<NotificationEntity>[] =
+          mentionedFriends.map((mentionFriend) => {
             return {
-              owner: owner,
-              content: MentionCommentNotification(
-                data.comment.commenter.username,
-                data.comment.content,
+              owner: mentionFriend,
+              message: MentionInCommentNotificationMessage(
+                data.comment.commenter.displayName,
               ),
-              target: {
-                postId: String(data.comment.post.id),
-                commentId: String(data.comment.id),
-              },
-              type: NotificationType.MENTION_COMMENT,
+              target: target,
+              type: NotificationType.MENTION_IN_COMMENT,
             };
-          },
-        );
+          });
         //insert notification
-        await this.notificationRepo.insertNotifications(notifications);
+        const insertedNotifications =
+          await this.notificationRepo.insertNotifications(notifications);
         //notify
-        notifications.forEach((notification) =>
-          this.notificationService.notify(notification),
+        insertedNotifications.forEach((insertedNotification) =>
+          this.notificationService.notify(insertedNotification),
         );
         break;
       }
