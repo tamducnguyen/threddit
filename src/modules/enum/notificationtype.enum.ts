@@ -1,11 +1,11 @@
 export enum NotificationType {
   FOLLOW = 'follow',
-  FOLLOWEE_POST = 'followee_post',
-  MENTION_IN_POST = 'mention_in_post',
+  FOLLOWING_CONTENT_CREATION = 'following_content_creation',
+  MENTION_IN_CONTENT = 'mention_in_content',
   COMMENT = 'comment',
   MENTION_IN_COMMENT = 'mention_in_comment',
   REACTION_CONTENT = 'reaction_content',
   REACTION_COMMENT = 'reaction_comment',
-  FRIEND_POST = 'friend_post',
+  FRIEND_CONTENT_CREATION = 'friend_content_creation',
   FRIEND_REQUEST = 'friend_request',
 }

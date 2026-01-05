@@ -10,7 +10,8 @@ import { SessionEntity } from '../entities/session.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { NotificationWorker } from './notification.worker';
 import { FollowEntity } from '../entities/follow.entity';
-import { NameNotificationQueue } from '../common/helper/notification.helper';
+import { NameNotificationQueue } from './helper/notification.helper';
+import { FriendshipEntity } from '../entities/friendship.entity';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { NameNotificationQueue } from '../common/helper/notification.helper';
       SessionEntity,
       UserEntity,
       FollowEntity,
+      FriendshipEntity,
     ]),
     SessionModule,
     BullModule.registerQueue({

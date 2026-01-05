@@ -94,4 +94,26 @@ export const errorCode = {
     account_not_activate: '52',
     too_many_requests: '53',
   },
+  notification: {
+    create_stream: {
+      user_not_found: '81',
+    },
+    get_notification: {
+      user_not_found: '82',
+      cursor_invalid: '83',
+    },
+    get_unread_notification: {
+      user_not_found: '84',
+      cursor_invalid: '85',
+    },
+    read_notification: {
+      not_found_or_already_read: '86',
+    },
+    delete_notification: {
+      not_found: '87',
+    },
+    get_count_unread: {
+      user_not_found: '88',
+    },
+  },
 };

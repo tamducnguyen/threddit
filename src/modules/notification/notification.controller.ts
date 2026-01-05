@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -18,6 +19,7 @@ import { CursorDTO } from './dtos/cursor.dto';
 import { ReadNotificationDTO } from './dtos/readnotification.dto';
 import { SkipThrottle } from '@nestjs/throttler';
 import { TokenGuard } from '../common/guard/token.guard';
+import { DeleteNotificationDTO } from './dtos/deletenotification.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -161,13 +163,24 @@ export class NotificationController {
     description: 'Id của thông báo',
     type: String,
   })
-  async postReadNotification(
-    @CurrentUser('sub') sub: string,
+  async readNotification(
+    @CurrentUser('sub') sub: number,
     @Param() readnotifDTO: ReadNotificationDTO,
   ) {
-    return await this.notificationService.postReadNotification(
+    return await this.notificationService.readNotification(
       sub,
       readnotifDTO.notificationId,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete(':notificationId')
+  async deleteNotification(
+    @CurrentUser('sub') sub: number,
+    @Param() deleteNotificationDTO: DeleteNotificationDTO,
+  ) {
+    return await this.notificationService.deleteNotification(
+      sub,
+      deleteNotificationDTO.notificationId,
     );
   }
   @HttpCode(HttpStatus.OK)
@@ -175,7 +188,12 @@ export class NotificationController {
   @ApiOperation({ summary: 'Lấy số lượng thông báo chưa đọc.' })
   @ApiNotFoundResponse({ description: 'Không có người dùng.' })
   @ApiOkResponse({ description: 'Thành công lấy số lượng thông báo chưa đọc.' })
-  async getCountUnreadNotification(@CurrentUser('sub') id: string) {
+  async getCountUnreadNotification(@CurrentUser('sub') id: number) {
     return await this.notificationService.getCountUnreadNotificationount(id);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post('readall')
+  async readAllNotifications(@CurrentUser() currentUser: AuthUser) {
+    return await this.notificationService.readAllNotifications(currentUser);
   }
 }
