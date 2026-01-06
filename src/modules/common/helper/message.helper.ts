@@ -177,6 +177,7 @@ export const message = {
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
     post_follow: {
+      followee_blocked: 'Không thể theo dõi do bạn đã chặn người dùng này',
       user_not_found: 'Người dùng không tồn tại',
       follow_already: 'Đã theo dõi người dùng này',
       cant_self_follow: 'Không thể follow chính mình',

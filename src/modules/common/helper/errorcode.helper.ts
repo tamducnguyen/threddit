@@ -94,6 +94,32 @@ export const errorCode = {
     account_not_activate: '52',
     too_many_requests: '53',
   },
+  follow: {
+    get_follow_number: {
+      user_not_found: '64',
+    },
+    get_follower_list: {
+      user_not_found: '65',
+      cursor_invalid: '66',
+    },
+    get_following_list: {
+      user_not_found: '67',
+      cursor_invalid: '68',
+    },
+    post_follow: {
+      followee_blocked: '89',
+      cant_self_follow: '69',
+      user_not_found: '70',
+      follow_already: '71',
+    },
+    delete_follow: {
+      user_not_found: '72',
+      follow_not_found: '73',
+    },
+    get_follow_state: {
+      user_not_found: '74',
+    },
+  },
   notification: {
     create_stream: {
       user_not_found: '81',

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Delete,
   Get,
@@ -16,8 +16,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../common/guard/throttler.guard';
 import { UsernameDTO } from './dtos/username.dto';
 import { TokenGuard } from '../common/guard/token.guard';
+import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
 import { AuthUser } from '../token/authuser.interface';
-import { SearchUserDTO } from './dtos/searchuser.dto';
 
 import {
   ApiBadRequestResponse,
@@ -51,7 +51,7 @@ import {
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
   @HttpCode(HttpStatus.OK)
-  @Get('me/count')
+  @Get('count')
   @ApiOperation({
     summary: 'Lấy số người theo dõi và đang theo dõi của **chính người dùng**',
     description:
@@ -63,8 +63,8 @@ export class FollowController {
   @ApiNotFoundResponse({
     description: 'Không tìm thấy người dùng.',
   })
-  async getMyFollowNumber(@CurrentUser('username') username: string) {
-    return await this.followService.getFollowNumber(username);
+  async getMyFollowNumber(@CurrentUser() currentUser: AuthUser) {
+    return await this.followService.getFollowNumber(currentUser);
   }
   @HttpCode(HttpStatus.OK)
   @Get(':username/count')
@@ -85,11 +85,17 @@ export class FollowController {
     description: 'Tên người dùng',
     type: String,
   })
-  async getUserFollowNumber(@Param() usernameDTO: UsernameDTO) {
-    return await this.followService.getFollowNumber(usernameDTO.username);
+  async getUserFollowNumber(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() usernameDTO: UsernameDTO,
+  ) {
+    return await this.followService.getFollowNumber(
+      currentUser,
+      usernameDTO.username,
+    );
   }
   @HttpCode(HttpStatus.OK)
-  @Get('me/followers')
+  @Get('followers')
   @ApiOperation({
     summary:
       'Lấy danh sách người theo dõi của **chính người dùng** (có phân trang bằng con trỏ)',
@@ -118,10 +124,20 @@ export class FollowController {
   })
   async getMyFollowers(
     @CurrentUser('username') username: string,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
-    return this.followService.getFollowers(
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowersByKey(
+        username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
+    return await this.followService.getFollowers(
       username,
       currentUserId,
       cursorDTO.cursor,
@@ -164,10 +180,20 @@ export class FollowController {
   })
   async getUserFollowers(
     @Param() usernameDTO: UsernameDTO,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
-    return this.followService.getFollowers(
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowersByKey(
+        usernameDTO.username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
+    return await this.followService.getFollowers(
       usernameDTO.username,
       currentUserId,
       cursorDTO.cursor,
@@ -175,7 +201,7 @@ export class FollowController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('me/followings')
+  @Get('followings')
   @ApiOperation({
     summary:
       'Lấy danh sách người đang theo dõi của **chính người dùng** (có phân trang bằng con trỏ)',
@@ -205,10 +231,20 @@ export class FollowController {
   })
   async getMyFollowings(
     @CurrentUser('username') username: string,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
-    return this.followService.getFollowings(
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowingsByKey(
+        username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
+    return await this.followService.getFollowings(
       username,
       currentUserId,
       cursorDTO.cursor,
@@ -252,9 +288,19 @@ export class FollowController {
   })
   async getUserFollowings(
     @Param() usernameDTO: UsernameDTO,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowingsByKey(
+        usernameDTO.username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
     return this.followService.getFollowings(
       usernameDTO.username,
       currentUserId,
@@ -308,7 +354,7 @@ export class FollowController {
     );
   }
   @HttpCode(HttpStatus.OK)
-  @Get(':username/state')
+  @Get(':username')
   @ApiOperation({
     summary:
       'Lấy thông tin người dùng và trạng thái theo dõi đối với người dùng hiện tại',
@@ -324,44 +370,12 @@ export class FollowController {
     type: String,
   })
   async getFollowState(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.followService.getFollowState(
-      currentUsername,
-      usernameDTO.username,
-    );
-  }
-  @HttpCode(HttpStatus.OK)
-  @Get('search')
-  @ApiOperation({ summary: 'Tìm kiếm người dùng theo từ khóa ' })
-  @ApiOkResponse({
-    description:
-      'Tìm kiếm người dùng thành công, trả về danh sách người dùng khớp với kết quả tìm kiếm',
-  })
-  @ApiNoContentResponse({
-    description: 'Không có kết quả nào khớp hoặc là đã hết danh sách',
-  })
-  @ApiBadRequestResponse({ description: 'Con trỏ không hợp lệ' })
-  @ApiQuery({
-    name: 'key',
-    required: true,
-    description: 'Từ khóa để tìm kiếm',
-  })
-  @ApiQuery({
-    name: 'cursor',
-    required: false,
-    description: 'Con trỏ để phân trang cuộn',
-  })
-  async getUsersByKey(
-    @CurrentUser() currentUser: AuthUser,
-    @Query() searchPostDTO: SearchUserDTO,
-    @Query() cursorDTO: CursorDTO,
-  ) {
-    return await this.followService.getUsersByKey(
       currentUser,
-      searchPostDTO,
-      cursorDTO.cursor,
+      usernameDTO.username,
     );
   }
 }

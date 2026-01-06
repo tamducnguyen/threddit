@@ -9,6 +9,8 @@ import { UserEntity } from './user.entity';
 
 @Entity('follows')
 @Index(['follower', 'followee'], { unique: true })
+@Index(['follower'])
+@Index(['followee'])
 export class FollowEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
