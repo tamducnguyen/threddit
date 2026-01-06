@@ -23,7 +23,6 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCookieAuth,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -98,12 +97,12 @@ export class FollowController {
   @Get('followers')
   @ApiOperation({
     summary:
-      'Lấy danh sách người theo dõi của **chính người dùng** (có phân trang bằng con trỏ)',
+      'Lấy danh sách người theo dõi của **chính người dùng** (có phân trang bằng con trỏ, có thể tìm kiếm bằng từ khóa)',
     description:
       '**Trả về danh sách người theo dõi của người dùng hiện tại theo thứ tự gần đây nhất. ' +
       'Hỗ trợ phân trang tiến bằng một mã con trỏ nằm trên query string. ' +
       'Người dùng kéo hết thì gọi api tiếp kèm theo cursor' +
-      'Nếu không còn dữ liệu để trả về, máy chủ có thể trả trạng thái không có nội dung.**',
+      'Nếu không còn dữ liệu để trả về, máy chủ trả con trỏ null và một mảng rỗng.**',
   })
   @ApiOkResponse({
     description:
@@ -113,13 +112,17 @@ export class FollowController {
     description:
       'Thất bại: người dùng không hợp lệ hoặc mã con trỏ không hợp lệ',
   })
-  @ApiNoContentResponse({
-    description: 'Không có người theo dõi / Đã lấy hết người theo dõi',
-  })
   @ApiQuery({
     name: 'cursor',
     required: false,
     description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'key',
+    required: false,
+    description:
+      'từ khóa để tìm kiếm người dùng trong danh sách người theo dõi, có thể không điền',
     type: String,
   })
   async getMyFollowers(
@@ -148,12 +151,12 @@ export class FollowController {
   @Get(':username/followers')
   @ApiOperation({
     summary:
-      'Lấy danh sách người theo dõi **dựa trên tên người dùng** (có phân trang bằng con trỏ)',
+      'Lấy danh sách người theo dõi **dựa trên tên người dùng** (có phân trang bằng con trỏ, tìm kiếm dựa trên từ khóa)',
     description:
       '**Trả về danh sách người theo dõi của người dùng theo thứ tự gần đây nhất. ' +
       'Hỗ trợ phân trang tiến bằng một mã con trỏ nằm trên query string. ' +
       'Người dùng kéo hết thì gọi api tiếp kèm theo cursor' +
-      'Nếu không còn dữ liệu để trả về, máy chủ có thể trả trạng thái không có nội dung.**',
+      'Nếu không còn dữ liệu để trả về, máy chủ trả con trỏ null và mảng rỗng.**',
   })
   @ApiOkResponse({
     description:
@@ -162,9 +165,6 @@ export class FollowController {
   @ApiBadRequestResponse({
     description:
       'Thất bại: người dùng không hợp lệ hoặc mã con trỏ không hợp lệ',
-  })
-  @ApiNoContentResponse({
-    description: 'Không có người theo dõi / Đã lấy hết người theo dõi',
   })
   @ApiParam({
     name: 'username',
@@ -176,6 +176,13 @@ export class FollowController {
     name: 'cursor',
     required: false,
     description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'key',
+    required: false,
+    description:
+      'từ khóa để tìm kiếm người dùng trong danh sách người theo dõi, có thể không điền',
     type: String,
   })
   async getUserFollowers(
@@ -204,12 +211,12 @@ export class FollowController {
   @Get('followings')
   @ApiOperation({
     summary:
-      'Lấy danh sách người đang theo dõi của **chính người dùng** (có phân trang bằng con trỏ)',
+      'Lấy danh sách người đang theo dõi của **chính người dùng** (có phân trang bằng con trỏ, tìm kiếm dựa trên từ khóa)',
     description:
       '**Trả về danh sách người đang theo dõi của người dùng hiện tại theo thứ tự gần đây nhất. ' +
       'Hỗ trợ phân trang tiến bằng một mã con trỏ nằm trên query string. ' +
       'Người dùng kéo hết thì gọi api tiếp kèm theo cursor' +
-      'Nếu không còn dữ liệu để trả về, máy chủ có thể trả trạng thái không có nội dung.**',
+      'Nếu không còn dữ liệu để trả về, máy chủ trả về con trỏ null và mảng rỗng.**',
   })
   @ApiOkResponse({
     description:
@@ -219,14 +226,17 @@ export class FollowController {
     description:
       'Thất bại: người dùng không hợp lệ hoặc mã con trỏ không hợp lệ',
   })
-  @ApiNoContentResponse({
-    description:
-      'Không có người đang theo dõi / Đã lấy hết người đang theo dõi',
-  })
   @ApiQuery({
     name: 'cursor',
     required: false,
     description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'key',
+    required: false,
+    description:
+      'từ khóa để tìm kiếm người dùng trong danh sách người đang theo dõi, có thể không điền',
     type: String,
   })
   async getMyFollowings(
@@ -255,12 +265,12 @@ export class FollowController {
   @Get(':username/followings')
   @ApiOperation({
     summary:
-      'Lấy danh sách người đang theo dõi dựa trên **tên người dùng** (có phân trang bằng con trỏ)',
+      'Lấy danh sách người đang theo dõi dựa trên **tên người dùng** (có phân trang bằng con trỏ, tìm kiếm dựa trên từ khóa)',
     description:
       '**Trả về danh sách người đang theo dõi của người dùng theo thứ tự gần đây nhất. ' +
       'Hỗ trợ phân trang tiến bằng một mã con trỏ nằm trên query string. ' +
       'Người dùng hiện tại kéo hết thì gọi api tiếp kèm theo cursor' +
-      'Nếu không còn dữ liệu để trả về, máy chủ có thể trả trạng thái không có nội dung.**',
+      'Nếu không còn dữ liệu để trả về, máy chủ trả về con trỏ null và mảng rỗng.**',
   })
   @ApiOkResponse({
     description:
@@ -269,10 +279,6 @@ export class FollowController {
   @ApiBadRequestResponse({
     description:
       'Thất bại: người dùng không hợp lệ hoặc mã con trỏ không hợp lệ',
-  })
-  @ApiNoContentResponse({
-    description:
-      'Không có người đang theo dõi / Đã lấy hết người đang theo dõi',
   })
   @ApiParam({
     name: 'username',
@@ -284,6 +290,13 @@ export class FollowController {
     name: 'cursor',
     required: false,
     description: 'Mã con trỏ để phân trang (JWT), có thể không điền',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'key',
+    required: false,
+    description:
+      'từ khóa để tìm kiếm người dùng trong danh sách người đang theo dõi, có thể không điền',
     type: String,
   })
   async getUserFollowings(
@@ -312,7 +325,8 @@ export class FollowController {
   @ApiOperation({ summary: 'Theo dõi người dùng' })
   @ApiOkResponse({ description: 'Đã theo dõi người dùng thành công' })
   @ApiBadRequestResponse({
-    description: 'Không thể follow chính mình / Đã theo dõi trước đó',
+    description:
+      'Không thể follow chính mình / Đã theo dõi trước đó/ Đã chặn người dùng này',
   })
   @ApiNotFoundResponse({ description: 'Người dùng không hợp lệ' })
   @ApiParam({
@@ -356,13 +370,12 @@ export class FollowController {
   @HttpCode(HttpStatus.OK)
   @Get(':username')
   @ApiOperation({
-    summary:
-      'Lấy thông tin người dùng và trạng thái theo dõi đối với người dùng hiện tại',
+    summary: 'Lấy trạng thái theo dõi đối với người dùng hiện tại',
   })
   @ApiOkResponse({
-    description: 'Lấy thông tin người dùng và trạng thái theo dõi thành công',
+    description: 'Lấy trạng thái theo dõi thành công',
   })
-  @ApiNotFoundResponse({ description: 'Người dùng không hợp lệ' })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy người dùng ' })
   @ApiParam({
     name: 'username',
     required: true,
