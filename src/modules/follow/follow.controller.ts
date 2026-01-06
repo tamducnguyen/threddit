@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Delete,
   Get,
@@ -16,31 +16,47 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../common/guard/throttler.guard';
 import { UsernameDTO } from './dtos/username.dto';
 import { TokenGuard } from '../common/guard/token.guard';
+import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
 import { AuthUser } from '../token/authuser.interface';
-import { SearchUserDTO } from './dtos/searchuser.dto';
 
 @Controller('follow')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
   @HttpCode(HttpStatus.OK)
-  @Get('me/count')
-  async getMyFollowNumber(@CurrentUser('username') username: string) {
-    return await this.followService.getFollowNumber(username);
+  @Get('count')
+  async getMyFollowNumber(@CurrentUser() currentUser: AuthUser) {
+    return await this.followService.getFollowNumber(currentUser);
   }
   @HttpCode(HttpStatus.OK)
   @Get(':username/count')
-  async getUserFollowNumber(@Param() usernameDTO: UsernameDTO) {
-    return await this.followService.getFollowNumber(usernameDTO.username);
+  async getUserFollowNumber(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() usernameDTO: UsernameDTO,
+  ) {
+    return await this.followService.getFollowNumber(
+      currentUser,
+      usernameDTO.username,
+    );
   }
   @HttpCode(HttpStatus.OK)
-  @Get('me/followers')
+  @Get('followers')
   async getMyFollowers(
     @CurrentUser('username') username: string,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
-    return this.followService.getFollowers(
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowersByKey(
+        username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
+    return await this.followService.getFollowers(
       username,
       currentUserId,
       cursorDTO.cursor,
@@ -51,10 +67,20 @@ export class FollowController {
   @Get(':username/followers')
   async getUserFollowers(
     @Param() usernameDTO: UsernameDTO,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
-    return this.followService.getFollowers(
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowersByKey(
+        usernameDTO.username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
+    return await this.followService.getFollowers(
       usernameDTO.username,
       currentUserId,
       cursorDTO.cursor,
@@ -62,13 +88,23 @@ export class FollowController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('me/followings')
+  @Get('followings')
   async getMyFollowings(
     @CurrentUser('username') username: string,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
-    return this.followService.getFollowings(
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowingsByKey(
+        username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
+    return await this.followService.getFollowings(
       username,
       currentUserId,
       cursorDTO.cursor,
@@ -79,9 +115,19 @@ export class FollowController {
   @Get(':username/followings')
   async getUserFollowings(
     @Param() usernameDTO: UsernameDTO,
-    @CurrentUser('sub') currentUserId: string,
+    @CurrentUser('sub') currentUserId: number,
+    @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
   ) {
+    const key = searchUserDTO.key?.trim();
+    if (key) {
+      return await this.followService.searchFollowingsByKey(
+        usernameDTO.username,
+        currentUserId,
+        key,
+        cursorDTO.cursor,
+      );
+    }
     return this.followService.getFollowings(
       usernameDTO.username,
       currentUserId,
@@ -111,27 +157,14 @@ export class FollowController {
     );
   }
   @HttpCode(HttpStatus.OK)
-  @Get(':username/state')
+  @Get(':username')
   async getFollowState(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.followService.getFollowState(
-      currentUsername,
-      usernameDTO.username,
-    );
-  }
-  @HttpCode(HttpStatus.OK)
-  @Get('search')
-  async getUsersByKey(
-    @CurrentUser() currentUser: AuthUser,
-    @Query() searchPostDTO: SearchUserDTO,
-    @Query() cursorDTO: CursorDTO,
-  ) {
-    return await this.followService.getUsersByKey(
       currentUser,
-      searchPostDTO,
-      cursorDTO.cursor,
+      usernameDTO.username,
     );
   }
 }
