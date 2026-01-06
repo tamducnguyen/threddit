@@ -32,6 +32,7 @@ services:
 
   web:
     build: .
+    image: tamducnguyen/threddit_web:latest
     container_name: threddit_web
     restart: always
     depends_on:
