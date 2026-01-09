@@ -10,6 +10,13 @@ export const FollowingContentCreationNotificationMessage = (
   authorDisplayName: string,
   contentType: ContentType,
 ) => `${authorDisplayName} vừa mới đăng tải ${contentType} mới`;
+export const FriendRequestNotificationMessage = (
+  requesterDisplayName: string,
+) => `${requesterDisplayName} gửi yêu cầu kết bạn`;
+export const FriendAcceptedNotificationMessage = (friendDisplayName: string) =>
+  `${friendDisplayName} chấp nhận lời mời kết bạn của bạn`;
+export const FriendConnectedNotificationMessage = (friendDisplayName: string) =>
+  `Bạn từ bây giờ đã là bạn bè với ${friendDisplayName}`;
 export const MentionInContentNotificationMessage = (
   authorDisplayName: string,
   contentType: ContentType,
@@ -24,6 +31,8 @@ export enum JobNotificationQueue {
   MENTION_IN_CONTENT = 'sendMentionInContentNotification',
   FOLLOW = 'sendFollowNotification',
   COMMENT = 'sendCommentNotification',
+  FRIEND_REQUEST = 'sendFriendRequestNotification',
+  FRIEND_ACCEPTED = 'sendFriendAcceptedNotification',
   MENTION_IN_COMMENT = 'sendMentionCommentNotification',
 }
 export const NameNotificationQueue = 'notification';

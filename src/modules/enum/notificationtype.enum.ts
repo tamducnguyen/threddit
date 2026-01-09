@@ -8,4 +8,5 @@ export enum NotificationType {
   REACTION_COMMENT = 'reaction_comment',
   FRIEND_CONTENT_CREATION = 'friend_content_creation',
   FRIEND_REQUEST = 'friend_request',
+  FRIEND_ACCEPTED = 'friend_accepted',
 }

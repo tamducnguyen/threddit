@@ -10,7 +10,7 @@ import {
 import { UserEntity } from './user.entity';
 import { FriendshipStatus } from '../enum/friendshipstatus.enum';
 
-@Entity('friendship')
+@Entity('friendships')
 @Index(['requester', 'recipient'], { unique: true })
 export class FriendshipEntity {
   @PrimaryGeneratedColumn('increment')

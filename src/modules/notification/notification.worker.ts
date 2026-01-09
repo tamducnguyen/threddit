@@ -8,9 +8,12 @@ import { NotificationEntity } from '../entities/notification.entity';
 import { NotificationType } from '../enum/notificationtype.enum';
 import {
   CommentNotificationMessage,
+  FriendAcceptedNotificationMessage,
+  FriendConnectedNotificationMessage,
   FollowingContentCreationNotificationMessage,
   FollowNotificationMessage,
   FriendContentCreationNotificationMessage,
+  FriendRequestNotificationMessage,
   JobNotificationQueue,
   MentionInCommentNotificationMessage,
   MentionInContentNotificationMessage,
@@ -179,6 +182,74 @@ export class NotificationWorker extends WorkerHost {
         const insertedNotification =
           await this.notificationRepo.saveNotification(notification);
         this.notificationService.notify(insertedNotification);
+        break;
+      }
+      //send friend request notification to recipient
+      case String(JobNotificationQueue.FRIEND_REQUEST): {
+        type SendFriendRequestNotificationInterface = {
+          requester: UserEntity;
+          recipient: UserEntity;
+        };
+        const data = job.data as SendFriendRequestNotificationInterface;
+        const target: NotificationTarget = {
+          type: 'FRIEND_REQUEST',
+          actorAvatarUrl: this.STORAGE_URL + data.requester.avatarRelativePath,
+          actorDisplayName: data.requester.displayName,
+          actorUsername: data.requester.username,
+        };
+        const notification: Partial<NotificationEntity> = {
+          owner: data.recipient,
+          message: FriendRequestNotificationMessage(data.requester.displayName),
+          type: NotificationType.FRIEND_REQUEST,
+          target: target,
+        };
+        const insertedNotification =
+          await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(insertedNotification);
+        break;
+      }
+      //send friend accepted notification to both users
+      case String(JobNotificationQueue.FRIEND_ACCEPTED): {
+        type SendFriendAcceptedNotificationInterface = {
+          requester: UserEntity;
+          recipient: UserEntity;
+        };
+        const data = job.data as SendFriendAcceptedNotificationInterface;
+        const requesterTarget: NotificationTarget = {
+          type: 'FRIEND_ACCEPTED',
+          actorAvatarUrl: this.STORAGE_URL + data.recipient.avatarRelativePath,
+          actorDisplayName: data.recipient.displayName,
+          actorUsername: data.recipient.username,
+        };
+        const recipientTarget: NotificationTarget = {
+          type: 'FRIEND_ACCEPTED',
+          actorAvatarUrl: this.STORAGE_URL + data.requester.avatarRelativePath,
+          actorDisplayName: data.requester.displayName,
+          actorUsername: data.requester.username,
+        };
+        const notifications: Partial<NotificationEntity>[] = [
+          {
+            owner: data.requester,
+            message: FriendAcceptedNotificationMessage(
+              data.recipient.displayName,
+            ),
+            type: NotificationType.FRIEND_ACCEPTED,
+            target: requesterTarget,
+          },
+          {
+            owner: data.recipient,
+            message: FriendConnectedNotificationMessage(
+              data.requester.displayName,
+            ),
+            type: NotificationType.FRIEND_ACCEPTED,
+            target: recipientTarget,
+          },
+        ];
+        const insertedNotifications =
+          await this.notificationRepo.insertNotifications(notifications);
+        insertedNotifications.forEach((insertedNotification) =>
+          this.notificationService.notify(insertedNotification),
+        );
         break;
       }
       //send notification comment to author
