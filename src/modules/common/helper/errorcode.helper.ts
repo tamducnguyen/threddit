@@ -120,6 +120,72 @@ export const errorCode = {
       user_not_found: '74',
     },
   },
+  friendship: {
+    send_request: {
+      recipient_blocked: '100',
+      cant_self_request: '90',
+      user_not_found: '91',
+      friendship_exists: '92',
+      request_already_sent: '93',
+    },
+    get_received_requests: {
+      cursor_invalid: '94',
+    },
+    get_sent_requests: {
+      cursor_invalid: '95',
+    },
+    accept_request: {
+      user_not_found: '96',
+      request_not_found: '97',
+      cant_accept_self: '98',
+      friendship_exists: '99',
+    },
+    reject_request: {
+      request_not_found: '101',
+      friendship_exists: '102',
+    },
+    cancel_request: {
+      request_not_found: '103',
+      friendship_exists: '104',
+    },
+    get_friend_list: {
+      cursor_invalid: '105',
+    },
+    get_user_friend_list: {
+      user_not_found: '106',
+      cursor_invalid: '107',
+    },
+    get_mutual_friend_list: {
+      user_not_found: '108',
+      cursor_invalid: '109',
+      cant_self_get: '120',
+    },
+    get_friend_count: {
+      success: '110',
+    },
+    get_user_friend_count: {
+      user_not_found: '111',
+    },
+    get_friend_status: {
+      user_not_found: '115',
+      cant_self_check: '116',
+    },
+    unfriend: {
+      user_not_found: '117',
+      friend_not_found: '118',
+      cant_self_unfriend: '119',
+    },
+    get_mutual_friend_count: {
+      user_not_found: '112',
+      cant_self_get: '121',
+    },
+    get_sent_request_count: {
+      success: '113',
+    },
+    get_received_request_count: {
+      success: '114',
+    },
+  },
   notification: {
     create_stream: {
       user_not_found: '81',

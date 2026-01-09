@@ -11,6 +11,7 @@ import { throttlerConfig } from './modules/config/throttler.config';
 import { AccountModule } from './modules/account/account.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FollowModule } from './modules/follow/follow.module';
+import { FriendshipModule } from './modules/friendship/friendship.module';
 // import { PostModule } from './modules/post/post.module';
 import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
@@ -25,6 +26,7 @@ import { ProfileModule } from './modules/profile/profile.module';
     AccountModule,
     NotificationModule,
     FollowModule,
+    FriendshipModule,
     // PostModule,
     ProfileModule,
     ThrottlerModule.forRootAsync({

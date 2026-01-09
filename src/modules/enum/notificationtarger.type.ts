@@ -68,4 +68,10 @@ export type NotificationTarget =
       actorUsername: string;
       actorDisplayName: string;
       actorAvatarUrl: string;
+    }
+  | {
+      type: 'FRIEND_ACCEPTED';
+      actorUsername: string;
+      actorDisplayName: string;
+      actorAvatarUrl: string;
     };

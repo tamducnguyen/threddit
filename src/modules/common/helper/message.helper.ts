@@ -198,6 +198,86 @@ export const message = {
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
   },
+  friendship: {
+    send_request: {
+      recipient_blocked:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để gửi lời mời',
+      cant_self_request: 'Không thể gửi lời mời kết bạn cho chính mình',
+      user_not_found: 'Không tìm thấy người dùng này, hãy thử lại',
+      friendship_exists: 'Bạn và người dùng này đã là bạn bè',
+      request_already_sent: 'Đã gửi lời mời kết bạn trước đó',
+      friendship_accepted:
+        'Người này đã gửi lời mời cho bạn trước đó. Bây giờ cả hai đã là bạn bè',
+      success: 'Gửi lời mời kết bạn thành công',
+    },
+    get_received_requests: {
+      success: 'Lấy danh sách lời mời kết bạn đã nhận thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    get_sent_requests: {
+      success: 'Lấy danh sách lời mời kết bạn đã gửi thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    accept_request: {
+      success: 'Chấp nhận kết bạn thành công',
+      request_not_found: 'Không tìm thấy lời mời kết bạn',
+      friendship_exists: 'Bạn và người dùng này đã là bạn bè trước đó',
+    },
+    reject_request: {
+      success: 'Từ chối kết bạn thành công',
+      request_not_found: 'Không tìm thấy lời mời kết bạn',
+      friendship_exists: 'Bạn và người dùng này đã là bạn bè trước đó',
+    },
+    cancel_request: {
+      success: 'Hủy lời mời kết bạn thành công',
+      request_not_found: 'Không tìm thấy lời mời kết bạn',
+      friendship_exists: 'Bạn và người dùng này đã là bạn bè trước đó',
+    },
+    get_friend_list: {
+      success: 'Lấy danh sách bạn bè thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    get_user_friend_list: {
+      success: 'Lấy danh sách bạn bè thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    get_mutual_friend_list: {
+      success: 'Lấy danh sách bạn bè chung thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      cant_self_get: 'Lấy danh sách bạn chung không hợp lệ',
+    },
+    get_friend_count: {
+      success: 'Lấy số lượng bạn bè thành công',
+    },
+    get_user_friend_count: {
+      success: 'Lấy số lượng bạn bè thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+    },
+    get_friend_status: {
+      success: 'Lấy trạng thái bạn bè thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+      cant_self_check: 'Lấy trạng thái không hợp lệ',
+    },
+    unfriend: {
+      success: 'Hủy kết bạn thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+      friend_not_found: 'Không tìm thấy bạn bè',
+      cant_self_unfriend: 'Hủy kết bạn không hợp lệ',
+    },
+    get_mutual_friend_count: {
+      success: 'Lấy số lượng bạn chung thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+      cant_self_get: 'Lấy số lượng bạn chung không hợp lệ',
+    },
+    get_sent_request_count: {
+      success: 'Lấy số lượng yêu cầu kết bạn đã gửi thành công',
+    },
+    get_received_request_count: {
+      success: 'Lấy số lượng yêu cầu kết bạn đã nhận thành công',
+    },
+  },
   post: {
     get_created_post: {
       user_not_found: 'Người dùng không tồn tại',
