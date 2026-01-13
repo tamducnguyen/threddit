@@ -2,12 +2,10 @@ import {
   BadRequestException,
   HttpStatus,
   Injectable,
-  UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ProfileRepository } from './profile.repository';
 import { AuthUser } from '../token/authuser.interface';
-import { UsernameDTO } from './dtos/username.dto';
-import { UserEntity } from '../entities/user.entity';
 import { sendResponse } from '../common/helper/response.helper';
 import { message } from '../common/helper/message.helper';
 import { ConfigService } from '@nestjs/config';
@@ -42,17 +40,12 @@ export class ProfileService {
    * @param usernameDTO
    * @returns
    */
-  async getProfile(currentUser: AuthUser, usernameDTO?: UsernameDTO) {
-    const paramUsername = usernameDTO?.username;
-    //if not have param, get current user profile
-    let profileFound: UserEntity | null;
-    if (paramUsername) {
-      profileFound = await this.profileRepo.getProfileByUsername(paramUsername);
-    } else {
-      profileFound = await this.profileRepo.getProfileById(currentUser.sub);
-    }
-    //check if username not found
-    if (!profileFound) {
+  async getSelfProfile(currentUser: AuthUser) {
+    //check if user exist
+    const userFound = await this.profileRepo.findUserByUsername(
+      currentUser.username,
+    );
+    if (!userFound) {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -63,18 +56,70 @@ export class ProfileService {
       );
     }
     //convert relative path into url
-    const avatarUrl = profileFound.avatarRelativePath
-      ? this.STORAGE_URL + profileFound.avatarRelativePath
+    const avatarUrl = userFound.avatarRelativePath
+      ? this.STORAGE_URL + userFound.avatarRelativePath
       : null;
-    const backgroundImageUrl = profileFound.backgroundImageRelativePath
-      ? this.STORAGE_URL + profileFound.backgroundImageRelativePath
+    const backgroundImageUrl = userFound.backgroundImageRelativePath
+      ? this.STORAGE_URL + userFound.backgroundImageRelativePath
       : null;
     //send response
     const profile = {
-      email: profileFound.email,
-      displayName: profileFound.displayName,
-      dateOfBirth: profileFound.dateOfBirth,
-      gender: profileFound.gender,
+      email: userFound.email,
+      username: userFound.username,
+      displayName: userFound.displayName,
+      dateOfBirth: userFound.dateOfBirth,
+      gender: userFound.gender,
+      avatarUrl: avatarUrl,
+      backgroundImageUrl: backgroundImageUrl,
+    };
+    return sendResponse(
+      HttpStatus.OK,
+      message.profile.get_profile.success,
+      profile,
+    );
+  }
+  async getOtherProfile(currentUser: AuthUser, otherUsername: string) {
+    //check if user exist
+    const userFound = await this.profileRepo.findUserByUsername(otherUsername);
+    if (!userFound) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.profile.get_profile.user_not_found,
+          undefined,
+          errorCode.profile.get_profile.user_not_found,
+        ),
+      );
+    }
+    //check if current user got blocked
+    const isBlocked = await this.profileRepo.checkBlocked(
+      currentUser.sub,
+      userFound.id,
+    );
+    if (isBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.profile.get_profile.user_not_found,
+          undefined,
+          errorCode.profile.get_profile.user_not_found,
+        ),
+      );
+    }
+    //convert relative path into url
+    const avatarUrl = userFound.avatarRelativePath
+      ? this.STORAGE_URL + userFound.avatarRelativePath
+      : null;
+    const backgroundImageUrl = userFound.backgroundImageRelativePath
+      ? this.STORAGE_URL + userFound.backgroundImageRelativePath
+      : null;
+    //send response
+    const profile = {
+      email: userFound.email,
+      username: userFound.username,
+      displayName: userFound.displayName,
+      dateOfBirth: userFound.dateOfBirth,
+      gender: userFound.gender,
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
     };
@@ -94,9 +139,9 @@ export class ProfileService {
     const { sub } = currentUser;
     //check if there is no field to update
     if (
-      !updateProfileDTO.dateOfBirth &&
-      !updateProfileDTO.displayName &&
-      !updateProfileDTO.gender
+      updateProfileDTO.dateOfBirth === undefined &&
+      updateProfileDTO.displayName === undefined &&
+      updateProfileDTO.gender === undefined
     ) {
       throw new BadRequestException(
         sendResponse(
@@ -121,9 +166,9 @@ export class ProfileService {
       updateResult.affected == 0 ||
       !updatedProfile
     ) {
-      throw new UnauthorizedException(
+      throw new NotFoundException(
         sendResponse(
-          HttpStatus.UNAUTHORIZED,
+          HttpStatus.NOT_FOUND,
           message.profile.update_profile.user_not_found,
           undefined,
           errorCode.profile.update_profile.user_not_found,
@@ -238,9 +283,9 @@ export class ProfileService {
       updateResult.affected == 0 ||
       !updatedProfile
     ) {
-      throw new UnauthorizedException(
+      throw new NotFoundException(
         sendResponse(
-          HttpStatus.UNAUTHORIZED,
+          HttpStatus.NOT_FOUND,
           message.profile.update_profile.user_not_found,
           undefined,
           errorCode.profile.update_profile.user_not_found,
@@ -356,9 +401,9 @@ export class ProfileService {
       updateResult.affected == 0 ||
       !updatedProfile
     ) {
-      throw new UnauthorizedException(
+      throw new NotFoundException(
         sendResponse(
-          HttpStatus.UNAUTHORIZED,
+          HttpStatus.NOT_FOUND,
           message.profile.update_profile.user_not_found,
           undefined,
           errorCode.profile.update_profile.user_not_found,

@@ -29,15 +29,18 @@ export class ProfileController {
   @HttpCode(HttpStatus.OK)
   @Get()
   async getCurrentProfile(@CurrentUser() currentUser: AuthUser) {
-    return await this.profileService.getProfile(currentUser);
+    return await this.profileService.getSelfProfile(currentUser);
   }
   @HttpCode(HttpStatus.OK)
   @Get('/:username')
   async getProfile(
     @CurrentUser() currentUser: AuthUser,
-    @Param() usernameDTO?: UsernameDTO,
+    @Param() usernameDTO: UsernameDTO,
   ) {
-    return await this.profileService.getProfile(currentUser, usernameDTO);
+    return await this.profileService.getOtherProfile(
+      currentUser,
+      usernameDTO.username,
+    );
   }
   @HttpCode(HttpStatus.OK)
   @Post('avatar/presign')
@@ -85,7 +88,7 @@ export class ProfileController {
   }
   @HttpCode(HttpStatus.OK)
   @Patch('info')
-  async updateProfle(
+  async updateProfile(
     @CurrentUser() currentUser: AuthUser,
     @Body() updateProfileDTO: UpdateProfileDTO,
   ) {
