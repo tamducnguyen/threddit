@@ -381,6 +381,30 @@ export const message = {
       success: 'Cập nhật bình luận thành công',
     },
   },
+  block: {
+    post_block: {
+      success: 'Chặn người dùng thành công',
+      user_not_found: 'Người dùng không tồn tại',
+      cant_self_block: 'Không thể chặn chính mình',
+      already_blocked: 'Bạn đã chặn người dùng này trước đó',
+    },
+    delete_block: {
+      success: 'Gỡ chặn người dùng này thành công',
+      user_not_found: 'Người dùng không tồn tại',
+      cant_self_unblock: 'KHông thể gỡ chặn chính mình',
+      not_blocked: 'Bạn chưa chặn người dùng này',
+    },
+    get_blocked_list: {
+      success: 'Lấy danh sách người bạn đã chặn thành công',
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trở không hợp lệ',
+    },
+    get_block_status: {
+      success: 'Lấy trạng thái chặn thành công',
+      user_not_found: 'Không tìm thấy người dùng',
+      cant_self_check: 'Không thể kiếm tra chính mình',
+    },
+  },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',

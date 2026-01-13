@@ -186,6 +186,26 @@ export const errorCode = {
       success: '114',
     },
   },
+  block: {
+    post_block: {
+      user_not_found: '122',
+      cant_self_block: '123',
+      already_blocked: '124',
+    },
+    delete_block: {
+      user_not_found: '125',
+      cant_self_unblock: '126',
+      not_blocked: '127',
+    },
+    get_blocked_list: {
+      user_not_found: '128',
+      cursor_invalid: '129',
+    },
+    get_block_status: {
+      user_not_found: '130',
+      cant_self_check: '131',
+    },
+  },
   notification: {
     create_stream: {
       user_not_found: '81',

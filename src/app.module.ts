@@ -17,6 +17,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
 import { cacheConfig } from './modules/config/cache.config';
 import { ProfileModule } from './modules/profile/profile.module';
+import { BlockModule } from './modules/block/block.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ProfileModule } from './modules/profile/profile.module';
     FriendshipModule,
     // PostModule,
     ProfileModule,
+    BlockModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
