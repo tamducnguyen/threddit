@@ -42,9 +42,7 @@ export class ProfileService {
    */
   async getSelfProfile(currentUser: AuthUser) {
     //check if user exist
-    const userFound = await this.profileRepo.findUserByUsername(
-      currentUser.username,
-    );
+    const userFound = await this.profileRepo.findUserById(currentUser.sub);
     if (!userFound) {
       throw new BadRequestException(
         sendResponse(

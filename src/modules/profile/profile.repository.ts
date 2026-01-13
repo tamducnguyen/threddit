@@ -26,6 +26,21 @@ export class ProfileRepository {
       },
     });
   }
+  async findUserById(userId: number) {
+    return await this.userRepo.findOne({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        username: true,
+        avatarRelativePath: true,
+        backgroundImageRelativePath: true,
+        gender: true,
+        dateOfBirth: true,
+      },
+    });
+  }
   async checkUsernameExist(username: string) {
     return await this.userRepo.exists({ where: { username: username } });
   }
