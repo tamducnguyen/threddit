@@ -1,31 +1,21 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
+import { BlockEntity } from '../entities/block.entity';
 
 export class ProfileRepository {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(BlockEntity)
+    private readonly blockRepo: Repository<BlockEntity>,
     private readonly datasource: DataSource,
   ) {}
-  async getProfileByUsername(username: string) {
+  async findUserByUsername(username: string) {
     return await this.userRepo.findOne({
       where: { username: username },
       select: {
-        email: true,
-        displayName: true,
-        username: true,
-        avatarRelativePath: true,
-        backgroundImageRelativePath: true,
-        gender: true,
-        dateOfBirth: true,
-      },
-    });
-  }
-  async getProfileById(userId: number) {
-    return await this.userRepo.findOne({
-      where: { id: userId },
-      select: {
+        id: true,
         email: true,
         displayName: true,
         username: true,
@@ -45,6 +35,14 @@ export class ProfileRepository {
       const updateResult = await userRepo.update(userId, updateInfo);
       const updatedProfile = await userRepo.findOne({ where: { id: userId } });
       return { updateResult, updatedProfile };
+    });
+  }
+  async checkBlocked(blockedId: number, blockerId: number) {
+    return await this.blockRepo.exists({
+      where: {
+        blockedUser: { id: blockedId },
+        blocker: { id: blockerId },
+      },
     });
   }
 }

@@ -58,7 +58,7 @@ export class ProfileController {
     description: 'Không tìm thấy người dùng.',
   })
   async getCurrentProfile(@CurrentUser() currentUser: AuthUser) {
-    return await this.profileService.getProfile(currentUser);
+    return await this.profileService.getSelfProfile(currentUser);
   }
   @HttpCode(HttpStatus.OK)
   @Get('/:username')
@@ -82,9 +82,12 @@ export class ProfileController {
   })
   async getProfile(
     @CurrentUser() currentUser: AuthUser,
-    @Param() usernameDTO?: UsernameDTO,
+    @Param() usernameDTO: UsernameDTO,
   ) {
-    return await this.profileService.getProfile(currentUser, usernameDTO);
+    return await this.profileService.getOtherProfile(
+      currentUser,
+      usernameDTO.username,
+    );
   }
   @HttpCode(HttpStatus.OK)
   @Post('avatar/presign')
@@ -209,7 +212,7 @@ export class ProfileController {
   @ApiUnauthorizedResponse({
     description: 'Không tìm thấy người dùng.',
   })
-  async updateProfle(
+  async updateProfile(
     @CurrentUser() currentUser: AuthUser,
     @Body() updateProfileDTO: UpdateProfileDTO,
   ) {

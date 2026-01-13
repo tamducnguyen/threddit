@@ -15,8 +15,6 @@ import { FriendshipModule } from './modules/friendship/friendship.module';
 // import { PostModule } from './modules/post/post.module';
 import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
-import { ApiKeyGuard } from './modules/common/guard/apikey.guard';
-import { APP_GUARD } from '@nestjs/core';
 import { cacheConfig } from './modules/config/cache.config';
 import { ProfileModule } from './modules/profile/profile.module';
 
@@ -56,12 +54,6 @@ import { ProfileModule } from './modules/profile/profile.module';
     }),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ApiKeyGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
