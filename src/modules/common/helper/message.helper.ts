@@ -100,6 +100,8 @@ export const message = {
     get_profile: {
       success: 'Lấy hồ sơ người dùng thành công',
       user_not_found: 'Người dùng không tồn tại',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để có thể xem trang cá nhân của họ',
     },
     update_profile: {
       no_field_to_update: 'Không có trường thông tin nào để cập nhật',

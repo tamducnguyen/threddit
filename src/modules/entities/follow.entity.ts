@@ -14,7 +14,7 @@ import { UserEntity } from './user.entity';
 export class FollowEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
-  @ManyToOne(() => UserEntity, (user) => user.following, {
+  @ManyToOne(() => UserEntity, (user) => user.followings, {
     onDelete: 'CASCADE',
   })
   follower: UserEntity;
