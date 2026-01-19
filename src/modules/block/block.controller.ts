@@ -48,7 +48,7 @@ export class BlockController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('status/:username')
+  @Get(':username/status')
   async getBlockStatus(
     @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,

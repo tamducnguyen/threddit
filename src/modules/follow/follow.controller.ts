@@ -157,7 +157,7 @@ export class FollowController {
     );
   }
   @HttpCode(HttpStatus.OK)
-  @Get(':username')
+  @Get(':username/status')
   async getFollowState(
     @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,

@@ -132,7 +132,7 @@ export class FriendshipController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get(':username')
+  @Get(':username/status')
   async getFriendStatus(
     @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,

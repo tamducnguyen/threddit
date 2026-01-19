@@ -686,13 +686,13 @@ export class FollowService {
       );
     }
     //get user's follow state
-    const isFollow = await this.followRepo.checkExistFollow(
+    const isFollowing = await this.followRepo.checkExistFollow(
       currentUser.sub,
       getStateUserFound.id,
     );
     //send response
     const data = {
-      isFollow: isFollow,
+      isFollowing: isFollowing,
     };
     return sendResponse(
       HttpStatus.OK,

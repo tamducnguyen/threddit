@@ -688,21 +688,27 @@ export class FriendshipService {
       currentUser.sub,
       userFound.id,
     );
-    let friendStatus = 'none';
+    let friendshipStatus:
+      | 'accepted'
+      | 'pending_sent'
+      | 'pending_received'
+      | null;
     if (friendship) {
       if (friendship.status === FriendshipStatus.ACCEPTED) {
-        friendStatus = 'accepted';
-      } else if (friendship.status === FriendshipStatus.PENDING) {
-        friendStatus =
+        friendshipStatus = 'accepted';
+      } else {
+        friendshipStatus =
           friendship.requester.id === currentUser.sub
             ? 'pending_sent'
             : 'pending_received';
       }
+    } else {
+      friendshipStatus = null;
     }
     return sendResponse(
       HttpStatus.OK,
       message.friendship.get_friend_status.success,
-      { friendStatus },
+      { friendshipStatus },
     );
   }
 
