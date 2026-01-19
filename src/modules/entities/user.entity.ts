@@ -16,6 +16,8 @@ import { SaveEntity } from './save.entity';
 import { CommentEntity } from './comment.entity';
 import { BlockEntity } from './block.entity';
 import { ReactionEntity } from './reaction.entity';
+import { EducationalLevel } from '../enum/educationallevel.enum';
+import { RelationshipStatus } from '../enum/relationshipstatus.enum';
 
 @Entity('users')
 @Index(['username', 'id'])
@@ -29,9 +31,23 @@ export class UserEntity {
   @Column({ name: 'display_name', type: 'varchar' })
   displayName: string;
   @Column({ type: 'enum', enum: Gender, name: 'gender', nullable: true })
-  gender: Gender;
+  gender: Gender | null;
   @Column({ type: 'date', name: 'date_of_birth', nullable: true })
-  dateOfBirth: Date;
+  dateOfBirth: Date | null;
+  @Column({
+    name: 'educational_level',
+    type: 'enum',
+    enum: EducationalLevel,
+    nullable: true,
+  })
+  educationalLevel: EducationalLevel | null;
+  @Column({
+    name: 'relationship_status',
+    type: 'enum',
+    enum: RelationshipStatus,
+    nullable: true,
+  })
+  relationshipStatus: RelationshipStatus | null;
   @Column({
     name: 'avatar_relative_path',
     type: 'varchar',
@@ -55,7 +71,7 @@ export class UserEntity {
   @OneToMany(() => FollowEntity, (follow) => follow.followee)
   followers: FollowEntity[];
   @OneToMany(() => FollowEntity, (follow) => follow.follower)
-  following: FollowEntity[];
+  followings: FollowEntity[];
   @OneToMany(() => ContentEntity, (content) => content.author)
   createdContents: ContentEntity[];
   @OneToMany(() => NotificationEntity, (notification) => notification.owner)

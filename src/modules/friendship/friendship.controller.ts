@@ -271,7 +271,7 @@ export class FriendshipController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get(':username')
+  @Get(':username/status')
   @ApiOperation({ summary: 'Lấy trạng thái quan hệ bạn bè với người dùng' })
   @ApiOkResponse({ description: 'Trả về trạng thái quan hệ bạn bè.' })
   @ApiBadRequestResponse({ description: 'Yêu cầu không hợp lệ.' })

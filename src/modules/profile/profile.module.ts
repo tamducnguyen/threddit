@@ -7,10 +7,16 @@ import { UserEntity } from '../entities/user.entity';
 import { SessionEntity } from '../entities/session.entity';
 import { StorageModule } from '../storage/storage.module';
 import { BlockEntity } from '../entities/block.entity';
+import { FriendshipEntity } from '../entities/friendship.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, SessionEntity, BlockEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      SessionEntity,
+      BlockEntity,
+      FriendshipEntity,
+    ]),
     StorageModule,
   ],
   providers: [ProfileService, ProfileRepository],

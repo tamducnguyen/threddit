@@ -368,7 +368,7 @@ export class FollowController {
     );
   }
   @HttpCode(HttpStatus.OK)
-  @Get(':username')
+  @Get(':username/status')
   @ApiOperation({
     summary: 'Lấy trạng thái theo dõi đối với người dùng hiện tại',
   })

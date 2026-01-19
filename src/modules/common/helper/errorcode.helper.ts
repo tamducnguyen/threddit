@@ -64,6 +64,7 @@ export const errorCode = {
   profile: {
     get_profile: {
       user_not_found: '44',
+      target_user_block: '132',
     },
     update_profile: {
       no_field_to_update: '47',

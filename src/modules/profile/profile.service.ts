@@ -42,8 +42,10 @@ export class ProfileService {
    */
   async getSelfProfile(currentUser: AuthUser) {
     //check if user exist
-    const userFound = await this.profileRepo.findUserById(currentUser.sub);
-    if (!userFound) {
+    const profileFound = await this.profileRepo.getProfileByUserId(
+      currentUser.sub,
+    );
+    if (!profileFound) {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -54,21 +56,23 @@ export class ProfileService {
       );
     }
     //convert relative path into url
-    const avatarUrl = userFound.avatarRelativePath
-      ? this.STORAGE_URL + userFound.avatarRelativePath
-      : null;
-    const backgroundImageUrl = userFound.backgroundImageRelativePath
-      ? this.STORAGE_URL + userFound.backgroundImageRelativePath
-      : null;
+    const avatarUrl = this.STORAGE_URL + profileFound.avatarRelativePath;
+    const backgroundImageUrl =
+      this.STORAGE_URL + profileFound.backgroundImageRelativePath;
     //send response
     const profile = {
-      email: userFound.email,
-      username: userFound.username,
-      displayName: userFound.displayName,
-      dateOfBirth: userFound.dateOfBirth,
-      gender: userFound.gender,
+      email: profileFound.email,
+      username: profileFound.username,
+      displayName: profileFound.displayName,
+      dateOfBirth: profileFound.dateOfBirth,
+      gender: profileFound.gender,
+      educationalLevel: profileFound.educationalLevel,
+      relationshipStatus: profileFound.relationshipStatus,
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
+      followerNumber: profileFound.followerNumber,
+      followingNumber: profileFound.followingNumber,
+      friendNumber: profileFound.friendNumber,
     };
     return sendResponse(
       HttpStatus.OK,
@@ -80,6 +84,25 @@ export class ProfileService {
     //check if user exist
     const userFound = await this.profileRepo.findUserByUsername(otherUsername);
     if (!userFound) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.profile.get_profile.user_not_found,
+          undefined,
+          errorCode.profile.get_profile.user_not_found,
+        ),
+      );
+    }
+    //check if whose username is current user
+    if (userFound.id === currentUser.sub) {
+      return await this.getSelfProfile(currentUser);
+    }
+    //get profile
+    const profileFound = await this.profileRepo.getOtherProfileByUserId(
+      currentUser.sub,
+      userFound.id,
+    );
+    if (!profileFound) {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -104,22 +127,42 @@ export class ProfileService {
         ),
       );
     }
+    //check if current user block target user
+    const isTargetUserBlocked = await this.profileRepo.checkBlocked(
+      userFound.id,
+      currentUser.sub,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.profile.get_profile.target_user_block,
+          undefined,
+          errorCode.profile.get_profile.target_user_block,
+        ),
+      );
+    }
     //convert relative path into url
-    const avatarUrl = userFound.avatarRelativePath
-      ? this.STORAGE_URL + userFound.avatarRelativePath
-      : null;
-    const backgroundImageUrl = userFound.backgroundImageRelativePath
-      ? this.STORAGE_URL + userFound.backgroundImageRelativePath
-      : null;
+    const avatarUrl = this.STORAGE_URL + userFound.avatarRelativePath;
+    const backgroundImageUrl =
+      this.STORAGE_URL + userFound.backgroundImageRelativePath;
     //send response
     const profile = {
-      email: userFound.email,
-      username: userFound.username,
-      displayName: userFound.displayName,
-      dateOfBirth: userFound.dateOfBirth,
-      gender: userFound.gender,
+      email: profileFound.email,
+      username: profileFound.username,
+      displayName: profileFound.displayName,
+      dateOfBirth: profileFound.dateOfBirth,
+      gender: profileFound.gender,
+      educationalLevel: profileFound.educationalLevel,
+      relationshipStatus: profileFound.relationshipStatus,
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
+      followingNumber: profileFound.followingNumber,
+      followerNumber: profileFound.followerNumber,
+      friendNumber: profileFound.friendNumber,
+      friendshipStatus: profileFound.friendshipStatus,
+      isFollowing: profileFound.isFollowing,
+      mutualFriendNumber: profileFound.mutualFriendNumber,
     };
     return sendResponse(
       HttpStatus.OK,
@@ -139,7 +182,9 @@ export class ProfileService {
     if (
       updateProfileDTO.dateOfBirth === undefined &&
       updateProfileDTO.displayName === undefined &&
-      updateProfileDTO.gender === undefined
+      updateProfileDTO.gender === undefined &&
+      updateProfileDTO.educationalLevel === undefined &&
+      updateProfileDTO.relationshipStatus === undefined
     ) {
       throw new BadRequestException(
         sendResponse(
@@ -155,6 +200,8 @@ export class ProfileService {
       displayName: updateProfileDTO.displayName,
       gender: updateProfileDTO.gender,
       dateOfBirth: updateProfileDTO.dateOfBirth,
+      educationalLevel: updateProfileDTO.educationalLevel,
+      relationshipStatus: updateProfileDTO.relationshipStatus,
     };
     const { updatedProfile, updateResult } =
       await this.profileRepo.updateAndGetProfile(sub, updateInfo);
@@ -174,17 +221,16 @@ export class ProfileService {
       );
     }
     //convert relative path into url
-    const avatarUrl = updatedProfile.avatarRelativePath
-      ? this.STORAGE_URL + updatedProfile.avatarRelativePath
-      : null;
-    const backgroundImageUrl = updatedProfile.backgroundImageRelativePath
-      ? this.STORAGE_URL + updatedProfile.backgroundImageRelativePath
-      : null;
+    const avatarUrl = this.STORAGE_URL + updatedProfile.avatarRelativePath;
+    const backgroundImageUrl =
+      this.STORAGE_URL + updatedProfile.backgroundImageRelativePath;
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
       dateOfBirth: updatedProfile.dateOfBirth,
       gender: updatedProfile.gender,
+      educationalLevel: updatedProfile.educationalLevel,
+      relationshipStatus: updatedProfile.relationshipStatus,
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
     };
@@ -290,12 +336,9 @@ export class ProfileService {
         ),
       );
     }
-    const avatarUrl = updatedProfile.avatarRelativePath
-      ? this.STORAGE_URL + updatedProfile.avatarRelativePath
-      : null;
-    const backgroundImageUrl = updatedProfile.backgroundImageRelativePath
-      ? this.STORAGE_URL + updatedProfile.backgroundImageRelativePath
-      : null;
+    const avatarUrl = this.STORAGE_URL + updatedProfile.avatarRelativePath;
+    const backgroundImageUrl =
+      this.STORAGE_URL + updatedProfile.backgroundImageRelativePath;
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
@@ -408,12 +451,9 @@ export class ProfileService {
         ),
       );
     }
-    const avatarUrl = updatedProfile.avatarRelativePath
-      ? this.STORAGE_URL + updatedProfile.avatarRelativePath
-      : null;
-    const backgroundImageUrl = updatedProfile.backgroundImageRelativePath
-      ? this.STORAGE_URL + updatedProfile.backgroundImageRelativePath
-      : null;
+    const avatarUrl = this.STORAGE_URL + updatedProfile.avatarRelativePath;
+    const backgroundImageUrl =
+      this.STORAGE_URL + updatedProfile.backgroundImageRelativePath;
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,

@@ -106,7 +106,7 @@ export class BlockController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('status/:username')
+  @Get(':username/status')
   @ApiOperation({
     summary: 'Lấy trạng thái chặn của mình đối với người dùng khác',
   })
