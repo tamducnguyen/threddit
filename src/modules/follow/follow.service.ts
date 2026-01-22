@@ -670,6 +670,15 @@ export class FollowService {
         ),
       );
     }
+    //check if current user self-check
+    if (currentUser.sub === getStateUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follow_state.can_not_self_check,
+        ),
+      );
+    }
     //check if current user is blocked by whose username
     const isBlocked = await this.followRepo.checkBlocked(
       currentUser.sub,

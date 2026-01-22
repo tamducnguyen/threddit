@@ -192,12 +192,8 @@ export const message = {
     },
     get_follow_state: {
       user_not_found: 'Người dùng không tồn tại',
+      can_not_self_check: 'Yêu cầu không hợp lệ',
       sucess: 'Lấy trạng thái theo dõi thành công',
-    },
-    get_user_by_key: {
-      success: 'Tìm kiếm người dùng thành công',
-      no_content: 'Hết danh sách người dùng hoặc là không có',
-      cursor_invalid: 'Con trỏ không hợp lệ',
     },
   },
   friendship: {
