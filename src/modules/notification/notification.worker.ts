@@ -22,19 +22,18 @@ import {
 import { CommentEntity } from '../entities/comment.entity';
 import { NotificationTarget } from '../enum/notificationtarger.type';
 import { ConfigService } from '@nestjs/config';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Processor(NameNotificationQueue, {
   concurrency: parseInt(process.env.NOTIFICATION_CONCURRENCY || '5', 10),
 })
 export class NotificationWorker extends WorkerHost {
-  private STORAGE_URL: string;
   constructor(
     private readonly notificationService: NotificationService,
     private readonly notificationRepo: NotificationRepository,
     private readonly configService: ConfigService,
   ) {
     super();
-    this.STORAGE_URL = this.configService.getOrThrow('STORAGE_URL');
   }
   async process(job: Job) {
     switch (job.name) {
@@ -61,8 +60,10 @@ export class NotificationWorker extends WorkerHost {
         //create notifications for friends
         const friendNotifications: Partial<NotificationEntity>[] = friends.map(
           (friend) => {
-            const actorAvatarUrl =
-              this.STORAGE_URL + data.currentUser.avatarRelativePath;
+            const actorAvatarUrl = ConvertMediaRelativePathToUrl(
+              this.configService,
+              data.currentUser.avatarRelativePath,
+            );
             const target: NotificationTarget = {
               type: 'FRIEND_CONTENT_CREATION',
               contentId: data.createdContent.id,
@@ -85,8 +86,10 @@ export class NotificationWorker extends WorkerHost {
         //create notifications for followers
         const followerNotifications: Partial<NotificationEntity>[] =
           pureFollowers.map((follower) => {
-            const actorAvatarUrl =
-              this.STORAGE_URL + data.currentUser.avatarRelativePath;
+            const actorAvatarUrl = ConvertMediaRelativePathToUrl(
+              this.configService,
+              data.currentUser.avatarRelativePath,
+            );
             const target: NotificationTarget = {
               type: 'FOLLOWING_CONTENT_CREATION',
               contentId: data.createdContent.id,
@@ -132,8 +135,10 @@ export class NotificationWorker extends WorkerHost {
           type: 'MENTION_IN_CONTENT',
           contentId: data.mentioningContent.id,
           contentType: data.mentioningContent.type,
-          actorAvatarUrl:
-            this.STORAGE_URL + data.currentUser.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.currentUser.avatarRelativePath,
+          ),
           actorDisplayName: data.currentUser.displayName,
           actorUsername: data.currentUser.username,
         };
@@ -168,8 +173,10 @@ export class NotificationWorker extends WorkerHost {
         const data = job.data as SendFollowNotificationInterface;
         const target: NotificationTarget = {
           type: 'FOLLOW',
-          actorAvatarUrl:
-            this.STORAGE_URL + data.currentUser.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.currentUser.avatarRelativePath,
+          ),
           actorDisplayName: data.currentUser.displayName,
           actorUsername: data.currentUser.username,
         };
@@ -193,7 +200,10 @@ export class NotificationWorker extends WorkerHost {
         const data = job.data as SendFriendRequestNotificationInterface;
         const target: NotificationTarget = {
           type: 'FRIEND_REQUEST',
-          actorAvatarUrl: this.STORAGE_URL + data.requester.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.requester.avatarRelativePath,
+          ),
           actorDisplayName: data.requester.displayName,
           actorUsername: data.requester.username,
         };
@@ -217,13 +227,19 @@ export class NotificationWorker extends WorkerHost {
         const data = job.data as SendFriendAcceptedNotificationInterface;
         const requesterTarget: NotificationTarget = {
           type: 'FRIEND_ACCEPTED',
-          actorAvatarUrl: this.STORAGE_URL + data.recipient.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.recipient.avatarRelativePath,
+          ),
           actorDisplayName: data.recipient.displayName,
           actorUsername: data.recipient.username,
         };
         const recipientTarget: NotificationTarget = {
           type: 'FRIEND_ACCEPTED',
-          actorAvatarUrl: this.STORAGE_URL + data.requester.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.requester.avatarRelativePath,
+          ),
           actorDisplayName: data.requester.displayName,
           actorUsername: data.requester.username,
         };
@@ -262,8 +278,10 @@ export class NotificationWorker extends WorkerHost {
           type: 'COMMENT',
           contentId: data.comment.content.id,
           commentId: data.comment.id,
-          actorAvatarUrl:
-            this.STORAGE_URL + data.comment.commenter.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.comment.commenter.avatarRelativePath,
+          ),
           actorDisplayName: data.comment.commenter.displayName,
           actorUsername: data.comment.commenter.username,
         };
@@ -292,8 +310,10 @@ export class NotificationWorker extends WorkerHost {
           type: 'MENTION_IN_COMMENT',
           contentId: data.comment.content.id,
           commentId: data.comment.id,
-          actorAvatarUrl:
-            this.STORAGE_URL + data.comment.commenter.avatarRelativePath,
+          actorAvatarUrl: ConvertMediaRelativePathToUrl(
+            this.configService,
+            data.comment.commenter.avatarRelativePath,
+          ),
           actorDisplayName: data.comment.commenter.displayName,
           actorUsername: data.comment.commenter.username,
         };

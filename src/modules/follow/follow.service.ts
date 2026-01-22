@@ -19,19 +19,17 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Injectable()
 export class FollowService {
-  private STORAGE_URL: string;
   constructor(
     private readonly followRepo: FollowRepository,
     private readonly jwtService: JwtService,
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
     private readonly configService: ConfigService,
-  ) {
-    this.STORAGE_URL = this.configService.getOrThrow<string>('STORAGE_URL');
-  }
+  ) {}
   private mapFollowerUser(user: {
     email: string;
     username: string;
@@ -42,10 +40,16 @@ export class FollowService {
     dateOfBirth: Date | null;
   }) {
     const avatarUrl = user.avatarRelativePath
-      ? this.STORAGE_URL + user.avatarRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.avatarRelativePath,
+        )
       : null;
     const backgroundImageUrl = user.backgroundImageRelativePath
-      ? this.STORAGE_URL + user.backgroundImageRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.backgroundImageRelativePath,
+        )
       : null;
     return {
       email: user.email,

@@ -13,17 +13,15 @@ import { JwtService } from '@nestjs/jwt';
 import { Cursor } from '../interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { QueryFailedError } from 'typeorm';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Injectable()
 export class BlockService {
-  private STORAGE_URL: string;
   constructor(
     private readonly blockRepo: BlockRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {
-    this.STORAGE_URL = this.configService.getOrThrow<string>('STORAGE_URL');
-  }
+  ) {}
 
   private mapBlockedUser(user: {
     email: string;
@@ -35,10 +33,16 @@ export class BlockService {
     dateOfBirth: Date | null;
   }) {
     const avatarUrl = user.avatarRelativePath
-      ? this.STORAGE_URL + user.avatarRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.avatarRelativePath,
+        )
       : null;
     const backgroundImageUrl = user.backgroundImageRelativePath
-      ? this.STORAGE_URL + user.backgroundImageRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.backgroundImageRelativePath,
+        )
       : null;
     return {
       email: user.email,

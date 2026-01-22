@@ -20,10 +20,10 @@ import { JwtService } from '@nestjs/jwt';
 import { Cursor } from '../interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Injectable()
 export class FriendshipService {
-  private STORAGE_URL: string;
   constructor(
     private readonly friendshipRepo: FriendshipRepository,
     @InjectQueue(NameNotificationQueue)
@@ -32,7 +32,7 @@ export class FriendshipService {
     private readonly configService: ConfigService,
   ) {}
 
-  private mapRequesterUser(user: {
+  private mapUser(user: {
     email: string;
     username: string;
     displayName: string;
@@ -41,14 +41,17 @@ export class FriendshipService {
     gender: unknown;
     dateOfBirth: Date | null;
   }) {
-    if (!this.STORAGE_URL) {
-      this.STORAGE_URL = this.configService.getOrThrow<string>('STORAGE_URL');
-    }
     const avatarUrl = user.avatarRelativePath
-      ? this.STORAGE_URL + user.avatarRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.avatarRelativePath,
+        )
       : null;
     const backgroundImageUrl = user.backgroundImageRelativePath
-      ? this.STORAGE_URL + user.backgroundImageRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.backgroundImageRelativePath,
+        )
       : null;
     return {
       email: user.email,
@@ -244,7 +247,7 @@ export class FriendshipService {
     const receivedFriendRequestList = receivedFriendRequestListRaw.map(
       (request) => ({
         friendshipId: request.id,
-        requester: this.mapRequesterUser(request.requester),
+        requester: this.mapUser(request.requester),
         createdAt: request.createdAt,
       }),
     );
@@ -307,7 +310,7 @@ export class FriendshipService {
     }
     const sentFriendRequestList = sentFriendRequestListRaw.map((request) => ({
       friendshipId: request.id,
-      recipient: this.mapRequesterUser(request.recipient),
+      recipient: this.mapUser(request.recipient),
       createdAt: request.createdAt,
     }));
     //sign next cursor
@@ -520,7 +523,7 @@ export class FriendshipService {
           : friendship.requester;
       return {
         friendshipId: friendship.id,
-        friend: this.mapRequesterUser(friend),
+        friend: this.mapUser(friend),
         createdAt: friendship.createdAt,
       };
     });
@@ -623,7 +626,7 @@ export class FriendshipService {
           ? friendship.recipient
           : friendship.requester;
       return {
-        friend: this.mapRequesterUser(friend),
+        friend: this.mapUser(friend),
         isFriend:
           friend.id === currentUser.sub
             ? undefined
@@ -865,7 +868,7 @@ export class FriendshipService {
           : friendship.requester;
       return {
         friendshipId: friendship.id,
-        friend: this.mapRequesterUser(friend),
+        friend: this.mapUser(friend),
         createdAt: friendship.createdAt,
       };
     });
