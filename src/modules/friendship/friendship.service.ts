@@ -69,9 +69,9 @@ export class FriendshipService {
    * @param currentUsername
    * @param recipientUsername
    */
-  async sendFriendRequest(currentUsername: string, recipientUsername: string) {
+  async sendFriendRequest(currentUser: AuthUser, recipientUsername: string) {
     //check if current user sends request to self
-    if (currentUsername === recipientUsername) {
+    if (currentUser.username === recipientUsername) {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -83,8 +83,9 @@ export class FriendshipService {
     }
 
     //check if users exist
-    const currentUserFound =
-      await this.friendshipRepo.findUserByUsername(currentUsername);
+    const currentUserFound = await this.friendshipRepo.findUserById(
+      currentUser.sub,
+    );
     const recipientUserFound =
       await this.friendshipRepo.findUserByUsername(recipientUsername);
     if (!currentUserFound || !recipientUserFound) {

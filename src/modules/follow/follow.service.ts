@@ -595,9 +595,9 @@ export class FollowService {
    * @param followeeUsername
    * @returns
    */
-  async postFollow(currentUsername: string, followeeUsername: string) {
+  async postFollow(currentUser: AuthUser, followeeUsername: string) {
     //check if current user self follow
-    if (followeeUsername === currentUsername) {
+    if (followeeUsername === currentUser.username) {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -608,8 +608,9 @@ export class FollowService {
       );
     }
     //check if current and followee user exist
-    const currentUserFound =
-      await this.followRepo.findUserByUsername(currentUsername);
+    const currentUserFound = await this.followRepo.findUserById(
+      currentUser.sub,
+    );
     const followeeUserFound =
       await this.followRepo.findUserByUsername(followeeUsername);
     if (!currentUserFound || !followeeUserFound) {
@@ -690,10 +691,11 @@ export class FollowService {
    * @param followeeUsername
    * @returns
    */
-  async deleteFollow(currentUsername: string, followeeUsername: string) {
+  async deleteFollow(currentUser: AuthUser, followeeUsername: string) {
     //check if current and followee user exist
-    const currentUserFound =
-      await this.followRepo.findUserByUsername(currentUsername);
+    const currentUserFound = await this.followRepo.findUserById(
+      currentUser.sub,
+    );
     const followeeUserFound =
       await this.followRepo.findUserByUsername(followeeUsername);
     if (!currentUserFound || !followeeUserFound) {

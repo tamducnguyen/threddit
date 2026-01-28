@@ -21,6 +21,9 @@ export class FriendshipRepository {
   async findUserByUsername(username: string) {
     return await this.userRepo.findOne({ where: { username: username } });
   }
+  async findUserById(id: number) {
+    return await this.userRepo.findOne({ where: { id: id } });
+  }
 
   async findFriendship(requesterId: number, recipientId: number) {
     return await this.friendshipRepo.findOne({

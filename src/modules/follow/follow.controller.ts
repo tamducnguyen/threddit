@@ -137,22 +137,22 @@ export class FollowController {
   @HttpCode(HttpStatus.OK)
   @Post(':username')
   async postFollow(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.followService.postFollow(
-      currentUsername,
+      currentUser,
       usernameDTO.username,
     );
   }
   @HttpCode(HttpStatus.OK)
   @Delete(':username')
   async deleteFollow(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.followService.deleteFollow(
-      currentUsername,
+      currentUser,
       usernameDTO.username,
     );
   }

@@ -28,11 +28,11 @@ export class FriendshipController {
   @HttpCode(HttpStatus.OK)
   @Post('request/:username')
   async sendFriendRequest(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.friendshipService.sendFriendRequest(
-      currentUsername,
+      currentUser,
       usernameDTO.username,
     );
   }

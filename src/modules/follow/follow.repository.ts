@@ -19,6 +19,9 @@ export class FollowRepository {
   async findUserByUsername(username: string) {
     return await this.userRepo.findOne({ where: { username: username } });
   }
+  async findUserById(id: number) {
+    return await this.userRepo.findOne({ where: { id: id } });
+  }
   async countFollowing(userId: number) {
     return await this.followRepo.count({
       where: { follower: { id: userId } },
