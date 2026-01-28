@@ -576,6 +576,21 @@ export class FriendshipService {
           ),
         );
       }
+      //check if current user blocked target user
+      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
+        userFound.id,
+        currentUser.sub,
+      );
+      if (isTargetUserBlocked) {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.friendship.get_user_friend_list.target_user_block,
+            undefined,
+            errorCode.friendship.get_user_friend_list.target_user_block,
+          ),
+        );
+      }
     }
     //check cursor and decode
     let cursorDecoded: Cursor | undefined;
@@ -684,6 +699,21 @@ export class FriendshipService {
           message.friendship.get_friend_status.user_not_found,
           undefined,
           errorCode.friendship.get_friend_status.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked target user
+    const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
+      userFound.id,
+      currentUser.sub,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.friendship.get_friend_status.target_user_block,
+          undefined,
+          errorCode.friendship.get_friend_status.target_user_block,
         ),
       );
     }
@@ -828,6 +858,21 @@ export class FriendshipService {
           ),
         );
       }
+      //check if current user blocked target user
+      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
+        userFound.id,
+        currentUser.sub,
+      );
+      if (isTargetUserBlocked) {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.friendship.get_mutual_friend_list.target_user_block,
+            undefined,
+            errorCode.friendship.get_mutual_friend_list.target_user_block,
+          ),
+        );
+      }
     }
     //check cursor and decode
     let cursorDecoded: Cursor | undefined;
@@ -928,6 +973,21 @@ export class FriendshipService {
           ),
         );
       }
+      //check if current user blocked target user
+      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
+        userFound.id,
+        currentUser.sub,
+      );
+      if (isTargetUserBlocked) {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.friendship.get_user_friend_count.target_user_block,
+            undefined,
+            errorCode.friendship.get_user_friend_count.target_user_block,
+          ),
+        );
+      }
     }
     const friendCount = await this.friendshipRepo.countFriends(userFound.id);
     return sendResponse(
@@ -979,6 +1039,21 @@ export class FriendshipService {
             message.friendship.get_mutual_friend_count.user_not_found,
             undefined,
             errorCode.friendship.get_mutual_friend_count.user_not_found,
+          ),
+        );
+      }
+      //check if current user blocked target user
+      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
+        userFound.id,
+        currentUser.sub,
+      );
+      if (isTargetUserBlocked) {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.friendship.get_mutual_friend_count.target_user_block,
+            undefined,
+            errorCode.friendship.get_mutual_friend_count.target_user_block,
           ),
         );
       }

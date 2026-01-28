@@ -101,6 +101,21 @@ export class FollowService {
           ),
         );
       }
+      //check if current user blocked this user
+      const isTargetUserBlocked = await this.followRepo.checkBlocked(
+        getFollowNumberUserFound.id,
+        currentUser.sub,
+      );
+      if (isTargetUserBlocked) {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.follow.get_follow_number.target_user_block,
+            undefined,
+            errorCode.follow.get_follow_number.target_user_block,
+          ),
+        );
+      }
       userId = getFollowNumberUserFound.id;
     }
     //get follow numbers
@@ -146,6 +161,21 @@ export class FollowService {
           message.follow.get_follower_list.user_not_found,
           undefined,
           errorCode.follow.get_follower_list.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follower_list.target_user_block,
+          undefined,
+          errorCode.follow.get_follower_list.target_user_block,
         ),
       );
     }
@@ -246,6 +276,21 @@ export class FollowService {
           message.follow.get_following_list.user_not_found,
           undefined,
           errorCode.follow.get_following_list.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_following_list.target_user_block,
+          undefined,
+          errorCode.follow.get_following_list.target_user_block,
         ),
       );
     }
@@ -350,6 +395,21 @@ export class FollowService {
         ),
       );
     }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follower_list.target_user_block,
+          undefined,
+          errorCode.follow.get_follower_list.target_user_block,
+        ),
+      );
+    }
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -449,6 +509,21 @@ export class FollowService {
           message.follow.get_following_list.user_not_found,
           undefined,
           errorCode.follow.get_following_list.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_following_list.target_user_block,
+          undefined,
+          errorCode.follow.get_following_list.target_user_block,
         ),
       );
     }
@@ -695,6 +770,21 @@ export class FollowService {
           message.follow.get_follow_state.user_not_found,
           undefined,
           errorCode.follow.get_follow_state.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      getStateUserFound.id,
+      currentUser.sub,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follow_state.target_user_block,
+          undefined,
+          errorCode.follow.get_follow_state.target_user_block,
         ),
       );
     }

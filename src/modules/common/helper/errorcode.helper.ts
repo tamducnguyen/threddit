@@ -98,13 +98,16 @@ export const errorCode = {
   follow: {
     get_follow_number: {
       user_not_found: '64',
+      target_user_block: '75',
     },
     get_follower_list: {
       user_not_found: '65',
+      target_user_block: '76',
       cursor_invalid: '66',
     },
     get_following_list: {
       user_not_found: '67',
+      target_user_block: '77',
       cursor_invalid: '68',
     },
     post_follow: {
@@ -119,6 +122,7 @@ export const errorCode = {
     },
     get_follow_state: {
       user_not_found: '74',
+      target_user_block: '78',
     },
   },
   friendship: {
@@ -154,10 +158,12 @@ export const errorCode = {
     },
     get_user_friend_list: {
       user_not_found: '106',
+      target_user_block: '133',
       cursor_invalid: '107',
     },
     get_mutual_friend_list: {
       user_not_found: '108',
+      target_user_block: '134',
       cursor_invalid: '109',
       cant_self_get: '120',
     },
@@ -166,9 +172,11 @@ export const errorCode = {
     },
     get_user_friend_count: {
       user_not_found: '111',
+      target_user_block: '135',
     },
     get_friend_status: {
       user_not_found: '115',
+      target_user_block: '136',
       cant_self_check: '116',
     },
     unfriend: {
@@ -178,6 +186,7 @@ export const errorCode = {
     },
     get_mutual_friend_count: {
       user_not_found: '112',
+      target_user_block: '137',
       cant_self_get: '121',
     },
     get_sent_request_count: {
