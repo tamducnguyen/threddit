@@ -336,11 +336,11 @@ export class FollowController {
     type: String,
   })
   async postFollow(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.followService.postFollow(
-      currentUsername,
+      currentUser,
       usernameDTO.username,
     );
   }
@@ -359,11 +359,11 @@ export class FollowController {
     type: String,
   })
   async deleteFollow(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.followService.deleteFollow(
-      currentUsername,
+      currentUser,
       usernameDTO.username,
     );
   }

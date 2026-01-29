@@ -19,19 +19,17 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Injectable()
 export class FollowService {
-  private STORAGE_URL: string;
   constructor(
     private readonly followRepo: FollowRepository,
     private readonly jwtService: JwtService,
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
     private readonly configService: ConfigService,
-  ) {
-    this.STORAGE_URL = this.configService.getOrThrow<string>('STORAGE_URL');
-  }
+  ) {}
   private mapFollowerUser(user: {
     email: string;
     username: string;
@@ -42,10 +40,16 @@ export class FollowService {
     dateOfBirth: Date | null;
   }) {
     const avatarUrl = user.avatarRelativePath
-      ? this.STORAGE_URL + user.avatarRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.avatarRelativePath,
+        )
       : null;
     const backgroundImageUrl = user.backgroundImageRelativePath
-      ? this.STORAGE_URL + user.backgroundImageRelativePath
+      ? ConvertMediaRelativePathToUrl(
+          this.configService,
+          user.backgroundImageRelativePath,
+        )
       : null;
     return {
       email: user.email,
@@ -97,6 +101,21 @@ export class FollowService {
           ),
         );
       }
+      //check if current user blocked this user
+      const isTargetUserBlocked = await this.followRepo.checkBlocked(
+        getFollowNumberUserFound.id,
+        currentUser.sub,
+      );
+      if (isTargetUserBlocked) {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.follow.get_follow_number.target_user_block,
+            undefined,
+            errorCode.follow.get_follow_number.target_user_block,
+          ),
+        );
+      }
       userId = getFollowNumberUserFound.id;
     }
     //get follow numbers
@@ -142,6 +161,21 @@ export class FollowService {
           message.follow.get_follower_list.user_not_found,
           undefined,
           errorCode.follow.get_follower_list.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follower_list.target_user_block,
+          undefined,
+          errorCode.follow.get_follower_list.target_user_block,
         ),
       );
     }
@@ -245,6 +279,21 @@ export class FollowService {
         ),
       );
     }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_following_list.target_user_block,
+          undefined,
+          errorCode.follow.get_following_list.target_user_block,
+        ),
+      );
+    }
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -343,6 +392,21 @@ export class FollowService {
           message.follow.get_follower_list.user_not_found,
           undefined,
           errorCode.follow.get_follower_list.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follower_list.target_user_block,
+          undefined,
+          errorCode.follow.get_follower_list.target_user_block,
         ),
       );
     }
@@ -448,6 +512,21 @@ export class FollowService {
         ),
       );
     }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      userFound.id,
+      currentUserId,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_following_list.target_user_block,
+          undefined,
+          errorCode.follow.get_following_list.target_user_block,
+        ),
+      );
+    }
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -516,9 +595,9 @@ export class FollowService {
    * @param followeeUsername
    * @returns
    */
-  async postFollow(currentUsername: string, followeeUsername: string) {
+  async postFollow(currentUser: AuthUser, followeeUsername: string) {
     //check if current user self follow
-    if (followeeUsername === currentUsername) {
+    if (followeeUsername === currentUser.username) {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -529,8 +608,9 @@ export class FollowService {
       );
     }
     //check if current and followee user exist
-    const currentUserFound =
-      await this.followRepo.findUserByUsername(currentUsername);
+    const currentUserFound = await this.followRepo.findUserById(
+      currentUser.sub,
+    );
     const followeeUserFound =
       await this.followRepo.findUserByUsername(followeeUsername);
     if (!currentUserFound || !followeeUserFound) {
@@ -611,10 +691,11 @@ export class FollowService {
    * @param followeeUsername
    * @returns
    */
-  async deleteFollow(currentUsername: string, followeeUsername: string) {
+  async deleteFollow(currentUser: AuthUser, followeeUsername: string) {
     //check if current and followee user exist
-    const currentUserFound =
-      await this.followRepo.findUserByUsername(currentUsername);
+    const currentUserFound = await this.followRepo.findUserById(
+      currentUser.sub,
+    );
     const followeeUserFound =
       await this.followRepo.findUserByUsername(followeeUsername);
     if (!currentUserFound || !followeeUserFound) {
@@ -670,6 +751,15 @@ export class FollowService {
         ),
       );
     }
+    //check if current user self-check
+    if (currentUser.sub === getStateUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follow_state.can_not_self_check,
+        ),
+      );
+    }
     //check if current user is blocked by whose username
     const isBlocked = await this.followRepo.checkBlocked(
       currentUser.sub,
@@ -682,6 +772,21 @@ export class FollowService {
           message.follow.get_follow_state.user_not_found,
           undefined,
           errorCode.follow.get_follow_state.user_not_found,
+        ),
+      );
+    }
+    //check if current user blocked this user
+    const isTargetUserBlocked = await this.followRepo.checkBlocked(
+      getStateUserFound.id,
+      currentUser.sub,
+    );
+    if (isTargetUserBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.get_follow_state.target_user_block,
+          undefined,
+          errorCode.follow.get_follow_state.target_user_block,
         ),
       );
     }

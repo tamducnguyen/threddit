@@ -66,11 +66,11 @@ export class FriendshipController {
     type: String,
   })
   async sendFriendRequest(
-    @CurrentUser('username') currentUsername: string,
+    @CurrentUser() currentUser: AuthUser,
     @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.friendshipService.sendFriendRequest(
-      currentUsername,
+      currentUser,
       usernameDTO.username,
     );
   }

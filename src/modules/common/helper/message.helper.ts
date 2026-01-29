@@ -165,15 +165,21 @@ export const message = {
     get_follow_number: {
       success: 'Lấy thông tin số lượng theo dõi thành công',
       user_not_found: 'Người dùng không tồn tại',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem thông tin số lượng theo dõi',
     },
     get_follower_list: {
       user_not_found: 'Người dùng không tồn tại',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách người theo dõi',
       success: 'Lấy danh sách người theo dõi thành công',
       no_content: 'Không có người theo dõi hoặc đã hết danh sách',
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
     get_following_list: {
       user_not_found: 'Người dùng không tồn tại',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách theo dõi',
       no_content: 'Không có đang theo dõi hoặc đã hết danh sách',
       success: 'Lấy danh sách đang theo dõi thành công',
       cursor_invalid: 'Con trỏ không hợp lệ',
@@ -192,12 +198,10 @@ export const message = {
     },
     get_follow_state: {
       user_not_found: 'Người dùng không tồn tại',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem trạng thái theo dõi',
+      can_not_self_check: 'Yêu cầu không hợp lệ',
       sucess: 'Lấy trạng thái theo dõi thành công',
-    },
-    get_user_by_key: {
-      success: 'Tìm kiếm người dùng thành công',
-      no_content: 'Hết danh sách người dùng hoặc là không có',
-      cursor_invalid: 'Con trỏ không hợp lệ',
     },
   },
   friendship: {
@@ -242,11 +246,15 @@ export const message = {
     get_user_friend_list: {
       success: 'Lấy danh sách bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách bạn bè',
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
     get_mutual_friend_list: {
       success: 'Lấy danh sách bạn bè chung thành công',
       user_not_found: 'Không tìm thấy người dùng',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách bạn bè chung',
       cursor_invalid: 'Con trỏ không hợp lệ',
       cant_self_get: 'Lấy danh sách bạn chung không hợp lệ',
     },
@@ -256,10 +264,14 @@ export const message = {
     get_user_friend_count: {
       success: 'Lấy số lượng bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem số lượng bạn bè',
     },
     get_friend_status: {
       success: 'Lấy trạng thái bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem trạng thái bạn bè',
       cant_self_check: 'Lấy trạng thái không hợp lệ',
     },
     unfriend: {
@@ -271,6 +283,8 @@ export const message = {
     get_mutual_friend_count: {
       success: 'Lấy số lượng bạn chung thành công',
       user_not_found: 'Không tìm thấy người dùng',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem số lượng bạn bè chung',
       cant_self_get: 'Lấy số lượng bạn chung không hợp lệ',
     },
     get_sent_request_count: {

@@ -16,10 +16,10 @@ import { AvatarConfirmDTO } from './dtos/avatarconfirm.dto';
 import { BackgroundPresignDTO } from './dtos/backgroundpresign.dto';
 import { BackgroundConfirmDTO } from './dtos/backgroundconfirm.dto';
 import { StorageService } from '../storage/storage.service';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Injectable()
 export class ProfileService {
-  private STORAGE_URL: string;
   private avatarMaxSize: number;
   private backgroundMaxSize: number;
   constructor(
@@ -27,7 +27,6 @@ export class ProfileService {
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
   ) {
-    this.STORAGE_URL = this.configService.getOrThrow<string>('STORAGE_URL');
     this.avatarMaxSize =
       this.configService.getOrThrow<number>('AVATAR_MAX_SIZE');
     this.backgroundMaxSize = this.configService.getOrThrow<number>(
@@ -56,9 +55,14 @@ export class ProfileService {
       );
     }
     //convert relative path into url
-    const avatarUrl = this.STORAGE_URL + profileFound.avatarRelativePath;
-    const backgroundImageUrl =
-      this.STORAGE_URL + profileFound.backgroundImageRelativePath;
+    const avatarUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      profileFound.avatarRelativePath,
+    );
+    const backgroundImageUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      profileFound.backgroundImageRelativePath,
+    );
     //send response
     const profile = {
       email: profileFound.email,
@@ -143,9 +147,14 @@ export class ProfileService {
       );
     }
     //convert relative path into url
-    const avatarUrl = this.STORAGE_URL + userFound.avatarRelativePath;
-    const backgroundImageUrl =
-      this.STORAGE_URL + userFound.backgroundImageRelativePath;
+    const avatarUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      userFound.avatarRelativePath,
+    );
+    const backgroundImageUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      userFound.backgroundImageRelativePath,
+    );
     //send response
     const profile = {
       email: profileFound.email,
@@ -221,9 +230,14 @@ export class ProfileService {
       );
     }
     //convert relative path into url
-    const avatarUrl = this.STORAGE_URL + updatedProfile.avatarRelativePath;
-    const backgroundImageUrl =
-      this.STORAGE_URL + updatedProfile.backgroundImageRelativePath;
+    const avatarUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      updatedProfile.avatarRelativePath,
+    );
+    const backgroundImageUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      updatedProfile.backgroundImageRelativePath,
+    );
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
@@ -336,9 +350,14 @@ export class ProfileService {
         ),
       );
     }
-    const avatarUrl = this.STORAGE_URL + updatedProfile.avatarRelativePath;
-    const backgroundImageUrl =
-      this.STORAGE_URL + updatedProfile.backgroundImageRelativePath;
+    const avatarUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      updatedProfile.avatarRelativePath,
+    );
+    const backgroundImageUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      updatedProfile.backgroundImageRelativePath,
+    );
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
@@ -451,9 +470,14 @@ export class ProfileService {
         ),
       );
     }
-    const avatarUrl = this.STORAGE_URL + updatedProfile.avatarRelativePath;
-    const backgroundImageUrl =
-      this.STORAGE_URL + updatedProfile.backgroundImageRelativePath;
+    const avatarUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      updatedProfile.avatarRelativePath,
+    );
+    const backgroundImageUrl = ConvertMediaRelativePathToUrl(
+      this.configService,
+      updatedProfile.backgroundImageRelativePath,
+    );
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
