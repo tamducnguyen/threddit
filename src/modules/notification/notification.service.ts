@@ -13,12 +13,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Cursor } from '../interface/cursor.interface';
 import { sendResponse } from '../common/helper/response.helper';
 import { errorCode } from '../common/helper/errorcode.helper';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class NotificationService {
   constructor(
     private readonly notificationRepo: NotificationRepository,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
   private bus = new Subject<Partial<NotificationEntity>>();
   /**
@@ -40,26 +42,30 @@ export class NotificationService {
       );
     }
     //create stream
-    return new Observable<{ data: Partial<NotificationEntity> }>(
-      (subscriber) => {
-        const sub = this.bus.subscribe(
-          (notificationRaw: NotificationEntity) => {
-            if (notificationRaw.owner.id === userFound.id) {
-              const notification: Partial<NotificationEntity> = {
-                id: notificationRaw.id,
-                createdAt: notificationRaw.createdAt,
-                type: notificationRaw.type,
-                target: notificationRaw.target,
-                isRead: notificationRaw.isRead,
-                message: notificationRaw.message,
-              };
-              subscriber.next({ data: notification });
-            }
-          },
-        );
-        return () => sub.unsubscribe();
-      },
-    );
+    const heartbeatIntervalMs =
+      this.configService.getOrThrow<number>('HEARTBEAT_GAP_TIME');
+    return new Observable((subscriber) => {
+      const sub = this.bus.subscribe((notificationRaw: NotificationEntity) => {
+        if (notificationRaw.owner.id === userFound.id) {
+          const notification: Partial<NotificationEntity> = {
+            id: notificationRaw.id,
+            createdAt: notificationRaw.createdAt,
+            type: notificationRaw.type,
+            target: notificationRaw.target,
+            isRead: notificationRaw.isRead,
+            message: notificationRaw.message,
+          };
+          subscriber.next({ data: notification });
+        }
+      });
+      const heartbeatTimer = setInterval(() => {
+        subscriber.next({});
+      }, heartbeatIntervalMs);
+      return () => {
+        clearInterval(heartbeatTimer);
+        sub.unsubscribe();
+      };
+    });
   }
   /**
    * notify user
