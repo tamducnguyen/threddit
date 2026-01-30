@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { NotificationType } from '../enum/notificationtype.enum';
-import { NotificationTarget } from '../enum/notificationtarger.type';
+import { NotificationTarget } from '../enum/notificationtarget.type';
 
 @Entity('notifications')
 @Index(['owner', 'isRead'])

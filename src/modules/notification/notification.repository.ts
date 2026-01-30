@@ -23,6 +23,20 @@ export class NotificationRepository {
   async findUserById(id: number) {
     return await this.userRepo.findOne({ where: { id: id } });
   }
+  async findUsersByIds(ids: number[]) {
+    if (!ids.length) {
+      return [];
+    }
+    return await this.userRepo.find({
+      where: { id: In(ids) },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarRelativePath: true,
+      },
+    });
+  }
   async findNotification(user: UserEntity, cursor?: Cursor) {
     let condition: FindOptionsWhere<NotificationEntity> = { owner: user };
     if (cursor?.id) {
@@ -37,7 +51,7 @@ export class NotificationRepository {
   async saveNotification(notification: Partial<NotificationEntity>) {
     return await this.notificationRepo.save(notification);
   }
-  async getUnreadNotificatiom(user: UserEntity, cursor?: Cursor) {
+  async getUnreadNotification(user: UserEntity, cursor?: Cursor) {
     let condition: FindOptionsWhere<NotificationEntity> = {
       owner: user,
       isRead: false,

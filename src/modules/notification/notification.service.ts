@@ -14,6 +14,7 @@ import { Cursor } from '../interface/cursor.interface';
 import { sendResponse } from '../common/helper/response.helper';
 import { errorCode } from '../common/helper/errorcode.helper';
 import { ConfigService } from '@nestjs/config';
+import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
 
 @Injectable()
 export class NotificationService {
@@ -23,6 +24,32 @@ export class NotificationService {
     private readonly configService: ConfigService,
   ) {}
   private bus = new Subject<Partial<NotificationEntity>>();
+  private buildTargetWithActor(
+    rawTarget: {
+      actorId?: number;
+      actorUsername?: string;
+      actorDisplayName?: string;
+      actorAvatarUrl?: string;
+      [key: string]: unknown;
+    },
+    actor?: {
+      username: string;
+      displayName: string;
+      avatarRelativePath: string;
+    },
+  ) {
+    const target = { ...rawTarget };
+    if (actor) {
+      target.actorUsername = actor.username;
+      target.actorDisplayName = actor.displayName;
+      target.actorAvatarUrl = ConvertMediaRelativePathToUrl(
+        this.configService,
+        actor.avatarRelativePath,
+      );
+      delete target.actorId;
+    }
+    return target;
+  }
   /**
    * create stream for user listening notification
    * @param currentUser
@@ -46,17 +73,44 @@ export class NotificationService {
       this.configService.getOrThrow<number>('HEARTBEAT_GAP_TIME');
     return new Observable((subscriber) => {
       const sub = this.bus.subscribe((notificationRaw: NotificationEntity) => {
-        if (notificationRaw.owner.id === userFound.id) {
-          const notification: Partial<NotificationEntity> = {
-            id: notificationRaw.id,
-            createdAt: notificationRaw.createdAt,
-            type: notificationRaw.type,
-            target: notificationRaw.target,
-            isRead: notificationRaw.isRead,
-            message: notificationRaw.message,
-          };
-          subscriber.next({ data: notification });
+        if (notificationRaw.owner.id !== userFound.id) {
+          return;
         }
+        void (async () => {
+          try {
+            const rawTarget = notificationRaw.target as {
+              actorId?: number;
+              actorUsername?: string;
+              actorDisplayName?: string;
+              actorAvatarUrl?: string;
+              [key: string]: unknown;
+            };
+            let actor:
+              | {
+                  username: string;
+                  displayName: string;
+                  avatarRelativePath: string;
+                }
+              | undefined;
+            if (typeof rawTarget?.actorId === 'number') {
+              const [actorFound] = await this.notificationRepo.findUsersByIds([
+                rawTarget.actorId,
+              ]);
+              actor = actorFound;
+            }
+            const notification = {
+              id: notificationRaw.id,
+              createdAt: notificationRaw.createdAt,
+              type: notificationRaw.type,
+              target: this.buildTargetWithActor(rawTarget, actor),
+              isRead: notificationRaw.isRead,
+              message: notificationRaw.message,
+            };
+            subscriber.next({ data: notification });
+          } catch {
+            subscriber.next({ data: notificationRaw });
+          }
+        })();
       });
       const heartbeatTimer = setInterval(() => {
         subscriber.next({});
@@ -127,14 +181,40 @@ export class NotificationService {
         { notifications: [], cursor: null },
       );
     }
+    //load actor info for response (backward-compatible fields)
+    const actorIds = Array.from(
+      new Set(
+        notificationsRaw
+          .map((notification) => {
+            const target = notification.target as {
+              actorId?: number;
+            };
+            return typeof target?.actorId === 'number' ? target.actorId : null;
+          })
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    );
+    const actors = await this.notificationRepo.findUsersByIds(actorIds);
+    const actorMap = new Map(actors.map((actor) => [actor.id, actor]));
     //mapping data
     const notifications = notificationsRaw.map((notification) => {
+      const rawTarget = notification.target as {
+        actorId?: number;
+        actorUsername?: string;
+        actorDisplayName?: string;
+        actorAvatarUrl?: string;
+        [key: string]: unknown;
+      };
+      const actorId =
+        typeof rawTarget?.actorId === 'number' ? rawTarget.actorId : undefined;
+      const actor = actorId ? actorMap.get(actorId) : undefined;
+      const target = this.buildTargetWithActor(rawTarget, actor);
       return {
         id: notification.id,
         message: notification.message,
         isRead: notification.isRead,
         type: notification.type,
-        target: notification.target,
+        target: target,
         createdAt: notification.createdAt,
       };
     });
@@ -194,7 +274,7 @@ export class NotificationService {
     }
     //get unread notifications
     const unreadNotificationRaw =
-      await this.notificationRepo.getUnreadNotificatiom(
+      await this.notificationRepo.getUnreadNotification(
         userFound,
         cursorDecoded,
       );
@@ -208,14 +288,37 @@ export class NotificationService {
         { unreadNotifications: [], cursor: null },
       );
     }
+    const actorIds = Array.from(
+      new Set(
+        unreadNotificationRaw
+          .map((notification) => {
+            const target = notification.target as { actorId?: number };
+            return typeof target?.actorId === 'number' ? target.actorId : null;
+          })
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    );
+    const actors = await this.notificationRepo.findUsersByIds(actorIds);
+    const actorMap = new Map(actors.map((actor) => [actor.id, actor]));
     //mapping data
     const unreadNotifications = unreadNotificationRaw.map((notification) => {
+      const rawTarget = notification.target as {
+        actorId?: number;
+        actorUsername?: string;
+        actorDisplayName?: string;
+        actorAvatarUrl?: string;
+        [key: string]: unknown;
+      };
+      const actorId =
+        typeof rawTarget?.actorId === 'number' ? rawTarget.actorId : undefined;
+      const actor = actorId ? actorMap.get(actorId) : undefined;
+      const target = this.buildTargetWithActor(rawTarget, actor);
       return {
         id: notification.id,
         message: notification.message,
         isRead: notification.isRead,
         type: notification.type,
-        target: notification.target,
+        target: target,
         createdAt: notification.createdAt,
       };
     });
@@ -282,7 +385,7 @@ export class NotificationService {
       message.notification.delete_notification.success,
     );
   }
-  async getCountUnreadNotificationount(sub: number) {
+  async getCountUnreadNotification(sub: number) {
     //check if user exist
     const userFound = await this.notificationRepo.findUserById(sub);
     if (!userFound) {

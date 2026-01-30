@@ -77,7 +77,7 @@ export class NotificationController {
   @HttpCode(HttpStatus.OK)
   @Get('count/unread')
   async getCountUnreadNotification(@CurrentUser('sub') id: number) {
-    return await this.notificationService.getCountUnreadNotificationount(id);
+    return await this.notificationService.getCountUnreadNotification(id);
   }
   @HttpCode(HttpStatus.OK)
   @Post('readall')
