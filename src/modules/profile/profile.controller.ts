@@ -21,9 +21,11 @@ import { AvatarPresignDTO } from './dtos/avatarpresign.dto';
 import { AvatarConfirmDTO } from './dtos/avatarconfirm.dto';
 import { BackgroundPresignDTO } from './dtos/backgroundpresign.dto';
 import { BackgroundConfirmDTO } from './dtos/backgroundconfirm.dto';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('profile')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@SkipThrottle({ public: true })
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
   @HttpCode(HttpStatus.OK)

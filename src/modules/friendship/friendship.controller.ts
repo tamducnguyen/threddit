@@ -19,9 +19,11 @@ import { CursorDTO } from './dtos/cursor.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { FriendshipIdDTO } from './dtos/friendshipid.dto';
 import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('friendship')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@SkipThrottle({ public: true })
 export class FriendshipController {
   constructor(private readonly friendshipService: FriendshipService) {}
 

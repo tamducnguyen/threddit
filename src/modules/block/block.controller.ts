@@ -18,9 +18,11 @@ import { SearchUserOptionalDTO } from './dto/searchuser.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { TokenGuard } from '../common/guard/token.guard';
 import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('block')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@SkipThrottle({ public: true })
 export class BlockController {
   constructor(private readonly blockService: BlockService) {}
   @HttpCode(HttpStatus.OK)

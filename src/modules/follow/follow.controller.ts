@@ -18,9 +18,11 @@ import { UsernameDTO } from './dtos/username.dto';
 import { TokenGuard } from '../common/guard/token.guard';
 import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
 import { AuthUser } from '../token/authuser.interface';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('follow')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@SkipThrottle({ public: true })
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
   @HttpCode(HttpStatus.OK)
