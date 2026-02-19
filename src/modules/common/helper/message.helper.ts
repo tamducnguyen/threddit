@@ -294,65 +294,86 @@ export const message = {
       success: 'Lấy số lượng yêu cầu kết bạn đã nhận thành công',
     },
   },
-  post: {
-    get_created_post: {
+  content: {
+    get_timeline_content: {
       user_not_found: 'Người dùng không tồn tại',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Không có bài đăng hoặc đã hết danh sách',
-      success: 'Lấy danh sách bài đăng thành công',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách hoạt động',
+      success: 'Lấy danh sách hoạt thành công',
     },
-    get_saved_post: {
+    get_saved_content: {
       user_not_found: 'Người dùng không tồn tại',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Không có bài đăng hoặc đã hết danh sách',
       success: 'Lấy danh sách bài đăng đã lưu thành công',
     },
-    pin_post: {
+    pin_content: {
       not_found: 'Không tìm thấy bài viết của bạn',
       success: 'Ghim bài viết thành công',
     },
-    unpin_post: {
+    unpin_content: {
       not_found: 'Không tìm thấy bài viết của bạn',
       success: 'Bỏ ghim bài viết thành công',
     },
     create_post: {
       user_not_found: 'Không tìm thấy người dùng',
       success: 'Đăng tải bài viết thành công',
+      text_or_media_required:
+        'Bài viết phải có nội dung văn bản hoặc ít nhất 1 tệp media',
+      media_files_number_invalid:
+        'Số lượng tệp media không hợp lệ khi tạo bài viết có media',
+      media_content_types_required:
+        'Cần khai báo content type cho từng media file',
+      media_content_types_count_mismatch:
+        'Số lượng content type media phải khớp mediaFilesNumber',
+      gen_media_presigned_url_failed:
+        'Không thể tạo URL upload media, vui lòng thử lại',
+      upload_failed: 'Quá trình tải tệp lên thất bại, vui lòng thử lại.',
+      invalid_media_key: 'Media key không hợp lệ',
+      invalid_media_content_type: 'Media content type không hợp lệ',
+      media_file_too_large: 'Mỗi media file tối đa 500MB',
+      confirm_content_not_found:
+        'Không tìm thấy bài viết để xác nhận tải tệp media.',
+      confirm_media_failed:
+        'Không thể xác nhận media cho bài viết, vui lòng thử lại.',
+      confirm_media_success: 'Xác nhận upload media thành công',
     },
-    delete_post: {
+    delete_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết của bạn',
       success: 'Xóa bài thành công',
     },
-    save_post: {
+    save_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
       success: 'Lưu bài thành công',
       already: 'Bạn đã lưu bài viết',
     },
-    unsave_post: {
+    unsave_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
       success: 'Bỏ lưu bài viết thành công',
       not_save: 'Bạn chưa lưu bài viết',
     },
-    vote_post: {
+    vote_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
       success: 'Bình chọn bài viết thành công',
       already: 'Đã bình chọn kiểu này',
     },
-    unvote_post: {
+    unvote_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
       success: 'Hủy bình chọn bài viết thành công',
       not_vote: 'Bạn chưa bình chọn vài viết này',
     },
-    update_post: {
+    update_content: {
       not_found: 'Không tìm thấy bài viết của bạn',
       success: 'Chỉnh sủa bài viết thành công',
     },
-    get_post: {
+    get_content: {
       success: 'Lấy chi tiết bài viết thành công',
       not_found: 'Không tìm thấy bài viết',
     },
@@ -360,26 +381,26 @@ export const message = {
       success: 'Lấy bảng tin thành công',
       no_content: 'Đã hết bài đăng',
     },
-    get_following_post: {
+    get_following_content: {
       success: 'Lấy bảng tin từ người bạn đang theo dõi thành công',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Đã hết danh sách bài đăng hoặc không có bài đăng nào',
     },
-    get_post_by_key: {
+    get_content_by_key: {
       success: 'Tìm kiếm bài đăng thành công',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Đã hết danh sách bài đăng hoặc không có bài đăng nào',
     },
     listen_comment: {
-      post_not_found: 'Không tìm thấy bài viết',
+      content_not_found: 'Không tìm thấy bài viết',
     },
     comment: {
-      post_not_found: 'Không tìm thấy bài viết',
+      content_not_found: 'Không tìm thấy bài viết',
       user_not_found: 'Không tìm thấy người dùng',
       success: 'Bình luận bài viết thành công',
     },
     get_comment: {
-      post_not_found: 'Không tìm thấy bài viết',
+      content_not_found: 'Không tìm thấy bài viết',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Đã hết bình luận hoặc không có bình luận',
       success: 'Lấy danh sách bình luận thành công',

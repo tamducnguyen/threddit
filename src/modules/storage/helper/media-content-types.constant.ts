@@ -1,0 +1,16 @@
+export const ALLOWED_MEDIA_CONTENT_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/x-matroska',
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/aac',
+  'audio/ogg',
+  'audio/wav',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+] as const;

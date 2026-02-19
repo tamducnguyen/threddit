@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -18,9 +19,10 @@ export class ReactionEntity {
   id: number;
   @Column({ name: 'target_type', type: 'enum', enum: ReactionTargetType })
   reactionTargetType: ReactionTargetType;
-  @Column({ name: 'target_id', type: 'int' })
+  @Column({ name: 'target_id', type: 'bigint' })
   targetId: number;
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'reacter_user_id' })
   reacter: UserEntity;
   @Column({ name: 'type', type: 'enum', enum: ReactionType })
   type: ReactionType;

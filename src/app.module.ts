@@ -12,7 +12,7 @@ import { AccountModule } from './modules/account/account.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { FriendshipModule } from './modules/friendship/friendship.module';
-// import { PostModule } from './modules/post/post.module';
+import { ContentModule } from './modules/content/content.module';
 import { BullModule } from '@nestjs/bullmq';
 import { bullMqConfig } from './modules/config/bullmq.config';
 import { cacheConfig } from './modules/config/cache.config';
@@ -26,7 +26,7 @@ import { BlockModule } from './modules/block/block.module';
     NotificationModule,
     FollowModule,
     FriendshipModule,
-    // PostModule,
+    ContentModule,
     ProfileModule,
     BlockModule,
     ThrottlerModule.forRootAsync({

@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { message } from '../common/helper/message.helper';
-import { ToxicResponse } from '../post/interface/toxicresponse.interface';
+import { ToxicResponse } from '../content/interface/toxicresponse.interface';
 @Injectable()
 export class HttpsService {
   constructor(

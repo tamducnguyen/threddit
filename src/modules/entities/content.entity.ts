@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -20,6 +21,7 @@ export class ContentEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'author_user_id' })
   author: UserEntity;
   @Column({ name: 'text', type: 'text', nullable: true })
   text: string;
@@ -28,7 +30,11 @@ export class ContentEntity {
   @Column({ name: 'is_pinned', type: 'bool', default: false })
   isPinned: boolean;
   @ManyToMany(() => UserEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-  @JoinTable({ name: 'mentioned_user_content' })
+  @JoinTable({
+    name: 'mentioned_user_content',
+    joinColumn: { name: 'content_id' },
+    inverseJoinColumn: { name: 'user_id' },
+  })
   mentionedUser: UserEntity[];
   @OneToMany(() => CommentEntity, (comment) => comment.content)
   comments: CommentEntity[];
