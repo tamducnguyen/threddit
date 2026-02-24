@@ -18,6 +18,8 @@ import { bullMqConfig } from './modules/config/bullmq.config';
 import { cacheConfig } from './modules/config/cache.config';
 import { ProfileModule } from './modules/profile/profile.module';
 import { BlockModule } from './modules/block/block.module';
+import { SavedContentModule } from './modules/saved-content/saved-content.module';
+import { ReactionModule } from './modules/reaction/reaction.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { BlockModule } from './modules/block/block.module';
     FollowModule,
     FriendshipModule,
     ContentModule,
+    SavedContentModule,
+    ReactionModule,
     ProfileModule,
     BlockModule,
     ThrottlerModule.forRootAsync({

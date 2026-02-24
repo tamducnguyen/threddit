@@ -1,4 +1,4 @@
-export const message = {
+﻿export const message = {
   auth: {
     signup: {
       success: 'Đăng ký thành công, vui lòng xác minh thông qua email',
@@ -309,12 +309,19 @@ export const message = {
       no_content: 'Không có bài đăng hoặc đã hết danh sách',
       success: 'Lấy danh sách bài đăng đã lưu thành công',
     },
+    get_friend_story: {
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có story từ bạn bè hoặc đã hết danh sách',
+      success: 'Lấy danh sách story của bạn bè thành công',
+    },
     pin_content: {
       not_found: 'Không tìm thấy bài viết của bạn',
+      already_pinned: 'Bài viết đã được ghim trước đó',
       success: 'Ghim bài viết thành công',
     },
     unpin_content: {
       not_found: 'Không tìm thấy bài viết của bạn',
+      already_unpinned: 'Bài viết chưa được ghim',
       success: 'Bỏ ghim bài viết thành công',
     },
     create_post: {
@@ -357,17 +364,24 @@ export const message = {
       success: 'Bỏ lưu bài viết thành công',
       not_save: 'Bạn chưa lưu bài viết',
     },
-    vote_content: {
+    reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
-      success: 'Bình chọn bài viết thành công',
-      already: 'Đã bình chọn kiểu này',
+      success: 'Thả cảm xúc bài viết thành công',
+      already: 'Bạn đã thả cảm xúc bài viết này trước đó',
     },
-    unvote_content: {
+    update_reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
-      success: 'Hủy bình chọn bài viết thành công',
-      not_vote: 'Bạn chưa bình chọn vài viết này',
+      success: 'Cập nhật cảm xúc bài viết thành công',
+      not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
+      already: 'Bạn đã thả cảm xúc kiểu này',
+    },
+    delete_reaction_content: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      success: 'Bỏ cảm xúc bài viết thành công',
+      not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
     },
     update_content: {
       not_found: 'Không tìm thấy bài viết của bạn',

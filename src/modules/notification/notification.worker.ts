@@ -18,6 +18,7 @@ import {
   MentionInCommentNotificationMessage,
   MentionInContentNotificationMessage,
   NameNotificationQueue,
+  ReactionContentNotificationMessage,
 } from './helper/notification.helper';
 import { CommentEntity } from '../entities/comment.entity';
 import { NotificationTarget } from '../enum/notificationtarget.type';
@@ -251,6 +252,37 @@ export class NotificationWorker extends WorkerHost {
         const insertNotification =
           await this.notificationRepo.saveNotification(notification);
         this.notificationService.notify(insertNotification);
+        break;
+      }
+      //send reaction notification to content author
+      case String(JobNotificationQueue.REACTION_CONTENT): {
+        type SendReactionContentNotificationInterface = {
+          currentUser: UserEntity;
+          reactedContent: ContentEntity;
+          reactionId: number;
+        };
+        const data = job.data as SendReactionContentNotificationInterface;
+        //do not notify user for self-reaction
+        if (data.currentUser.id === data.reactedContent.author.id) {
+          break;
+        }
+        const target: NotificationTarget = {
+          type: 'REACTION_CONTENT',
+          contentId: data.reactedContent.id,
+          reactionId: data.reactionId,
+          actorId: data.currentUser.id,
+        };
+        const notification: Partial<NotificationEntity> = {
+          owner: data.reactedContent.author,
+          message: ReactionContentNotificationMessage(
+            data.currentUser.displayName,
+          ),
+          type: NotificationType.REACTION_CONTENT,
+          target: target,
+        };
+        const insertedNotification =
+          await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(insertedNotification);
         break;
       }
       //send notification to mentioned comment user
