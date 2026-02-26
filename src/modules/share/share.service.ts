@@ -81,6 +81,11 @@ export class ShareService {
       throw new NotFoundException(message.content.share_content.not_found);
     }
 
+    // Hide own post from share endpoint to prevent self-share behavior.
+    if (contentFound.author.id === currentUserId) {
+      throw new NotFoundException(message.content.share_content.not_found);
+    }
+
     // Enforce block policy before sharing target post.
     await this.validateShareAccess(
       currentUserId,
