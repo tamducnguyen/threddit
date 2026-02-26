@@ -46,7 +46,10 @@ export class GoogleAuthService {
     const { tokens } = await this.client.getToken(googleCode);
     if (!tokens.id_token) {
       throw new UnauthorizedException(
-        message.auth.google_auth.id_token_missing,
+        sendResponse(
+          HttpStatus.UNAUTHORIZED,
+          message.auth.google_auth.id_token_missing,
+        ),
       );
     }
     // Verify token audience and extract payload.
@@ -56,12 +59,20 @@ export class GoogleAuthService {
     });
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {
-      throw new UnauthorizedException(message.auth.google_auth.invalid_token);
+      throw new UnauthorizedException(
+        sendResponse(
+          HttpStatus.UNAUTHORIZED,
+          message.auth.google_auth.invalid_token,
+        ),
+      );
     }
     // Only allow verified Google emails.
     if (!payload.email_verified) {
       throw new UnauthorizedException(
-        message.auth.google_auth.email_not_verified,
+        sendResponse(
+          HttpStatus.UNAUTHORIZED,
+          message.auth.google_auth.email_not_verified,
+        ),
       );
     }
     // Return minimal Google identity info for later steps.
@@ -81,12 +92,18 @@ export class GoogleAuthService {
     if (userFound) {
       if (userFound.authMethod == AuthMethod.CREDENTIAL) {
         throw new BadRequestException(
-          message.auth.google_auth.already_auth_method,
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.auth.google_auth.already_auth_method,
+          ),
         );
       }
       if (userFound.isActivate == false) {
         throw new BadRequestException(
-          message.auth.google_auth.account_not_activate,
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.auth.google_auth.account_not_activate,
+          ),
         );
       }
       // Create session and set auth cookie.

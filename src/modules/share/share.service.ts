@@ -43,12 +43,16 @@ export class ShareService {
 
     // Hide content when target user has blocked current user.
     if (isBlockedByTarget) {
-      throw new NotFoundException(notFoundMessage);
+      throw new NotFoundException(
+        sendResponse(HttpStatus.NOT_FOUND, notFoundMessage),
+      );
     }
 
     // Reject request when current user has blocked target user.
     if (isTargetBlocked) {
-      throw new BadRequestException(targetBlockedMessage);
+      throw new BadRequestException(
+        sendResponse(HttpStatus.BAD_REQUEST, targetBlockedMessage),
+      );
     }
   }
 
@@ -73,17 +77,32 @@ export class ShareService {
 
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(message.content.share_content.user_not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.share_content.user_not_found,
+        ),
+      );
     }
 
     // Reject the request if the content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(message.content.share_content.not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.share_content.not_found,
+        ),
+      );
     }
 
     // Hide own post from share endpoint to prevent self-share behavior.
     if (contentFound.author.id === currentUserId) {
-      throw new NotFoundException(message.content.share_content.not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.share_content.not_found,
+        ),
+      );
     }
 
     // Enforce block policy before sharing target post.
@@ -100,7 +119,12 @@ export class ShareService {
       currentUserId,
     );
     if (isAlreadyShared) {
-      throw new BadRequestException(message.content.share_content.already);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.share_content.already,
+        ),
+      );
     }
 
     // Normalize optional share message before persisting.
@@ -123,18 +147,31 @@ export class ShareService {
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
-          message.content.share_content.user_not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.share_content.user_not_found,
+          ),
         );
       }
       if (!contentStillExists) {
-        throw new NotFoundException(message.content.share_content.not_found);
+        throw new NotFoundException(
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.share_content.not_found,
+          ),
+        );
       }
       throw error;
     }
 
     // Insert returns false when the user already shared before.
     if (!isShared) {
-      throw new BadRequestException(message.content.share_content.already);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.share_content.already,
+        ),
+      );
     }
 
     // Return standardized success response.
@@ -163,14 +200,20 @@ export class ShareService {
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
       throw new NotFoundException(
-        message.content.update_share_content.user_not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.update_share_content.user_not_found,
+        ),
       );
     }
 
     // Reject the request if the content does not exist.
     if (!contentFound) {
       throw new NotFoundException(
-        message.content.update_share_content.not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.update_share_content.not_found,
+        ),
       );
     }
 
@@ -185,7 +228,10 @@ export class ShareService {
     // Reject empty payload to avoid ambiguous update behavior.
     if (shareContentDTO.message === undefined) {
       throw new BadRequestException(
-        message.content.update_share_content.no_field_to_update,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.update_share_content.no_field_to_update,
+        ),
       );
     }
 
@@ -196,7 +242,10 @@ export class ShareService {
     );
     if (!isAlreadyShared) {
       throw new BadRequestException(
-        message.content.update_share_content.not_share,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.update_share_content.not_share,
+        ),
       );
     }
 
@@ -219,16 +268,25 @@ export class ShareService {
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
-          message.content.update_share_content.user_not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.update_share_content.user_not_found,
+          ),
         );
       }
       if (!contentStillExists) {
         throw new NotFoundException(
-          message.content.update_share_content.not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.update_share_content.not_found,
+          ),
         );
       }
       throw new BadRequestException(
-        message.content.update_share_content.not_share,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.update_share_content.not_share,
+        ),
       );
     }
 
@@ -256,13 +314,21 @@ export class ShareService {
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
       throw new NotFoundException(
-        message.content.unshare_content.user_not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.unshare_content.user_not_found,
+        ),
       );
     }
 
     // Reject the request if the content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(message.content.unshare_content.not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.unshare_content.not_found,
+        ),
+      );
     }
 
     // Enforce block policy before removing target share entry.
@@ -287,13 +353,26 @@ export class ShareService {
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
-          message.content.unshare_content.user_not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.unshare_content.user_not_found,
+          ),
         );
       }
       if (!contentStillExists) {
-        throw new NotFoundException(message.content.unshare_content.not_found);
+        throw new NotFoundException(
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.unshare_content.not_found,
+          ),
+        );
       }
-      throw new BadRequestException(message.content.unshare_content.not_share);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.unshare_content.not_share,
+        ),
+      );
     }
 
     // Return standardized success response.

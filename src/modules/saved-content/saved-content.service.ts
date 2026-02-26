@@ -31,12 +31,22 @@ export class SavedContentService {
 
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(message.content.save_content.user_not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.save_content.user_not_found,
+        ),
+      );
     }
 
     // Reject the request if the content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(message.content.save_content.not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.save_content.not_found,
+        ),
+      );
     }
 
     // Check whether the content is already saved by this user.
@@ -47,7 +57,12 @@ export class SavedContentService {
 
     // Prevent duplicate save operations.
     if (isAlreadySaved) {
-      throw new BadRequestException(message.content.save_content.already);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.save_content.already,
+        ),
+      );
     }
 
     // Create a new saved-content record.
@@ -65,18 +80,31 @@ export class SavedContentService {
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
-          message.content.save_content.user_not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.save_content.user_not_found,
+          ),
         );
       }
       if (!contentStillExists) {
-        throw new NotFoundException(message.content.save_content.not_found);
+        throw new NotFoundException(
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.save_content.not_found,
+          ),
+        );
       }
       throw error;
     }
 
     // Handle unexpected insert failure.
     if (!isSaved) {
-      throw new BadRequestException(message.content.save_content.already);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.save_content.already,
+        ),
+      );
     }
 
     // Return a standardized success response.
@@ -100,13 +128,21 @@ export class SavedContentService {
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
       throw new NotFoundException(
-        message.content.unsave_content.user_not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.unsave_content.user_not_found,
+        ),
       );
     }
 
     // Reject the request if the content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(message.content.unsave_content.not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.unsave_content.not_found,
+        ),
+      );
     }
 
     // Delete the saved-content record.
@@ -123,13 +159,26 @@ export class SavedContentService {
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
-          message.content.unsave_content.user_not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.unsave_content.user_not_found,
+          ),
         );
       }
       if (!contentStillExists) {
-        throw new NotFoundException(message.content.unsave_content.not_found);
+        throw new NotFoundException(
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.unsave_content.not_found,
+          ),
+        );
       }
-      throw new BadRequestException(message.content.unsave_content.not_save);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.unsave_content.not_save,
+        ),
+      );
     }
 
     // Return a standardized success response.

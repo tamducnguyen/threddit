@@ -48,13 +48,21 @@ export class ReactionService {
     // Stop when user does not exist.
     if (!currentUserFound) {
       throw new NotFoundException(
-        message.content.reaction_content.user_not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.reaction_content.user_not_found,
+        ),
       );
     }
 
     // Stop when content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(message.content.reaction_content.not_found);
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.reaction_content.not_found,
+        ),
+      );
     }
 
     // Reject duplicate reaction requests explicitly before insert.
@@ -63,7 +71,12 @@ export class ReactionService {
       currentUserId,
     );
     if (existingReaction) {
-      throw new BadRequestException(message.content.reaction_content.already);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.reaction_content.already,
+        ),
+      );
     }
 
     // Insert a new reaction row for this user and content.
@@ -82,18 +95,31 @@ export class ReactionService {
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
-          message.content.reaction_content.user_not_found,
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.reaction_content.user_not_found,
+          ),
         );
       }
       if (!contentStillExists) {
-        throw new NotFoundException(message.content.reaction_content.not_found);
+        throw new NotFoundException(
+          sendResponse(
+            HttpStatus.NOT_FOUND,
+            message.content.reaction_content.not_found,
+          ),
+        );
       }
       throw error;
     }
 
     // Insert returns false when the user already reacted before.
     if (!isCreated) {
-      throw new BadRequestException(message.content.reaction_content.already);
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.reaction_content.already,
+        ),
+      );
     }
 
     // Load inserted reaction id for notification target payload.
@@ -152,14 +178,20 @@ export class ReactionService {
     // Stop when user does not exist.
     if (!currentUserFound) {
       throw new NotFoundException(
-        message.content.update_reaction_content.user_not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.update_reaction_content.user_not_found,
+        ),
       );
     }
 
     // Stop when content does not exist.
     if (!contentFound) {
       throw new NotFoundException(
-        message.content.update_reaction_content.not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.update_reaction_content.not_found,
+        ),
       );
     }
 
@@ -172,14 +204,20 @@ export class ReactionService {
     // Cannot update when there is no existing reaction.
     if (!reactionFound) {
       throw new BadRequestException(
-        message.content.update_reaction_content.not_reacted,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.update_reaction_content.not_reacted,
+        ),
       );
     }
 
     // Reject no-op updates when the new type equals current type.
     if (reactionFound.type === reactionTypeDTO.type) {
       throw new BadRequestException(
-        message.content.update_reaction_content.already,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.update_reaction_content.already,
+        ),
       );
     }
 
@@ -192,7 +230,10 @@ export class ReactionService {
     // Handle race condition where reaction is removed between read and update.
     if (!isUpdated) {
       throw new BadRequestException(
-        message.content.update_reaction_content.not_reacted,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.update_reaction_content.not_reacted,
+        ),
       );
     }
 
@@ -220,14 +261,20 @@ export class ReactionService {
     // Stop when user does not exist.
     if (!currentUserFound) {
       throw new NotFoundException(
-        message.content.delete_reaction_content.user_not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.delete_reaction_content.user_not_found,
+        ),
       );
     }
 
     // Stop when content does not exist.
     if (!contentFound) {
       throw new NotFoundException(
-        message.content.delete_reaction_content.not_found,
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          message.content.delete_reaction_content.not_found,
+        ),
       );
     }
 
@@ -240,7 +287,10 @@ export class ReactionService {
     // Delete returns false when user has not reacted yet.
     if (!isDeleted) {
       throw new BadRequestException(
-        message.content.delete_reaction_content.not_reacted,
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.content.delete_reaction_content.not_reacted,
+        ),
       );
     }
 
