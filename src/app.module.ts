@@ -20,6 +20,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { BlockModule } from './modules/block/block.module';
 import { SavedContentModule } from './modules/saved-content/saved-content.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
+import { ShareModule } from './modules/share/share.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ReactionModule } from './modules/reaction/reaction.module';
     ContentModule,
     SavedContentModule,
     ReactionModule,
+    ShareModule,
     ProfileModule,
     BlockModule,
     ThrottlerModule.forRootAsync({

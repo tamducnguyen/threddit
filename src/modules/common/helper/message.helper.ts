@@ -364,6 +364,31 @@
       success: 'Bỏ lưu bài viết thành công',
       not_save: 'Bạn chưa lưu bài viết',
     },
+    share_content: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để chia sẻ bài viết',
+      success: 'Chia sẻ bài viết thành công',
+      already: 'Bạn đã chia sẻ bài viết này',
+    },
+    update_share_content: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để cập nhật chia sẻ',
+      success: 'Cập nhật chia sẻ bài viết thành công',
+      not_share: 'Bạn chưa chia sẻ bài viết này',
+      no_field_to_update: 'Không có nội dung để cập nhật',
+    },
+    unshare_content: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bài viết',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để hủy chia sẻ',
+      success: 'Hủy chia sẻ bài viết thành công',
+      not_share: 'Bạn chưa chia sẻ bài viết này',
+    },
     reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
