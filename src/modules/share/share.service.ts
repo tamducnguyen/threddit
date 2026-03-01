@@ -9,13 +9,17 @@ import { message } from '../common/helper/message.helper';
 import { errorCode } from '../common/helper/errorcode.helper';
 import { ShareRepository } from './share.repository';
 import { ShareContentDTO } from './dtos/share-content.dto';
+import { HttpsService } from '../http/http.service';
 
 /**
  * Handles share/unshare content business logic for users.
  */
 @Injectable()
 export class ShareService {
-  constructor(private readonly shareRepo: ShareRepository) {}
+  constructor(
+    private readonly shareRepo: ShareRepository,
+    private readonly httpsService: HttpsService,
+  ) {}
 
   /**
    * Validates block relationship before allowing share interactions.
@@ -155,6 +159,10 @@ export class ShareService {
     // Normalize optional share message before persisting.
     const normalizedShareMessage = shareContentDTO.message?.trim();
     const shareMessage = normalizedShareMessage ? normalizedShareMessage : null;
+    // Validate toxicity only when user provides non-empty share message.
+    if (shareMessage) {
+      await this.httpsService.checkToxic(shareMessage);
+    }
 
     // Create a new share record.
     let isShared = false;
@@ -293,6 +301,10 @@ export class ShareService {
     // Normalize share message before update.
     const shareMessage =
       shareContentDTO.message === null ? null : shareContentDTO.message.trim();
+    // Validate toxicity only when user provides non-empty share message.
+    if (shareMessage) {
+      await this.httpsService.checkToxic(shareMessage);
+    }
 
     // Update share message in database.
     const isUpdated = await this.shareRepo.updateShareContentMessage(

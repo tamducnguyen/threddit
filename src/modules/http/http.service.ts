@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { message } from '../common/helper/message.helper';
 import { sendResponse } from '../common/helper/response.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 import { ToxicResponse } from '../content/interface/toxicresponse.interface';
 @Injectable()
 export class HttpsService {
@@ -32,12 +33,19 @@ export class HttpsService {
         sendResponse(
           HttpStatus.INTERNAL_SERVER_ERROR,
           message.http.common.time_out,
+          undefined,
+          errorCode.http.common.time_out,
         ),
       );
     }
     if (data && data.type !== 0) {
       throw new BadRequestException(
-        sendResponse(HttpStatus.BAD_REQUEST, message.http.check_toxic.toxic),
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.http.check_toxic.toxic,
+          undefined,
+          errorCode.http.check_toxic.toxic,
+        ),
       );
     }
   }

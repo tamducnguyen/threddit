@@ -100,6 +100,14 @@ export const errorCode = {
     account_not_activate: '52',
     too_many_requests: '53',
   },
+  http: {
+    check_toxic: {
+      toxic: '188',
+    },
+    common: {
+      time_out: '189',
+    },
+  },
   follow: {
     get_follow_number: {
       user_not_found: '64',

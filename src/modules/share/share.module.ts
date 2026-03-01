@@ -9,6 +9,7 @@ import { ShareEntity } from '../entities/share.entity';
 import { SessionEntity } from '../entities/session.entity';
 import { SessionModule } from '../token/session.module';
 import { BlockEntity } from '../entities/block.entity';
+import { HttpsModule } from '../http/http.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BlockEntity } from '../entities/block.entity';
       SessionEntity,
     ]),
     SessionModule,
+    HttpsModule,
   ],
   controllers: [ShareController],
   providers: [ShareService, ShareRepository],
