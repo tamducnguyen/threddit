@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { sendResponse } from '../common/helper/response.helper';
 import { message } from '../common/helper/message.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 import { SavedContentRepository } from './saved-content.repository';
 
 /**
@@ -36,6 +37,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.save_content.user_not_found,
+          undefined,
+          errorCode.content.save_content.user_not_found,
         ),
       );
     }
@@ -46,6 +49,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.save_content.not_found,
+          undefined,
+          errorCode.content.save_content.not_found,
         ),
       );
     }
@@ -62,6 +67,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.save_content.already,
+          undefined,
+          errorCode.content.save_content.already,
         ),
       );
     }
@@ -84,6 +91,8 @@ export class SavedContentService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.save_content.user_not_found,
+            undefined,
+            errorCode.content.save_content.user_not_found,
           ),
         );
       }
@@ -92,6 +101,8 @@ export class SavedContentService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.save_content.not_found,
+            undefined,
+            errorCode.content.save_content.not_found,
           ),
         );
       }
@@ -104,6 +115,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.save_content.already,
+          undefined,
+          errorCode.content.save_content.already,
         ),
       );
     }
@@ -133,6 +146,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.unsave_content.user_not_found,
+          undefined,
+          errorCode.content.unsave_content.user_not_found,
         ),
       );
     }
@@ -143,6 +158,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.unsave_content.not_found,
+          undefined,
+          errorCode.content.unsave_content.not_found,
         ),
       );
     }
@@ -164,6 +181,8 @@ export class SavedContentService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.unsave_content.user_not_found,
+            undefined,
+            errorCode.content.unsave_content.user_not_found,
           ),
         );
       }
@@ -172,6 +191,8 @@ export class SavedContentService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.unsave_content.not_found,
+            undefined,
+            errorCode.content.unsave_content.not_found,
           ),
         );
       }
@@ -179,6 +200,8 @@ export class SavedContentService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.unsave_content.not_save,
+          undefined,
+          errorCode.content.unsave_content.not_save,
         ),
       );
     }

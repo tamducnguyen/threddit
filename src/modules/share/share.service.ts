@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { sendResponse } from '../common/helper/response.helper';
 import { message } from '../common/helper/message.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 import { ShareRepository } from './share.repository';
 import { ShareContentDTO } from './dtos/share-content.dto';
 
@@ -22,13 +23,17 @@ export class ShareService {
    * @param currentUserId Current authenticated user id.
    * @param targetUserId Post author user id.
    * @param notFoundMessage Message used when current user is blocked by target.
+   * @param notFoundErrorCode Error code used when current user is blocked by target.
    * @param targetBlockedMessage Message used when current user has blocked target.
+   * @param targetBlockedErrorCode Error code used when current user has blocked target.
    */
   private async validateShareAccess(
     currentUserId: number,
     targetUserId: number,
     notFoundMessage: string,
+    notFoundErrorCode: string,
     targetBlockedMessage: string,
+    targetBlockedErrorCode: string,
   ) {
     // No block check is required when interacting with own post.
     if (currentUserId === targetUserId) {
@@ -44,14 +49,24 @@ export class ShareService {
     // Hide content when target user has blocked current user.
     if (isBlockedByTarget) {
       throw new NotFoundException(
-        sendResponse(HttpStatus.NOT_FOUND, notFoundMessage),
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          notFoundMessage,
+          undefined,
+          notFoundErrorCode,
+        ),
       );
     }
 
     // Reject request when current user has blocked target user.
     if (isTargetBlocked) {
       throw new BadRequestException(
-        sendResponse(HttpStatus.BAD_REQUEST, targetBlockedMessage),
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          targetBlockedMessage,
+          undefined,
+          targetBlockedErrorCode,
+        ),
       );
     }
   }
@@ -81,6 +96,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.share_content.user_not_found,
+          undefined,
+          errorCode.content.share_content.user_not_found,
         ),
       );
     }
@@ -91,6 +108,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.share_content.not_found,
+          undefined,
+          errorCode.content.share_content.not_found,
         ),
       );
     }
@@ -101,6 +120,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.share_content.not_found,
+          undefined,
+          errorCode.content.share_content.not_found,
         ),
       );
     }
@@ -110,7 +131,9 @@ export class ShareService {
       currentUserId,
       contentFound.author.id,
       message.content.share_content.not_found,
+      errorCode.content.share_content.not_found,
       message.content.share_content.target_user_block,
+      errorCode.content.share_content.target_user_block,
     );
 
     // Prevent duplicate share operations.
@@ -123,6 +146,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.share_content.already,
+          undefined,
+          errorCode.content.share_content.already,
         ),
       );
     }
@@ -150,6 +175,8 @@ export class ShareService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.share_content.user_not_found,
+            undefined,
+            errorCode.content.share_content.user_not_found,
           ),
         );
       }
@@ -158,6 +185,8 @@ export class ShareService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.share_content.not_found,
+            undefined,
+            errorCode.content.share_content.not_found,
           ),
         );
       }
@@ -170,6 +199,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.share_content.already,
+          undefined,
+          errorCode.content.share_content.already,
         ),
       );
     }
@@ -203,6 +234,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.update_share_content.user_not_found,
+          undefined,
+          errorCode.content.update_share_content.user_not_found,
         ),
       );
     }
@@ -213,6 +246,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.update_share_content.not_found,
+          undefined,
+          errorCode.content.update_share_content.not_found,
         ),
       );
     }
@@ -222,7 +257,9 @@ export class ShareService {
       currentUserId,
       contentFound.author.id,
       message.content.update_share_content.not_found,
+      errorCode.content.update_share_content.not_found,
       message.content.update_share_content.target_user_block,
+      errorCode.content.update_share_content.target_user_block,
     );
 
     // Reject empty payload to avoid ambiguous update behavior.
@@ -231,6 +268,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.update_share_content.no_field_to_update,
+          undefined,
+          errorCode.content.update_share_content.no_field_to_update,
         ),
       );
     }
@@ -245,6 +284,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.update_share_content.not_share,
+          undefined,
+          errorCode.content.update_share_content.not_share,
         ),
       );
     }
@@ -271,6 +312,8 @@ export class ShareService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.update_share_content.user_not_found,
+            undefined,
+            errorCode.content.update_share_content.user_not_found,
           ),
         );
       }
@@ -279,6 +322,8 @@ export class ShareService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.update_share_content.not_found,
+            undefined,
+            errorCode.content.update_share_content.not_found,
           ),
         );
       }
@@ -286,6 +331,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.update_share_content.not_share,
+          undefined,
+          errorCode.content.update_share_content.not_share,
         ),
       );
     }
@@ -317,6 +364,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.unshare_content.user_not_found,
+          undefined,
+          errorCode.content.unshare_content.user_not_found,
         ),
       );
     }
@@ -327,6 +376,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.unshare_content.not_found,
+          undefined,
+          errorCode.content.unshare_content.not_found,
         ),
       );
     }
@@ -336,7 +387,9 @@ export class ShareService {
       currentUserId,
       contentFound.author.id,
       message.content.unshare_content.not_found,
+      errorCode.content.unshare_content.not_found,
       message.content.unshare_content.target_user_block,
+      errorCode.content.unshare_content.target_user_block,
     );
 
     // Delete the share record for current user and content.
@@ -356,6 +409,8 @@ export class ShareService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.unshare_content.user_not_found,
+            undefined,
+            errorCode.content.unshare_content.user_not_found,
           ),
         );
       }
@@ -364,6 +419,8 @@ export class ShareService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.unshare_content.not_found,
+            undefined,
+            errorCode.content.unshare_content.not_found,
           ),
         );
       }
@@ -371,6 +428,8 @@ export class ShareService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.unshare_content.not_share,
+          undefined,
+          errorCode.content.unshare_content.not_share,
         ),
       );
     }

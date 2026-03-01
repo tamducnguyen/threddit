@@ -7,6 +7,7 @@
 } from '@nestjs/common';
 import { sendResponse } from '../common/helper/response.helper';
 import { message } from '../common/helper/message.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 import { ReactionRepository } from './reaction.repository';
 import { ReactionTypeDTO } from './dtos/reaction-type.dto';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -51,6 +52,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.reaction_content.user_not_found,
+          undefined,
+          errorCode.content.reaction_content.user_not_found,
         ),
       );
     }
@@ -61,6 +64,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.reaction_content.not_found,
+          undefined,
+          errorCode.content.reaction_content.not_found,
         ),
       );
     }
@@ -75,6 +80,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.reaction_content.already,
+          undefined,
+          errorCode.content.reaction_content.already,
         ),
       );
     }
@@ -98,6 +105,8 @@ export class ReactionService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.reaction_content.user_not_found,
+            undefined,
+            errorCode.content.reaction_content.user_not_found,
           ),
         );
       }
@@ -106,6 +115,8 @@ export class ReactionService {
           sendResponse(
             HttpStatus.NOT_FOUND,
             message.content.reaction_content.not_found,
+            undefined,
+            errorCode.content.reaction_content.not_found,
           ),
         );
       }
@@ -118,6 +129,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.reaction_content.already,
+          undefined,
+          errorCode.content.reaction_content.already,
         ),
       );
     }
@@ -181,6 +194,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.update_reaction_content.user_not_found,
+          undefined,
+          errorCode.content.update_reaction_content.user_not_found,
         ),
       );
     }
@@ -191,6 +206,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.update_reaction_content.not_found,
+          undefined,
+          errorCode.content.update_reaction_content.not_found,
         ),
       );
     }
@@ -207,6 +224,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.update_reaction_content.not_reacted,
+          undefined,
+          errorCode.content.update_reaction_content.not_reacted,
         ),
       );
     }
@@ -217,6 +236,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.update_reaction_content.already,
+          undefined,
+          errorCode.content.update_reaction_content.already,
         ),
       );
     }
@@ -233,6 +254,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.update_reaction_content.not_reacted,
+          undefined,
+          errorCode.content.update_reaction_content.not_reacted,
         ),
       );
     }
@@ -264,6 +287,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.delete_reaction_content.user_not_found,
+          undefined,
+          errorCode.content.delete_reaction_content.user_not_found,
         ),
       );
     }
@@ -274,6 +299,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.NOT_FOUND,
           message.content.delete_reaction_content.not_found,
+          undefined,
+          errorCode.content.delete_reaction_content.not_found,
         ),
       );
     }
@@ -290,6 +317,8 @@ export class ReactionService {
         sendResponse(
           HttpStatus.BAD_REQUEST,
           message.content.delete_reaction_content.not_reacted,
+          undefined,
+          errorCode.content.delete_reaction_content.not_reacted,
         ),
       );
     }

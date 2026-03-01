@@ -85,9 +85,14 @@ export const errorCode = {
     },
   },
   storage: {
+    upload_failed: '155',
+    invalid_upload_session_id: '156',
+    media_file_too_large: '157',
+    invalid_media_content_type: '158',
     invalid_content_type: '48',
     invalid_key: '62',
     object_not_found: '63',
+    invalid_media_key: '154',
   },
   common: {
     token_not_found: '50',
@@ -194,6 +199,86 @@ export const errorCode = {
     },
     get_received_request_count: {
       success: '114',
+    },
+  },
+  content: {
+    get_timeline_content: {
+      user_not_found: '138',
+      cursor_invalid: '139',
+      target_user_block: '140',
+    },
+    get_saved_content: {
+      cursor_invalid: '141',
+    },
+
+    save_content: {
+      user_not_found: '159',
+      not_found: '160',
+      already: '161',
+    },
+    unsave_content: {
+      user_not_found: '162',
+      not_found: '163',
+      not_save: '164',
+    },
+    reaction_content: {
+      user_not_found: '165',
+      not_found: '166',
+      already: '167',
+    },
+    update_reaction_content: {
+      user_not_found: '168',
+      not_found: '169',
+      not_reacted: '170',
+      already: '171',
+    },
+    delete_reaction_content: {
+      user_not_found: '172',
+      not_found: '173',
+      not_reacted: '174',
+    },
+    share_content: {
+      user_not_found: '175',
+      not_found: '176',
+      target_user_block: '177',
+      already: '178',
+    },
+    update_share_content: {
+      user_not_found: '179',
+      not_found: '180',
+      target_user_block: '181',
+      no_field_to_update: '182',
+      not_share: '183',
+    },
+    unshare_content: {
+      user_not_found: '184',
+      not_found: '185',
+      target_user_block: '186',
+      not_share: '187',
+    },
+    create_post: {
+      user_not_found: '142',
+      text_or_media_required: '143',
+      story_must_have_one_media: '144',
+      confirm_media_failed: '145',
+    },
+    get_friend_story: {
+      cursor_invalid: '146',
+    },
+    get_content: {
+      not_found: '147',
+    },
+    pin_content: {
+      not_found: '148',
+      already_pinned: '149',
+      only_one_post_allowed: '150',
+    },
+    unpin_content: {
+      not_found: '151',
+      already_unpinned: '152',
+    },
+    delete_content: {
+      not_found: '153',
     },
   },
   block: {
