@@ -3,6 +3,7 @@ import { ContentEntity } from '../entities/content.entity';
 import { Repository } from 'typeorm';
 import { SaveEntity } from '../entities/save.entity';
 import { UserEntity } from '../entities/user.entity';
+import { ContentType } from '../enum/contenttype.enum';
 
 export class SavedContentRepository {
   constructor(
@@ -18,8 +19,10 @@ export class SavedContentRepository {
     return await this.userRepo.findOne({ where: { id: userId } });
   }
 
-  async findContentById(contentId: number) {
-    return await this.contentRepo.findOne({ where: { id: contentId } });
+  async findPostById(contentId: number) {
+    return await this.contentRepo.findOne({
+      where: { id: contentId, type: ContentType.POST },
+    });
   }
 
   async checkSavedContent(contentId: number, userId: number) {

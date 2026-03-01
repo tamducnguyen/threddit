@@ -16,17 +16,18 @@ export class SavedContentService {
   constructor(private readonly savedContentRepo: SavedContentRepository) {}
 
   /**
-   * Saves a content item to the user's saved list.
+   * BUSINESS RULE: only post content can be saved
+   * Saves a post content item to the user's saved list.
    *
    * @param currentUserId ID of the current user.
-   * @param contentId ID of the content to save.
+   * @param contentId ID of the post content to save.
    * @returns Standardized success response when the save operation completes.
    */
   async saveContent(currentUserId: number, contentId: number) {
     // Validate user and content existence in parallel.
     const [currentUserFound, contentFound] = await Promise.all([
       this.savedContentRepo.findUserById(currentUserId),
-      this.savedContentRepo.findContentById(contentId),
+      this.savedContentRepo.findPostById(contentId),
     ]);
 
     // Reject the request if the user does not exist.
@@ -39,7 +40,7 @@ export class SavedContentService {
       );
     }
 
-    // Reject the request if the content does not exist.
+    // Reject the request if the post content does not exist.
     if (!contentFound) {
       throw new NotFoundException(
         sendResponse(
@@ -76,7 +77,7 @@ export class SavedContentService {
       // Re-check existence to map race-condition DB failures into domain errors.
       const [currentUserStillExists, contentStillExists] = await Promise.all([
         this.savedContentRepo.findUserById(currentUserId),
-        this.savedContentRepo.findContentById(contentId),
+        this.savedContentRepo.findPostById(contentId),
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
@@ -112,17 +113,18 @@ export class SavedContentService {
   }
 
   /**
-   * Removes a content item from the user's saved list.
+   * BUSINESS RULE: only post content can be saved
+   * Removes a post content item from the user's saved list.
    *
    * @param currentUserId ID of the current user.
-   * @param contentId ID of the content to unsave.
+   * @param contentId ID of the post content to unsave.
    * @returns Standardized success response when the unsave operation completes.
    */
   async unsaveContent(currentUserId: number, contentId: number) {
-    // Validate user and content existence in parallel.
+    // Validate user and post content existence in parallel.
     const [currentUserFound, contentFound] = await Promise.all([
       this.savedContentRepo.findUserById(currentUserId),
-      this.savedContentRepo.findContentById(contentId),
+      this.savedContentRepo.findPostById(contentId),
     ]);
 
     // Reject the request if the user does not exist.
@@ -135,7 +137,7 @@ export class SavedContentService {
       );
     }
 
-    // Reject the request if the content does not exist.
+    // Reject the request if the post content does not exist.
     if (!contentFound) {
       throw new NotFoundException(
         sendResponse(
@@ -155,7 +157,7 @@ export class SavedContentService {
     if (!isUnsaved) {
       const [currentUserStillExists, contentStillExists] = await Promise.all([
         this.savedContentRepo.findUserById(currentUserId),
-        this.savedContentRepo.findContentById(contentId),
+        this.savedContentRepo.findPostById(contentId),
       ]);
       if (!currentUserStillExists) {
         throw new NotFoundException(
