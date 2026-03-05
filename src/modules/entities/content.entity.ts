@@ -24,7 +24,7 @@ export class ContentEntity {
   @JoinColumn({ name: 'author_user_id' })
   author: UserEntity;
   @Column({ name: 'text', type: 'text', nullable: true })
-  text: string;
+  text: string | null;
   @Column({ name: 'type', type: 'enum', enum: ContentType })
   type: ContentType;
   @Column({ name: 'is_pinned', type: 'bool', default: false })
@@ -35,7 +35,7 @@ export class ContentEntity {
     joinColumn: { name: 'content_id' },
     inverseJoinColumn: { name: 'user_id' },
   })
-  mentionedUser: UserEntity[];
+  mentionedUsers: UserEntity[];
   @OneToMany(() => CommentEntity, (comment) => comment.content)
   comments: CommentEntity[];
   @OneToMany(() => SaveEntity, (save) => save.savedContent)

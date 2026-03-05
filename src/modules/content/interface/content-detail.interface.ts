@@ -1,22 +1,24 @@
+import { ContentType } from 'src/modules/enum/contenttype.enum';
 import { ReactionType } from 'src/modules/enum/reactiontype.enum';
 import { MediaFileDTO } from './media-file.interface';
 import { UserDTO } from './user.interface';
 
-export interface PinnedContent {
+export interface ContentDetail {
   id: number;
   createdAt: Date;
   updatedAt: Date;
-  isShared: boolean;
+  text: string | null;
+  type: ContentType;
+  isPinned: boolean;
   isOwner: boolean;
   author: UserDTO;
   mentionedUsers: UserDTO[];
-  text: string | null;
   mediaFiles: MediaFileDTO[];
-  type: string;
   commentNumber: number;
   saveNumber: number;
   shareNumber: number;
   reactionNumber: number;
   isSaved: boolean;
+  isShared: boolean;
   reaction: ReactionType | null;
 }

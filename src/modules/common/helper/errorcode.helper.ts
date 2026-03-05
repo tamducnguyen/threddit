@@ -89,6 +89,9 @@ export const errorCode = {
     invalid_upload_session_id: '156',
     media_file_too_large: '157',
     invalid_media_content_type: '158',
+    content_not_found: '196',
+    invalid_media_file_number: '198',
+    story_must_have_one_media: '199',
     invalid_content_type: '48',
     invalid_key: '62',
     object_not_found: '63',
@@ -270,8 +273,31 @@ export const errorCode = {
       story_must_have_one_media: '144',
       confirm_media_failed: '145',
     },
+    update_content: {
+      not_found: '200',
+      no_field_to_update: '201',
+      text_or_media_required: '202',
+      story_must_have_one_media: '203',
+      invalid_media_key: '204',
+    },
     get_friend_story: {
       cursor_invalid: '146',
+    },
+    get_my_story: {
+      cursor_invalid: '206',
+    },
+    get_my_current_story: {
+      cursor_invalid: '205',
+    },
+    get_other_current_story: {
+      user_not_found: '207',
+      cursor_invalid: '208',
+      target_user_block: '209',
+    },
+    get_pinned_story: {
+      user_not_found: '191',
+      cursor_invalid: '190',
+      target_user_block: '192',
     },
     get_content: {
       not_found: '147',

@@ -127,6 +127,15 @@
     },
   },
   storage: {
+    upload_failed: 'Quá trình tải tệp lên thất bại, vui lòng thử lại.',
+    request_upload_success: 'Yêu cầu upload thành công',
+    content_not_found: 'Không tìm thấy nội dung',
+    invalid_media_file_number: 'Số lượng media không hợp lệ',
+    invalid_upload_session_id: 'Upload session id không hợp lệ',
+    media_file_too_large: 'Mỗi media file tối đa 500MB',
+    invalid_media_content_type: 'Media content type không hợp lệ',
+    invalid_media_key: 'Media key không hợp lệ',
+    story_must_have_one_media: 'Story chỉ được đính kèm một tệp đính kèm',
     invalid_content_type: 'Loại tập tin không hợp lệ',
     invalid_key: 'Key lưu trữ không hợp lệ',
     object_not_found: 'Không tìm thấy đối tượng lưu trữ',
@@ -314,43 +323,61 @@
       no_content: 'Không có story từ bạn bè hoặc đã hết danh sách',
       success: 'Lấy danh sách story của bạn bè thành công',
     },
+    get_my_story: {
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có story hoặc đã hết danh sách',
+      success: 'Lấy danh sách story của bạn thành công',
+    },
+    get_my_current_story: {
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có story hiện tại hoặc đã hết danh sách',
+      success: 'Lấy danh sách story hiện tại của bạn thành công',
+    },
+    get_other_current_story: {
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content:
+        'Không có story hiện tại của người dùng này hoặc đã hết danh sách',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem story hiện tại',
+      success: 'Lấy danh sách story hiện tại của người dùng thành công',
+    },
+    get_pinned_story: {
+      user_not_found: 'Người dùng không tồn tại',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+      no_content: 'Không có story đã ghim hoặc đã hết danh sách',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem story đã ghim',
+      success: 'Lấy danh sách story đã ghim thành công',
+    },
     pin_content: {
-      not_found: 'Không tìm thấy bài viết của bạn',
-      already_pinned: 'Bài viết đã được ghim trước đó',
-      success: 'Ghim bài viết thành công',
+      not_found: 'Không tìm thấy nội dung của bạn',
+      already_pinned: 'Nội dung đã được ghim trước đó',
+      only_one_post_allowed: 'Bạn chỉ có thể ghim một bài viết',
+      success: 'Ghim nội dung thành công',
     },
     unpin_content: {
-      not_found: 'Không tìm thấy bài viết của bạn',
+      not_found: 'Không tìm thấy nội dung của bạn',
       already_unpinned: 'Bài viết chưa được ghim',
       success: 'Bỏ ghim bài viết thành công',
     },
     create_post: {
       user_not_found: 'Không tìm thấy người dùng',
-      success: 'Đăng tải bài viết thành công',
+      success: 'Đăng tải nội dung thành công',
       text_or_media_required:
-        'Bài viết phải có nội dung văn bản hoặc ít nhất 1 tệp media',
-      media_files_number_invalid:
-        'Số lượng tệp media không hợp lệ khi tạo bài viết có media',
-      media_content_types_required:
-        'Cần khai báo content type cho từng media file',
-      media_content_types_count_mismatch:
-        'Số lượng content type media phải khớp mediaFilesNumber',
+        'Nội dung phải có nội dung văn bản hoặc ít nhất 1 tệp media',
       gen_media_presigned_url_failed:
         'Không thể tạo URL upload media, vui lòng thử lại',
-      upload_failed: 'Quá trình tải tệp lên thất bại, vui lòng thử lại.',
-      invalid_media_key: 'Media key không hợp lệ',
-      invalid_media_content_type: 'Media content type không hợp lệ',
-      media_file_too_large: 'Mỗi media file tối đa 500MB',
+      story_must_have_one_media: 'Story chỉ được đính kèm một tệp đính kèm',
       confirm_content_not_found:
         'Không tìm thấy bài viết để xác nhận tải tệp media.',
       confirm_media_failed:
-        'Không thể xác nhận media cho bài viết, vui lòng thử lại.',
-      confirm_media_success: 'Xác nhận upload media thành công',
+        'Không thể xác nhận media cho nội dung, vui lòng thử lại.',
     },
     delete_content: {
       user_not_found: 'Không tìm thấy người dùng',
-      not_found: 'Không tìm thấy bài viết của bạn',
-      success: 'Xóa bài thành công',
+      not_found: 'Không tìm thấy nội dung của bạn',
+      success: 'Xóa nội dung thành công',
     },
     save_content: {
       user_not_found: 'Không tìm thấy người dùng',
@@ -409,16 +436,25 @@
       not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
     },
     update_content: {
-      not_found: 'Không tìm thấy bài viết của bạn',
-      success: 'Chỉnh sủa bài viết thành công',
+      not_found: 'Không tìm thấy nội dung của bạn',
+      no_field_to_update: 'Không có nội dung để cập nhật',
+      text_or_media_required:
+        'Nội dung phải có nội dung văn bản hoặc ít nhất 1 tệp media',
+      story_must_have_one_media: 'Story chỉ được đính kèm một tệp đính kèm',
+      invalid_media_key: 'Media key không hợp lệ',
+      success: 'Chỉnh sủa nội dung thành công',
     },
     get_content: {
-      success: 'Lấy chi tiết bài viết thành công',
-      not_found: 'Không tìm thấy bài viết',
+      success: 'Lấy chi tiết nội dung thành công',
+      not_found: 'Không tìm thấy nội dung',
     },
     get_feed: {
       success: 'Lấy bảng tin thành công',
       no_content: 'Đã hết bài đăng',
+    },
+    get_reel: {
+      success: 'Lấy danh sách reel thành công',
+      no_content: 'Đã hết reel',
     },
     get_following_content: {
       success: 'Lấy bảng tin từ người bạn đang theo dõi thành công',

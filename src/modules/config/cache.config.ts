@@ -10,6 +10,7 @@ export const prefixCache = {
   deleteaccount_code: 'deleteaccount_code:',
   deleteaccount_attemps: 'deleteaccount_attemps:',
   feedalready: 'feedalready:',
+  reelalready: 'reelalready:',
 };
 export const ttlCache = {
   attemps: 5 * 60 * 1000,
@@ -18,6 +19,7 @@ export const ttlCache = {
   code: 5 * 60 * 1000,
   ban: 5 * 60 * 1000,
   feedalready: 3 * 60 * 60 * 1000,
+  reelalready: 3 * 60 * 60 * 1000,
 };
 export const cacheConfig = (configService: ConfigService): CacheOptions => {
   const cacheStoreUrl = configService.getOrThrow<string>('REDIS_URL');
