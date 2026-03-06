@@ -751,9 +751,10 @@ export class ContentRepository {
       SELECT
         saves.id as "saveId",
         saves.created_at as "savedAt",
-        contents.id as "contentId",
-        contents.created_at as "contentCreatedAt",
-        contents.updated_at as "contentUpdatedAt",
+        contents.id as "id",
+        contents.created_at as "createdAt",
+        contents.updated_at as "updatedAt",
+        contents.is_pinned as "isPinned",
         (
           SELECT EXISTS(
             SELECT 1
