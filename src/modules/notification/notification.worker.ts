@@ -18,6 +18,7 @@ import {
   MentionInCommentNotificationMessage,
   MentionInContentNotificationMessage,
   NameNotificationQueue,
+  ReactionCommentNotificationMessage,
   ReactionContentNotificationMessage,
   ReplyCommentNotificationMessage,
 } from './helper/notification.helper';
@@ -305,6 +306,37 @@ export class NotificationWorker extends WorkerHost {
             data.currentUser.displayName,
           ),
           type: NotificationType.REACTION_CONTENT,
+          target: target,
+        };
+        const insertedNotification =
+          await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(insertedNotification);
+        break;
+      }
+      //send reaction notification to comment owner
+      case String(JobNotificationQueue.REACTION_COMMENT): {
+        type SendReactionCommentNotificationInterface = {
+          currentUser: UserEntity;
+          reactedComment: CommentEntity;
+          reactionId: number;
+        };
+        const data = job.data as SendReactionCommentNotificationInterface;
+        if (data.currentUser.id === data.reactedComment.commenter.id) {
+          break;
+        }
+        const target: NotificationTarget = {
+          type: 'REACTION_COMMENT',
+          contentId: data.reactedComment.content.id,
+          commentId: data.reactedComment.id,
+          reactionId: data.reactionId,
+          actorId: data.currentUser.id,
+        };
+        const notification: Partial<NotificationEntity> = {
+          owner: data.reactedComment.commenter,
+          message: ReactionCommentNotificationMessage(
+            data.currentUser.displayName,
+          ),
+          type: NotificationType.REACTION_COMMENT,
           target: target,
         };
         const insertedNotification =

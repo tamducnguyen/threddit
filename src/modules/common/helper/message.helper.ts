@@ -421,6 +421,8 @@
       not_found: 'Không tìm thấy bài viết',
       success: 'Thả cảm xúc bài viết thành công',
       already: 'Bạn đã thả cảm xúc bài viết này trước đó',
+      target_user_block:
+        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để thả cảm xúc',
     },
     update_reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
@@ -428,12 +430,41 @@
       success: 'Cập nhật cảm xúc bài viết thành công',
       not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
       already: 'Bạn đã thả cảm xúc kiểu này',
+      target_user_block:
+        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để cập nhật cảm xúc',
     },
     delete_reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
       success: 'Bỏ cảm xúc bài viết thành công',
       not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
+      target_user_block:
+        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để bỏ cảm xúc',
+    },
+    reaction_comment: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bình luận',
+      success: 'Thả cảm xúc bình luận thành công',
+      already: 'Bạn đã thả cảm xúc bình luận này trước đó',
+      target_user_block:
+        'Bạn đã chặn một trong những người dùng liên quan, hãy gỡ chặn để thả cảm xúc',
+    },
+    update_reaction_comment: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bình luận',
+      success: 'Cập nhật cảm xúc bình luận thành công',
+      not_reacted: 'Bạn chưa thả cảm xúc bình luận này',
+      already: 'Bạn đã thả cảm xúc kiểu này',
+      target_user_block:
+        'Bạn đã chặn một trong những người dùng liên quan, hãy gỡ chặn để cập nhật cảm xúc',
+    },
+    delete_reaction_comment: {
+      user_not_found: 'Không tìm thấy người dùng',
+      not_found: 'Không tìm thấy bình luận',
+      success: 'Bỏ cảm xúc bình luận thành công',
+      not_reacted: 'Bạn chưa thả cảm xúc bình luận này',
+      target_user_block:
+        'Bạn đã chặn một trong những người dùng liên quan, hãy gỡ chặn để bỏ cảm xúc',
     },
     update_content: {
       not_found: 'Không tìm thấy nội dung của bạn',

@@ -9,6 +9,7 @@ export type NotificationTarget =
     }
   | {
       type: 'REACTION_COMMENT';
+      contentId: number;
       commentId: number;
       reactionId: number;
       actorId: number;

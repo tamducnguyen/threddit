@@ -18,6 +18,7 @@ import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
 import { ContentIdDTO } from './dtos/content-id.dto';
 import { ReactionTypeDTO } from './dtos/reaction-type.dto';
+import { CommentIdDTO } from '../comment/dtos/comment-id.dto';
 
 @Controller('content')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -62,6 +63,46 @@ export class ReactionController {
     return await this.reactionService.deleteContentReaction(
       currentUser.sub,
       contentIdDTO.contentId,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('comment/:commentId/reaction')
+  async createCommentReaction(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() commentIdDTO: CommentIdDTO,
+    @Body() reactionTypeDTO: ReactionTypeDTO,
+  ) {
+    return await this.reactionService.createCommentReaction(
+      currentUser.sub,
+      commentIdDTO.commentId,
+      reactionTypeDTO,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('comment/:commentId/reaction')
+  async updateCommentReaction(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() commentIdDTO: CommentIdDTO,
+    @Body() reactionTypeDTO: ReactionTypeDTO,
+  ) {
+    return await this.reactionService.updateCommentReaction(
+      currentUser.sub,
+      commentIdDTO.commentId,
+      reactionTypeDTO,
+    );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Delete('comment/:commentId/reaction')
+  async deleteCommentReaction(
+    @CurrentUser() currentUser: AuthUser,
+    @Param() commentIdDTO: CommentIdDTO,
+  ) {
+    return await this.reactionService.deleteCommentReaction(
+      currentUser.sub,
+      commentIdDTO.commentId,
     );
   }
 }

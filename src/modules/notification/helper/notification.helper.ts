@@ -28,6 +28,9 @@ export const ReplyCommentNotificationMessage = (commenterDisplayName: string) =>
 export const ReactionContentNotificationMessage = (
   reacterDisplayName: string,
 ) => `${reacterDisplayName} đã thả cảm xúc vào bài viết của bạn`;
+export const ReactionCommentNotificationMessage = (
+  reacterDisplayName: string,
+) => `${reacterDisplayName} đã thả cảm xúc vào bình luận của bạn`;
 export const MentionInCommentNotificationMessage = (
   commenterDisplayName: string,
 ) => `${commenterDisplayName} đã nhắc tới bạn trong bình luận của một bài đăng`;
@@ -38,6 +41,7 @@ export enum JobNotificationQueue {
   FOLLOW = 'sendFollowNotification',
   COMMENT = 'sendCommentNotification',
   REACTION_CONTENT = 'sendReactionContentNotification',
+  REACTION_COMMENT = 'sendReactionCommentNotification',
   FRIEND_REQUEST = 'sendFriendRequestNotification',
   FRIEND_ACCEPTED = 'sendFriendAcceptedNotification',
   MENTION_IN_COMMENT = 'sendMentionCommentNotification',
