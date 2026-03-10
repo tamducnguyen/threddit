@@ -19,6 +19,7 @@ import {
   MentionInContentNotificationMessage,
   NameNotificationQueue,
   ReactionContentNotificationMessage,
+  ReplyCommentNotificationMessage,
 } from './helper/notification.helper';
 import { CommentEntity } from '../entities/comment.entity';
 import { NotificationTarget } from '../enum/notificationtarget.type';
@@ -252,6 +253,32 @@ export class NotificationWorker extends WorkerHost {
         const insertNotification =
           await this.notificationRepo.saveNotification(notification);
         this.notificationService.notify(insertNotification);
+        break;
+      }
+      //send reply notification to the parent comment owner
+      case String(JobNotificationQueue.REPLY_COMMENT): {
+        type SendReplyCommentNotificationInterface = {
+          comment: CommentEntity;
+          parentCommenter: UserEntity;
+        };
+        const data = job.data as SendReplyCommentNotificationInterface;
+        const target: NotificationTarget = {
+          type: 'REPLY_COMMENT',
+          contentId: data.comment.content.id,
+          commentId: data.comment.id,
+          actorId: data.comment.commenter.id,
+        };
+        const notification: Partial<NotificationEntity> = {
+          owner: data.parentCommenter,
+          message: ReplyCommentNotificationMessage(
+            data.comment.commenter.displayName,
+          ),
+          type: NotificationType.REPLY_COMMENT,
+          target: target,
+        };
+        const insertedNotification =
+          await this.notificationRepo.saveNotification(notification);
+        this.notificationService.notify(insertedNotification);
         break;
       }
       //send reaction notification to content author

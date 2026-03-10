@@ -267,6 +267,40 @@ export const errorCode = {
       target_user_block: '186',
       not_share: '187',
     },
+    comment: {
+      content_not_found: '211',
+      parent_comment_not_found: '217',
+      user_not_found: '212',
+      target_user_block: '213',
+      parent_commenter_block: '220',
+      text_or_media_required: '214',
+      only_one_media_allowed: '215',
+      confirm_media_failed: '216',
+    },
+    delete_comment: {
+      not_found: '218',
+    },
+    get_comment: {
+      content_not_found: '222',
+      target_user_block: '223',
+      cursor_invalid: '224',
+    },
+    get_detail_comment: {
+      not_found: '219',
+      target_user_block: '221',
+    },
+    get_child_comments: {
+      not_found: '232',
+    },
+    update_comment: {
+      not_found: '225',
+      target_user_block: '226',
+      parent_commenter_block: '227',
+      no_field_to_update: '228',
+      text_or_media_required: '229',
+      only_one_media_allowed: '230',
+      confirm_media_failed: '231',
+    },
     create_post: {
       user_not_found: '142',
       text_or_media_required: '143',

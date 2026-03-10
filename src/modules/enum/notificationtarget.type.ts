@@ -20,6 +20,12 @@ export type NotificationTarget =
       actorId: number;
     }
   | {
+      type: 'REPLY_COMMENT';
+      contentId: number;
+      commentId: number;
+      actorId: number;
+    }
+  | {
       type: 'FOLLOWING_CONTENT_CREATION';
       contentId: number;
       contentType: ContentType;

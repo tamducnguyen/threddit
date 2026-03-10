@@ -21,6 +21,7 @@ import { BlockModule } from './modules/block/block.module';
 import { SavedContentModule } from './modules/saved-content/saved-content.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
 import { ShareModule } from './modules/share/share.module';
+import { CommentModule } from './modules/comment/comment.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ShareModule } from './modules/share/share.module';
     SavedContentModule,
     ReactionModule,
     ShareModule,
+    CommentModule,
     ProfileModule,
     BlockModule,
     ThrottlerModule.forRootAsync({

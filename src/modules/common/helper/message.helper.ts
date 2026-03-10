@@ -471,24 +471,53 @@
     },
     comment: {
       content_not_found: 'Không tìm thấy bài viết',
+      parent_comment_not_found: 'Không tìm thấy bình luận cha',
       user_not_found: 'Không tìm thấy người dùng',
+      target_user_block:
+        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để bình luận',
+      parent_commenter_block:
+        'Bạn đã chặn người viết bình luận cha, hãy gỡ chặn để trả lời bình luận',
+      text_or_media_required:
+        'Bình luận phải có nội dung văn bản hoặc một tệp media',
+      only_one_media_allowed: 'Bình luận chỉ được đính kèm một tệp media',
+      confirm_media_failed: 'Upload thất bại, vui lòng thử lại',
       success: 'Bình luận bài viết thành công',
     },
+
     get_comment: {
       content_not_found: 'Không tìm thấy bài viết',
+      target_user_block:
+        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem bình luận',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Đã hết bình luận hoặc không có bình luận',
       success: 'Lấy danh sách bình luận thành công',
     },
+
     delete_comment: {
       not_found: 'Không tìm thấy bình luận của bạn',
       success: 'Xóa bình luận thành công',
     },
+
     get_detail_comment: {
       not_found: 'Không tìm thấy bình luận',
+      target_user_block: 'Bạn đã chặn một trong những người bình luận này',
       success: 'Lấy bình luận thành công',
     },
+    get_child_comments: {
+      not_found: 'Không tìm thấy bình luận',
+    },
     update_comment: {
+      confirm_media_failed: 'Upload thất bại, vui lòng thử lại',
+      no_field_to_update: 'Không có nội dung để cập nhật',
+      parent_commenter_block:
+        'Bạn đã chặn người viết bình luận cha, hãy gỡ chặn để trả lời bình luận',
+      text_or_media_required:
+        'Bình luận phải có nội dung văn bản hoặc một tệp media',
+      only_one_media_allowed: 'Bình luận chỉ được đính kèm một tệp media',
+      media_action_conflict:
+        'Hành động cập nhập tệp phương tiện mâu thuẫn, chỉ được xóa hoặc cập nhật thay thế',
+      target_user_block:
+        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để bình luận',
       not_found: 'Không tìm thấy bình luận của bạn',
       success: 'Cập nhật bình luận thành công',
     },

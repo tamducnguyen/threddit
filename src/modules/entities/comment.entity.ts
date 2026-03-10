@@ -7,6 +7,7 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -34,9 +35,14 @@ export class CommentEntity {
     },
     inverseJoinColumn: { name: 'user_id' },
   })
-  mentionedUser: UserEntity[];
+  mentionedUsers: UserEntity[];
   @Column({ name: 'text', type: 'text', nullable: true })
-  text: string;
+  text?: string | null;
+  @ManyToOne(() => CommentEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'parent_comment_id' })
+  parentComment: CommentEntity;
+  @OneToMany(() => CommentEntity, (comment) => comment.parentComment)
+  childComments: CommentEntity[];
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })

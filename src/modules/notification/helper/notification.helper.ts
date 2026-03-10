@@ -23,6 +23,8 @@ export const MentionInContentNotificationMessage = (
 ) => `${authorDisplayName} đã nhắc đến bạn trong ${contentType} mới`;
 export const CommentNotificationMessage = (commenterDisplayname: string) =>
   `${commenterDisplayname} đã bình luận vào bài viết của bạn`;
+export const ReplyCommentNotificationMessage = (commenterDisplayName: string) =>
+  `${commenterDisplayName} đã trả lời bình luận của bạn`;
 export const ReactionContentNotificationMessage = (
   reacterDisplayName: string,
 ) => `${reacterDisplayName} đã thả cảm xúc vào bài viết của bạn`;
@@ -39,6 +41,7 @@ export enum JobNotificationQueue {
   FRIEND_REQUEST = 'sendFriendRequestNotification',
   FRIEND_ACCEPTED = 'sendFriendAcceptedNotification',
   MENTION_IN_COMMENT = 'sendMentionCommentNotification',
+  REPLY_COMMENT = 'sendReplyCommentNotification',
 }
 
 export const NameNotificationQueue = 'notification';
