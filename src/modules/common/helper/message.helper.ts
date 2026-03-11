@@ -103,6 +103,11 @@
       target_user_block:
         'Bạn đã chặn người dùng này, hãy gỡ chặn để có thể xem trang cá nhân của họ',
     },
+    search_profile: {
+      success: 'Tìm kiếm hồ sơ người dùng thành công',
+      no_content: 'Đã hết danh sách hoặc không tìm thấy hồ sơ phù hợp',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
     update_profile: {
       no_field_to_update: 'Không có trường thông tin nào để cập nhật',
       user_not_found: 'Người dùng không tồn tại',

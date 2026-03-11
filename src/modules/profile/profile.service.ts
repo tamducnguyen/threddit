@@ -17,6 +17,8 @@ import { BackgroundPresignDTO } from './dtos/backgroundpresign.dto';
 import { BackgroundConfirmDTO } from './dtos/backgroundconfirm.dto';
 import { StorageService } from '../storage/storage.service';
 import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
+import { JwtService } from '@nestjs/jwt';
+import { ProfileCursor } from './interfaces/profile-cursor.interface';
 
 @Injectable()
 export class ProfileService {
@@ -26,6 +28,7 @@ export class ProfileService {
     private readonly profileRepo: ProfileRepository,
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
+    private readonly jwtService: JwtService,
   ) {
     this.avatarMaxSize =
       this.configService.getOrThrow<number>('AVATAR_MAX_SIZE');
@@ -146,38 +149,54 @@ export class ProfileService {
         ),
       );
     }
-    //convert relative path into url
-    const avatarUrl = ConvertMediaRelativePathToUrl(
-      this.configService,
-      userFound.avatarRelativePath,
-    );
-    const backgroundImageUrl = ConvertMediaRelativePathToUrl(
-      this.configService,
-      userFound.backgroundImageRelativePath,
-    );
-    //send response
-    const profile = {
-      email: profileFound.email,
-      username: profileFound.username,
-      displayName: profileFound.displayName,
-      dateOfBirth: profileFound.dateOfBirth,
-      gender: profileFound.gender,
-      educationalLevel: profileFound.educationalLevel,
-      relationshipStatus: profileFound.relationshipStatus,
-      avatarUrl: avatarUrl,
-      backgroundImageUrl: backgroundImageUrl,
-      followingNumber: profileFound.followingNumber,
-      followerNumber: profileFound.followerNumber,
-      friendNumber: profileFound.friendNumber,
-      friendshipStatus: profileFound.friendshipStatus,
-      isFollowing: profileFound.isFollowing,
-      mutualFriendNumber: profileFound.mutualFriendNumber,
-    };
     return sendResponse(
       HttpStatus.OK,
       message.profile.get_profile.success,
-      profile,
+      profileFound,
     );
+  }
+
+  async searchProfiles(currentUserId: number, key: string, cursor?: string) {
+    let profileCursor: ProfileCursor | undefined;
+    if (cursor) {
+      try {
+        profileCursor =
+          await this.jwtService.verifyAsync<ProfileCursor>(cursor);
+      } catch {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.profile.search_profile.cursor_invalid,
+            undefined,
+            errorCode.profile.search_profile.cursor_invalid,
+          ),
+        );
+      }
+    } else {
+      profileCursor = undefined;
+    }
+    const searchProfiles = await this.profileRepo.searchProfiles(
+      currentUserId,
+      key,
+      profileCursor,
+    );
+    const finalProfile = searchProfiles[searchProfiles.length - 1];
+    if (!finalProfile) {
+      return sendResponse(
+        HttpStatus.OK,
+        message.profile.search_profile.no_content,
+        { searchProfiles: [], cursor: null },
+      );
+    }
+    const cursorPayload: ProfileCursor = {
+      followerNumber: finalProfile.followerNumber,
+      username: finalProfile.username,
+    };
+    const nextCursor = await this.jwtService.signAsync(cursorPayload);
+    return sendResponse(HttpStatus.OK, message.profile.search_profile.success, {
+      searchProfiles: searchProfiles,
+      cursor: nextCursor,
+    });
   }
   /**
    * update user profile

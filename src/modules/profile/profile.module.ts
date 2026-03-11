@@ -8,6 +8,7 @@ import { SessionEntity } from '../entities/session.entity';
 import { StorageModule } from '../storage/storage.module';
 import { BlockEntity } from '../entities/block.entity';
 import { FriendshipEntity } from '../entities/friendship.entity';
+import { SessionModule } from '../token/session.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { FriendshipEntity } from '../entities/friendship.entity';
       BlockEntity,
       FriendshipEntity,
     ]),
+    SessionModule,
     StorageModule,
   ],
   providers: [ProfileService, ProfileRepository],

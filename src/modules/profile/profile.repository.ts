@@ -4,7 +4,9 @@ import { Brackets, DataSource, Repository } from 'typeorm';
 import { BlockEntity } from '../entities/block.entity';
 import { FriendshipEntity } from '../entities/friendship.entity';
 import { FriendshipStatus } from '../enum/friendshipstatus.enum';
-import { FollowEntity } from '../entities/follow.entity';
+import { ConfigService } from '@nestjs/config';
+import { ProfileCursor } from './interfaces/profile-cursor.interface';
+import { Profile } from './interfaces/profile.interface';
 
 export class ProfileRepository {
   constructor(
@@ -15,6 +17,7 @@ export class ProfileRepository {
     @InjectRepository(FriendshipEntity)
     private readonly friendshipRepo: Repository<FriendshipEntity>,
     private readonly datasource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
   async getProfileByUserId(userId: number) {
     type Profile = UserEntity & {
@@ -59,147 +62,93 @@ export class ProfileRepository {
     });
   }
   async getOtherProfileByUserId(currentUserId: number, userId: number) {
-    type Profile = UserEntity & {
-      followerNumber: number;
-      followingNumber: number;
-      friendNumber: number;
-      friendshipStatus: 'pending_sent' | 'pending_received' | 'accepted' | null;
-      isFollowing: boolean;
-      mutualFriendNumber: number;
-    };
-    const getUserFriendQuery = this.friendshipRepo
-      .createQueryBuilder('friendship')
-      .select(
-        `CASE WHEN friendship.requesterId = :userId THEN friendship.recipientId ELSE friendship.requesterId END`,
-      )
-      .where('friendship.status = :accepted')
-      .andWhere(
-        new Brackets((inner) => {
-          inner
-            .where('friendship.requesterId = :userId')
-            .orWhere('friendship.recipientId = :userId');
-        }),
-      )
-      .getQuery();
-    const qb = this.userRepo
-      .createQueryBuilder('user')
-      .where('user.id = :userId')
-      .loadRelationCountAndMap('user.followerNumber', 'user.followers')
-      .loadRelationCountAndMap('user.followingNumber', 'user.followings')
-
-      // friendNumber
-      .addSelect(
-        (subQ) =>
-          subQ
-            .select('COUNT(*)')
-            .from(FriendshipEntity, 'friendship')
-            .where('friendship.status = :accepted')
-            .andWhere(
-              new Brackets((q) =>
-                q
-                  .where('friendship.requesterId = :userId')
-                  .orWhere('friendship.recipientId = :userId'),
-              ),
-            ),
-        'friendNumber',
-      )
-
-      // friendshipStatus
-      .addSelect(
-        (subQ) =>
-          subQ
-            .select(
-              `
-          CASE
-            WHEN friendship.status = :pending AND friendship.requesterId = :currentUserId THEN 'pending_sent'
-            WHEN friendship.status = :pending AND friendship.requesterId = :userId THEN 'pending_received'
-            WHEN friendship.status = :accepted THEN 'accepted'
-          END
-        `,
-            )
-            .from(FriendshipEntity, 'friendship')
-            .where(
-              new Brackets((q) =>
-                q
-                  .where(
-                    'friendship.requesterId = :currentUserId AND friendship.recipientId = :userId',
-                  )
-                  .orWhere(
-                    'friendship.requesterId = :userId AND friendship.recipientId = :currentUserId',
-                  ),
-              ),
-            )
-            .limit(1),
-        'friendshipStatus',
-      )
-      // followStatus
-      .addSelect(
-        (subQ) =>
-          subQ
-            .select(
-              `
+    const storageUrl = this.configService.getOrThrow<string>('STORAGE_URL');
+    const getOtherProfileByUserIdQuery = `
+      SELECT
+        u.email as "email",
+        u.username as "username",
+        u.display_name as "displayName",
+        u.date_of_birth as "dateOfBirth",
+        u.gender as "gender",
+        u.educational_level as "educationalLevel",
+        u.relationship_status as "relationshipStatus",
+        concat($1::text, u.avatar_relative_path) as "avatarUrl",
+        concat($1::text, u.background_image_relative_path) as "backgroundImageUrl",
+        (
+          SELECT COUNT(*)
+          FROM follows f
+          WHERE f."followeeId" = u.id
+        )::int as "followerNumber",
+        (
+          SELECT COUNT(*)
+          FROM follows f
+          WHERE f."followerId" = u.id
+        )::int as "followingNumber",
+        (
+          SELECT COUNT(*)
+          FROM friendships fr
+          WHERE (fr."requesterId" = u.id OR fr."recipientId" = u.id)
+          AND fr.status = $2
+        )::int as "friendNumber",
+        EXISTS (
+          SELECT 1
+          FROM follows f
+          WHERE f."followerId" = $3
+          AND f."followeeId" = u.id
+        ) as "isFollowing",
+        (
+          SELECT 
+            CASE 
+              WHEN fr.status = $2 THEN $2::text
+              WHEN (fr."requesterId" = u.id AND fr."recipientId" = $3 AND fr.status = $4) THEN 'pending_received'
+              WHEN (fr."requesterId" = $3 AND fr."recipientId" = u.id AND fr.status = $4) THEN 'pending_sent'
+              ELSE NULL
+            END
+          FROM friendships fr
+          WHERE ((fr."requesterId" = u.id AND fr."recipientId" = $3)
+          OR (fr."requesterId" = $3 AND fr."recipientId" = u.id))
+        ) as "friendshipStatus",
+        (
+          SELECT COUNT(*)
+          FROM (
+            SELECT 
               CASE
-              WHEN COUNT(*) > 0 THEN TRUE
-              ELSE FALSE
+                WHEN fr."requesterId" = u.id THEN fr."recipientId"
+                ELSE fr."requesterId"
               END
-            `,
-            )
-            .from(FollowEntity, 'f')
-            .where('f.followerId = :currentUserId')
-            .andWhere('f.followeeId = :userId'),
-        'isFollowing',
-      )
-      //count mutual friend
-      .addSelect(
-        (subQ) =>
-          subQ
-            .from(FriendshipEntity, 'friendship')
-            .select('COUNT(*)')
-            .where('friendship.status = :accepted')
-            .andWhere(
-              new Brackets((qb) =>
-                qb
-                  .where('friendship.requesterId = :currentUserId ')
-                  .orWhere('friendship.recipientId = :currentUserId'),
-              ),
-            )
-            .andWhere(
-              `CASE WHEN friendship.requesterId = :currentUserId THEN friendship.recipientId ELSE friendship.requesterId END IN (${getUserFriendQuery})`,
-            )
-            .andWhere(
-              `CASE WHEN friendship.requesterId = :currentUserId THEN friendship.recipientId ELSE friendship.requesterId END NOT IN (:...excludedIds)`,
-            ),
-        'mutualFriendNumber',
-      )
-      .setParameters({
-        currentUserId: currentUserId,
-        userId: userId,
-        excludedIds: [currentUserId, userId],
-        pending: FriendshipStatus.PENDING,
-        accepted: FriendshipStatus.ACCEPTED,
-      });
-    const { entities, raw } = await qb.getRawAndEntities();
+            FROM friendships fr
+            WHERE ((fr."requesterId" = u.id AND  fr."recipientId" != $3)
+            OR (fr."recipientId" = u.id AND  fr."requesterId" != $3))
+            AND fr.status = $2
 
-    type ProfileRaw = {
-      friendNumber: number;
-      friendshipStatus: 'pending_sent' | 'pending_received' | 'accepted' | null;
-      isFollowing: boolean;
-      mutualFriendNumber: number;
-    };
+            INTERSECT
 
-    const profileEntity = entities[0] as Profile | undefined;
-    const profileRaw = raw[0] as ProfileRaw | undefined;
-
-    if (!profileEntity || !profileRaw) return undefined;
-
-    const profile: Profile = {
-      ...profileEntity,
-      friendNumber: Number(profileRaw.friendNumber),
-      friendshipStatus: profileRaw.friendshipStatus,
-      isFollowing: profileRaw.isFollowing,
-      mutualFriendNumber: Number(profileRaw.mutualFriendNumber),
-    };
-
+            SELECT 
+              CASE
+                WHEN fr."requesterId" = $3 THEN fr."recipientId"
+                ELSE fr."requesterId"
+              END
+            FROM friendships fr
+            WHERE ((fr."requesterId" = $3 AND  fr."recipientId" != u.id)
+            OR (fr."recipientId" = $3 AND  fr."requesterId" != u.id))
+            AND fr.status = $2
+          ) mutual_friend_ids
+        )::int as "mutualFriendNumber"
+      FROM users u
+      WHERE u.id = $5
+      LIMIT 1
+    `;
+    const params = [
+      storageUrl,
+      FriendshipStatus.ACCEPTED,
+      currentUserId,
+      FriendshipStatus.PENDING,
+      userId,
+    ];
+    const [profile] = await this.userRepo.query<Profile[]>(
+      getOtherProfileByUserIdQuery,
+      params,
+    );
     return profile;
   }
 
@@ -221,5 +170,124 @@ export class ProfileRepository {
         blocker: { id: blockerId },
       },
     });
+  }
+
+  async searchProfiles(
+    currentUserId: number,
+    key: string,
+    cursor?: ProfileCursor,
+  ) {
+    const limit = this.configService.getOrThrow<number>('LIMIT_USER_ITEM');
+    const storageUrl = this.configService.getOrThrow<string>('STORAGE_URL');
+    let searchProfilesQuery = `
+      SELECT
+        u.email as "email",
+        u.username as "username",
+        u.display_name as "displayName",
+        u.date_of_birth as "dateOfBirth",
+        u.gender as "gender",
+        u.educational_level as "educationalLevel",
+        u.relationship_status as "relationshipStatus",
+        concat($1::text, u.avatar_relative_path) as "avatarUrl",
+        concat($1::text, u.background_image_relative_path) as "backgroundImageUrl",
+        fln.follower_number::int as "followerNumber",
+        (
+          SELECT COUNT(*)
+          FROM follows f
+          WHERE f."followerId" = u.id
+        )::int as "followingNumber",
+        (
+          SELECT COUNT(*)
+          FROM friendships fr
+          WHERE (fr."requesterId" = u.id OR fr."recipientId" = u.id)
+          AND fr.status = $2
+        )::int as "friendNumber",
+        EXISTS (
+          SELECT 1
+          FROM follows f
+          WHERE f."followerId" = $3
+          AND f."followeeId" = u.id
+        ) as "isFollowing",
+        (
+          SELECT 
+            CASE 
+              WHEN fr.status = $2 THEN $2::text
+              WHEN (fr."requesterId" = u.id AND fr."recipientId" = $3 AND fr.status = $4) THEN 'pending_received'
+              WHEN (fr."requesterId" = $3 AND fr."recipientId" = u.id AND fr.status = $4) THEN 'pending_sent'
+              ELSE NULL
+            END
+          FROM friendships fr
+          WHERE ((fr."requesterId" = u.id AND fr."recipientId" = $3)
+          OR (fr."requesterId" = $3 AND fr."recipientId" = u.id))
+        ) as "friendshipStatus",
+        (
+          SELECT COUNT(*)
+          FROM (
+            SELECT 
+              CASE
+                WHEN fr."requesterId" = u.id THEN fr."recipientId"
+                ELSE fr."requesterId"
+              END
+            FROM friendships fr
+            WHERE ((fr."requesterId" = u.id AND  fr."recipientId" != $3)
+            OR (fr."recipientId" = u.id AND  fr."requesterId" != $3))
+            AND fr.status = $2
+
+            INTERSECT
+
+            SELECT 
+              CASE
+                WHEN fr."requesterId" = $3 THEN fr."recipientId"
+                ELSE fr."requesterId"
+              END
+            FROM friendships fr
+            WHERE ((fr."requesterId" = $3 AND  fr."recipientId" != u.id)
+            OR (fr."recipientId" = $3 AND  fr."requesterId" != u.id))
+            AND fr.status = $2
+          ) mutual_friend_ids
+        )::int as "mutualFriendNumber"
+      FROM users u
+      LEFT JOIN LATERAL(
+        SELECT COUNT(*) as follower_number
+        FROM follows f
+        WHERE f."followeeId" = u.id
+      ) fln ON TRUE
+      WHERE (u.username ILIKE $5
+      OR u.display_name ILIKE $5)
+      AND NOT EXISTS (
+        SELECT 1
+        FROM blocks bl
+        WHERE bl."blockerId" = $3
+        AND bl."blockedUserId" = u.id
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM blocks bl
+        WHERE bl."blockerId" = u.id
+        AND bl."blockedUserId" = $3
+      )
+    `;
+    const params = [
+      storageUrl,
+      FriendshipStatus.ACCEPTED,
+      currentUserId,
+      FriendshipStatus.PENDING,
+      `%${key}%`,
+      limit,
+    ];
+    if (cursor) {
+      params.push(cursor.followerNumber, cursor.username);
+      searchProfilesQuery += `AND (fln.follower_number::int < $7 OR (fln.follower_number::int = $7 AND u.username < $8))`;
+    }
+    searchProfilesQuery += `
+      ORDER BY fln.follower_number::int DESC,
+      u.username DESC
+      LIMIT $6
+    `;
+    const searchedProfiles = await this.userRepo.query<Profile[]>(
+      searchProfilesQuery,
+      params,
+    );
+    return searchedProfiles;
   }
 }

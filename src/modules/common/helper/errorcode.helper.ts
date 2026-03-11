@@ -66,6 +66,9 @@ export const errorCode = {
       user_not_found: '44',
       target_user_block: '132',
     },
+    search_profile: {
+      cursor_invalid: '249',
+    },
     update_profile: {
       no_field_to_update: '47',
       user_not_found: '45',

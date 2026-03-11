@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
@@ -22,6 +23,7 @@ import { AvatarConfirmDTO } from './dtos/avatarconfirm.dto';
 import { BackgroundPresignDTO } from './dtos/backgroundpresign.dto';
 import { BackgroundConfirmDTO } from './dtos/backgroundconfirm.dto';
 import { SkipThrottle } from '@nestjs/throttler';
+import { SearchProfileDTO } from './dtos/search-profile.dto';
 
 @Controller('profile')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -33,6 +35,20 @@ export class ProfileController {
   async getCurrentProfile(@CurrentUser() currentUser: AuthUser) {
     return await this.profileService.getSelfProfile(currentUser);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('search')
+  async searchProfiles(
+    @CurrentUser() currentUser: AuthUser,
+    @Query() searchProfileDTO: SearchProfileDTO,
+  ) {
+    return await this.profileService.searchProfiles(
+      currentUser.sub,
+      searchProfileDTO.key,
+      searchProfileDTO.cursor,
+    );
+  }
+
   @HttpCode(HttpStatus.OK)
   @Get('/:username')
   async getProfile(
