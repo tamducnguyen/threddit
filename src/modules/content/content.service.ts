@@ -35,6 +35,7 @@ import { ContentDetail } from './interface/content-detail.interface';
 import { UpdateContentDTO } from './dtos/update-content.dto';
 import { TimelineItem } from './interface/timeline-item.interface';
 import { prefixCache, ttlCache } from '../config/cache.config';
+import { SearchContentCursor } from './interface/search-content-cursor.interface';
 
 @Injectable()
 export class ContentService {
@@ -479,6 +480,67 @@ export class ContentService {
       HttpStatus.OK,
       message.content.get_saved_content.success,
       { savedContents: savedContents, cursor: cursorToken },
+    );
+  }
+  async searchContents(currentUserId: number, key: string, cursor?: string) {
+    let cursorDecoded: SearchContentCursor | undefined;
+    if (cursor) {
+      try {
+        cursorDecoded =
+          await this.jwtService.verifyAsync<SearchContentCursor>(cursor);
+        if (
+          !Number.isInteger(cursorDecoded?.id) ||
+          typeof cursorDecoded?.recommendationScore !== 'number' ||
+          !Number.isFinite(cursorDecoded.recommendationScore) ||
+          (!(cursorDecoded?.scoredAt instanceof Date) &&
+            typeof cursorDecoded?.scoredAt !== 'string')
+        ) {
+          throw new Error('invalid cursor payload');
+        }
+      } catch {
+        throw new BadRequestException(
+          sendResponse(
+            HttpStatus.BAD_REQUEST,
+            message.content.get_content_by_key.cursor_invalid,
+            undefined,
+            errorCode.content.get_content_by_key.cursor_invalid,
+          ),
+        );
+      }
+    } else {
+      cursorDecoded = undefined;
+    }
+    const scoredAt = cursorDecoded?.scoredAt ?? new Date().toISOString();
+    const contents = await this.contentRepo.searchPostContents(
+      currentUserId,
+      key,
+      scoredAt,
+      cursorDecoded,
+    );
+    const finalItem = contents[contents.length - 1];
+    if (!finalItem) {
+      return sendResponse(
+        HttpStatus.OK,
+        message.content.get_content_by_key.no_content,
+        { contents: [], cursor: null },
+      );
+    }
+    const nextCursor = await this.jwtService.signAsync({
+      id: finalItem.id,
+      recommendationScore: finalItem.recommendationScore,
+      scoredAt: scoredAt,
+    });
+    return sendResponse(
+      HttpStatus.OK,
+      message.content.get_content_by_key.success,
+      {
+        contents: contents.map(
+          //just remove recommendationScore from searchContent
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ({ recommendationScore, ...content }) => content,
+        ),
+        cursor: nextCursor,
+      },
     );
   }
   /**

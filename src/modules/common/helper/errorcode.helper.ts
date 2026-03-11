@@ -361,6 +361,9 @@ export const errorCode = {
     get_content: {
       not_found: '147',
     },
+    get_content_by_key: {
+      cursor_invalid: '250',
+    },
     pin_content: {
       not_found: '148',
       already_pinned: '149',

@@ -16,6 +16,7 @@ import { ContentDetail } from './interface/content-detail.interface';
 import { SavedContent } from './interface/saved-content.interface';
 import { FollowEntity } from '../entities/follow.entity';
 import { MediaType } from '../enum/media-type.enum';
+import { SearchContentCursor } from './interface/search-content-cursor.interface';
 
 export class ContentRepository {
   constructor(
@@ -859,6 +860,184 @@ export class ContentRepository {
     `;
     return await this.contentRepo.query<SavedContent[]>(
       getSavedContentQuery,
+      params,
+    );
+  }
+  async searchPostContents(
+    currentUserId: number,
+    key: string,
+    scoredAt: string | Date,
+    cursor?: SearchContentCursor,
+  ) {
+    type SearchContentItem = ContentDetail & { recommendationScore: number };
+    const limit = Number(
+      this.configService.getOrThrow<number>('LIMIT_CONTENT_ITEM'),
+    );
+    const params: Array<string | number | Date> = [
+      currentUserId,
+      this.configService.getOrThrow<string>('STORAGE_URL'),
+      ContentType.POST,
+      ReactionTargetType.CONTENT,
+      MediaTargetType.CONTENT,
+      `%${key}%`,
+      limit,
+      scoredAt,
+    ];
+    let searchPostContentsQuery = `
+      WITH content_stats AS (
+        SELECT
+          contents.id as content_id,
+          (
+            SELECT COUNT(*) :: int
+            FROM comments
+            WHERE comments.content_id = contents.id
+          ) as comment_count,
+          (
+            SELECT COUNT(*) :: int
+            FROM saves
+            WHERE saves.saved_content_id = contents.id
+          ) as save_count,
+          (
+            SELECT COUNT(*) :: int
+            FROM shares
+            WHERE shares.shared_content_id = contents.id
+          ) as share_count,
+          (
+            SELECT COUNT(*) :: int
+            FROM reactions
+            WHERE reactions.target_id = contents.id
+            AND reactions.target_type = $4
+          ) as reaction_count
+        FROM contents
+        WHERE contents.type = $3
+      ),
+      search_posts AS (
+      SELECT
+        contents.id as "id",
+        contents.created_at as "createdAt",
+        contents.updated_at as "updatedAt",
+        contents.text as "text",
+        contents.type as "type",
+        contents.is_pinned as "isPinned",
+        (contents.author_user_id = $1) as "isOwner",
+        json_build_object(
+          'username', author.username,
+          'displayName', author.display_name,
+          'avatarUrl', CONCAT($2::text, author.avatar_relative_path)
+        ) as "author",
+        mucs.mentionedUsers as "mentionedUsers",
+        mf.mediaFiles as "mediaFiles",
+        (
+          LN(
+            1 + stats.reaction_count + (3 * stats.comment_count) + (6 * stats.share_count)
+          )
+          * EXP(-(
+            EXTRACT(EPOCH FROM ($8::timestamptz - contents.created_at)) / 3600.0
+          ) / 24.0)
+        ) as "recommendationScore",
+        stats.comment_count as "commentNumber",
+        stats.save_count as "saveNumber",
+        stats.share_count as "shareNumber",
+        stats.reaction_count as "reactionNumber",
+        (
+          SELECT EXISTS(
+            SELECT 1
+            FROM saves
+            WHERE saves.saved_content_id = contents.id
+            AND saves.saver_user_id = $1
+          )
+        ) AS "isSaved",
+        (
+          SELECT EXISTS(
+            SELECT 1
+            FROM shares
+            WHERE shares.shared_content_id = contents.id
+            AND shares.sharer_user_id = $1
+          )
+        ) AS "isShared",
+        (
+          SELECT reactions.type
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $4
+          AND reactions.reacter_user_id = $1
+          LIMIT 1
+        ) AS "reaction"
+      FROM contents
+      INNER JOIN content_stats stats
+      ON stats.content_id = contents.id
+      LEFT JOIN users author
+      ON author.id = contents.author_user_id
+      LEFT JOIN LATERAL (
+        SELECT
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'username', mu.username,
+              'displayName', mu.display_name,
+              'avatarUrl', CONCAT($2::text, mu.avatar_relative_path)
+            )
+            ORDER BY mu.id
+          ) FILTER (WHERE mu.id IS NOT NULL), '[]'::json
+        ) as mentionedUsers
+        FROM mentioned_user_content muc
+        LEFT JOIN users mu
+        ON mu.id = muc.user_id
+        WHERE muc.content_id = contents.id
+      ) mucs ON true
+      LEFT JOIN LATERAL (
+        SELECT
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'url', CONCAT($2, mf.relative_path),
+              'type', mf.type,
+              'id', mf.id,
+              'sortOrder', mf.sort_order
+            )
+            ORDER BY mf.sort_order
+          ) FILTER (WHERE mf.id IS NOT NULL), '[]'::json
+        ) as mediaFiles
+        FROM media_files mf
+        WHERE mf.target_id = contents.id
+        AND mf.target_type = $5
+      ) mf ON true
+      WHERE contents.type = $3
+      AND (
+        author.username ILIKE $6
+        OR author.display_name ILIKE $6
+        OR COALESCE(contents.text, '') ILIKE $6
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM blocks
+        WHERE blocks."blockerId" = contents.author_user_id
+        AND blocks."blockedUserId" = $1
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM blocks
+        WHERE blocks."blockerId" = $1
+        AND blocks."blockedUserId" = contents.author_user_id
+      )
+      )
+      SELECT *
+      FROM search_posts
+    `;
+    if (cursor) {
+      params.push(cursor.recommendationScore, cursor.id);
+      searchPostContentsQuery += `
+      WHERE (
+        "recommendationScore" < $9
+        OR ("recommendationScore" = $9 AND "id" < $10)
+      )`;
+    }
+    searchPostContentsQuery += `
+      ORDER BY "recommendationScore" DESC, "id" DESC
+      LIMIT $7
+    `;
+    return await this.contentRepo.query<SearchContentItem[]>(
+      searchPostContentsQuery,
       params,
     );
   }

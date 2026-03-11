@@ -23,6 +23,7 @@ import { UsernameDTO } from './dtos/username.dto';
 import { ContentIdDTO } from './dtos/content-id.dto';
 import { CreateContentDTO } from './dtos/create-content.dto';
 import { UpdateContentDTO } from './dtos/update-content.dto';
+import { SearchContentDTO } from './dtos/search-content.dto';
 
 @Controller('content')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
@@ -129,6 +130,18 @@ export class ContentController {
     return await this.contentService.getPinnedStories(
       currentUser.sub,
       cursorDTO?.cursor,
+    );
+  }
+  @HttpCode(HttpStatus.OK)
+  @Get()
+  async searchContents(
+    @CurrentUser() currentUser: AuthUser,
+    @Query() searchContentDTO: SearchContentDTO,
+  ) {
+    return await this.contentService.searchContents(
+      currentUser.sub,
+      searchContentDTO.key,
+      searchContentDTO.cursor,
     );
   }
   @HttpCode(HttpStatus.OK)
