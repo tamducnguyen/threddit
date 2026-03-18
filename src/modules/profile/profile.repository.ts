@@ -254,6 +254,7 @@ export class ProfileRepository {
       ) fln ON TRUE
       WHERE (u.username ILIKE $5
       OR u.display_name ILIKE $5)
+      AND (u.id != $3)
       AND NOT EXISTS (
         SELECT 1
         FROM blocks bl
