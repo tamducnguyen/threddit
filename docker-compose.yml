@@ -38,6 +38,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - judger
     env_file:
       - .env.production
     ports:
@@ -56,6 +57,13 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+  
+  judger:
+    image: tamducnguyen/threddit-judger:latest
+    container_name: threddit-judger
+    restart: always
+    ports:
+      - 8000:8000
 
 volumes:
   postgres_data:
