@@ -68,7 +68,7 @@ export class ProfileRepository {
         u.email as "email",
         u.username as "username",
         u.display_name as "displayName",
-        u.date_of_birth as "dateOfBirth",
+        TO_CHAR(u.date_of_birth, 'YYYY-MM-DD') AS "dateOfBirth",
         u.gender as "gender",
         u.educational_level as "educationalLevel",
         u.relationship_status as "relationshipStatus",
