@@ -6,6 +6,7 @@ import { BlockEntity } from '../entities/block.entity';
 import { FriendshipStatus } from '../enum/friendshipstatus.enum';
 import { Cursor } from '../interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
+import { Friend } from './interfaces/friend.interface';
 
 export class FriendshipRepository {
   constructor(
@@ -34,9 +35,13 @@ export class FriendshipRepository {
     });
   }
 
-  async findFriendshipById(friendshipId: number) {
+  async findFriendRequest(requesterUserId: number, recipientUserId: number) {
     return await this.friendshipRepo.findOne({
-      where: { id: friendshipId },
+      where: {
+        requester: { id: requesterUserId },
+        recipient: { id: recipientUserId },
+        status: FriendshipStatus.PENDING,
+      },
       relations: { requester: true, recipient: true },
     });
   }
@@ -138,97 +143,81 @@ export class FriendshipRepository {
     return await qb.getMany();
   }
 
-  async findFriends(userId: number, cursor?: Cursor, key?: string) {
-    const limit = this.configService.getOrThrow<number>('LIMIT_FRIEND_ITEM');
-
-    const qb = this.friendshipRepo
-      .createQueryBuilder('friendship')
-      .leftJoinAndSelect('friendship.requester', 'requester')
-      .leftJoinAndSelect('friendship.recipient', 'recipient')
-      .where('friendship.status = :status', {
-        status: FriendshipStatus.ACCEPTED,
-      })
-      .andWhere(
-        new Brackets((qbInner) => {
-          qbInner
-            .where(
-              new Brackets((qbUser) => {
-                qbUser.where('requester.id = :userId', { userId });
-                if (key) {
-                  qbUser.andWhere(
-                    new Brackets((qbMatch) => {
-                      qbMatch
-                        .where('recipient.username ILIKE :key', {
-                          key: `%${key}%`,
-                        })
-                        .orWhere('recipient.displayName ILIKE :key', {
-                          key: `%${key}%`,
-                        });
-                    }),
-                  );
-                }
-              }),
-            )
-            .orWhere(
-              new Brackets((qbUser) => {
-                qbUser.where('recipient.id = :userId', { userId });
-                if (key) {
-                  qbUser.andWhere(
-                    new Brackets((qbMatch) => {
-                      qbMatch
-                        .where('requester.username ILIKE :key', {
-                          key: `%${key}%`,
-                        })
-                        .orWhere('requester.displayName ILIKE :key', {
-                          key: `%${key}%`,
-                        });
-                    }),
-                  );
-                }
-              }),
-            );
-        }),
-      )
-      .orderBy('friendship.id', 'DESC')
-      .take(limit);
-
-    if (cursor?.id) {
-      qb.andWhere('friendship.id < :id', { id: cursor.id });
-    }
-    return await qb.getMany();
-  }
-
-  async findAcceptedFriendIds(
+  async findFriends(
+    targetUserId: number,
     currentUserId: number,
-    friendIds: number[],
-  ): Promise<number[]> {
-    if (friendIds.length === 0) {
-      return [];
+    cursor?: number,
+    key?: string,
+  ) {
+    const limit = this.configService.getOrThrow<number>('LIMIT_FRIEND_ITEM');
+    const storageUrl = this.configService.getOrThrow<string>('STORAGE_URL');
+    let getFriendsQuery = `
+      SELECT 
+        friend_ids_and_friendship_ids.id as "friendshipId",
+        friend.username as "username",
+        friend.display_name as "displayName",
+        concat($4::text, friend.avatar_relative_path) as "avatarUrl", 
+        (
+          SELECT
+            CASE
+              WHEN frs.status = $2 THEN 'accepted'
+              WHEN frs."requesterId" = $3 THEN 'pending_sent'
+              WHEN frs."recipientId" = $3 THEN 'pending_received'
+              ELSE null
+            END
+          FROM friendships frs
+          WHERE (frs."requesterId" = $3 AND frs."recipientId" = friend_ids_and_friendship_ids.friend_id)
+          OR (frs."requesterId" = friend_ids_and_friendship_ids.friend_id AND frs."recipientId" = $3)
+        ) as "friendshipStatus"
+      FROM (
+        SELECT
+        frs.id,
+        CASE
+          WHEN frs."requesterId" = $1 THEN frs."recipientId"
+          ELSE frs."requesterId"
+        END as "friend_id"
+        FROM friendships frs
+        WHERE (frs."requesterId" = $1 OR frs."recipientId" = $1)
+        AND frs.status = $2
+      ) as friend_ids_and_friendship_ids
+      LEFT JOIN users friend
+      ON friend.id = friend_ids_and_friendship_ids.friend_id
+    `;
+    const params = [
+      targetUserId,
+      FriendshipStatus.ACCEPTED,
+      currentUserId,
+      storageUrl,
+      limit,
+    ];
+    if (key) {
+      params.push(`%${key}%`);
+      getFriendsQuery += `
+        WHERE (friend.username ILIKE $6
+        OR friend.display_name ILIKE $6)
+    `;
+      if (cursor) {
+        params.push(cursor);
+        getFriendsQuery += `
+        AND friend_ids_and_friendship_ids.id < $7
+        `;
+      }
     }
-    const rows = await this.friendshipRepo
-      .createQueryBuilder('friendship')
-      .select([
-        'friendship.requesterId AS "requesterId"',
-        'friendship.recipientId AS "recipientId"',
-      ])
-      .where('friendship.status = :status', {
-        status: FriendshipStatus.ACCEPTED,
-      })
-      .andWhere(
-        new Brackets((qb) => {
-          qb.where(
-            'friendship.requesterId = :currentUserId AND friendship.recipientId IN (:...friendIds)',
-            { currentUserId, friendIds },
-          ).orWhere(
-            'friendship.recipientId = :currentUserId AND friendship.requesterId IN (:...friendIds)',
-            { currentUserId, friendIds },
-          );
-        }),
-      )
-      .getRawMany<{ requesterId: number; recipientId: number }>();
-    return rows.map((row) =>
-      row.requesterId === currentUserId ? row.recipientId : row.requesterId,
+    if (cursor) {
+      params.push(cursor);
+      getFriendsQuery += `
+        WHERE friend_ids_and_friendship_ids.id < $6
+        `;
+    }
+    getFriendsQuery += `
+      ORDER BY friend_ids_and_friendship_ids.id DESC
+      LIMIT $5
+    `;
+    const friendList = await this.friendshipRepo.query<Friend[]>(
+      getFriendsQuery,
+      params,
     );
+    return friendList;
   }
 
   async findMutualFriends(

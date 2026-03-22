@@ -162,20 +162,14 @@ export const errorCode = {
       user_not_found: '96',
       request_not_found: '97',
       cant_accept_self: '98',
-      friendship_exists: '99',
     },
     reject_request: {
       request_not_found: '101',
-      friendship_exists: '102',
     },
     cancel_request: {
       request_not_found: '103',
-      friendship_exists: '104',
     },
     get_friend_list: {
-      cursor_invalid: '105',
-    },
-    get_user_friend_list: {
       user_not_found: '106',
       target_user_block: '133',
       cursor_invalid: '107',

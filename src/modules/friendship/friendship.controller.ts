@@ -17,7 +17,6 @@ import { CurrentUser } from '../token/currentuser.decorator';
 import { UsernameDTO } from './dtos/username.dto';
 import { CursorDTO } from './dtos/cursor.dto';
 import { AuthUser } from '../token/authuser.interface';
-import { FriendshipIdDTO } from './dtos/friendshipid.dto';
 import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
 import { SkipThrottle } from '@nestjs/throttler';
 
@@ -68,38 +67,38 @@ export class FriendshipController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('request/:friendshipId/accept')
+  @Post('request/:username/accept')
   async acceptFriendRequest(
     @CurrentUser() currentUser: AuthUser,
-    @Param() friendshipIdDTO: FriendshipIdDTO,
+    @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.friendshipService.acceptFriendRequest(
-      currentUser,
-      friendshipIdDTO.friendshipId,
+      currentUser.sub,
+      usernameDTO.username,
     );
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('request/:friendshipId/reject')
+  @Post('request/:username/reject')
   async rejectFriendRequest(
     @CurrentUser() currentUser: AuthUser,
-    @Param() friendshipIdDTO: FriendshipIdDTO,
+    @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.friendshipService.rejectFriendRequest(
-      currentUser,
-      friendshipIdDTO.friendshipId,
+      currentUser.sub,
+      usernameDTO.username,
     );
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('request/:friendshipId/cancel')
+  @Post('request/:username/cancel')
   async cancelFriendRequest(
     @CurrentUser() currentUser: AuthUser,
-    @Param() friendshipIdDTO: FriendshipIdDTO,
+    @Param() usernameDTO: UsernameDTO,
   ) {
     return await this.friendshipService.cancelFriendRequest(
-      currentUser,
-      friendshipIdDTO.friendshipId,
+      currentUser.sub,
+      usernameDTO.username,
     );
   }
 
@@ -111,7 +110,8 @@ export class FriendshipController {
     @Query() cursorDTO?: CursorDTO,
   ) {
     return await this.friendshipService.getFriends(
-      currentUser,
+      currentUser.sub,
+      currentUser.username,
       searchUserDTO?.key?.trim(),
       cursorDTO?.cursor,
     );
@@ -125,8 +125,8 @@ export class FriendshipController {
     @Query() searchUserDTO?: SearchUserOptionalDTO,
     @Query() cursorDTO?: CursorDTO,
   ) {
-    return await this.friendshipService.getUserFriends(
-      currentUser,
+    return await this.friendshipService.getFriends(
+      currentUser.sub,
       usernameDTO.username,
       searchUserDTO?.key?.trim(),
       cursorDTO?.cursor,

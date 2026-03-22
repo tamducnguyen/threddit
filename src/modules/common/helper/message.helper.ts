@@ -241,23 +241,16 @@
     accept_request: {
       success: 'Chấp nhận kết bạn thành công',
       request_not_found: 'Không tìm thấy lời mời kết bạn',
-      friendship_exists: 'Bạn và người dùng này đã là bạn bè trước đó',
     },
     reject_request: {
       success: 'Từ chối kết bạn thành công',
       request_not_found: 'Không tìm thấy lời mời kết bạn',
-      friendship_exists: 'Bạn và người dùng này đã là bạn bè trước đó',
     },
     cancel_request: {
       success: 'Hủy lời mời kết bạn thành công',
       request_not_found: 'Không tìm thấy lời mời kết bạn',
-      friendship_exists: 'Bạn và người dùng này đã là bạn bè trước đó',
     },
     get_friend_list: {
-      success: 'Lấy danh sách bạn bè thành công',
-      cursor_invalid: 'Con trỏ không hợp lệ',
-    },
-    get_user_friend_list: {
       success: 'Lấy danh sách bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
       target_user_block:
