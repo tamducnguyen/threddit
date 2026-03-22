@@ -465,11 +465,13 @@ export class FriendshipService {
    * @param cursor
    */
   async getFriends(
-    currentUserId: number,
+    currentUser: AuthUser,
     targetUsername: string,
     key?: string,
     cursor?: string,
   ) {
+    const currentUserId = currentUser.sub;
+    const currentUsername = currentUser.username;
     //check if user exist
     const targetUserFound =
       await this.friendshipRepo.findUserByUsername(targetUsername);
@@ -540,6 +542,17 @@ export class FriendshipService {
       cursorDecoded?.id,
       key,
     );
+    const filterFriendList = friendList.map((friend) => {
+      if (friend.username === currentUsername) {
+        return {
+          username: friend.username,
+          displayName: friend.displayName,
+          avatarUrl: friend.avatarUrl,
+          friendshipId: friend.friendshipId,
+        };
+      }
+      return friend;
+    });
     const friendFinal = friendList[friendList.length - 1];
     if (!friendFinal) {
       return sendResponse(
@@ -554,7 +567,7 @@ export class FriendshipService {
     return sendResponse(
       HttpStatus.OK,
       message.friendship.get_friend_list.success,
-      { friendList: friendList, cursor: cursorToken },
+      { friendList: filterFriendList, cursor: cursorToken },
     );
   }
 

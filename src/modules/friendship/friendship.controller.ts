@@ -110,7 +110,7 @@ export class FriendshipController {
     @Query() cursorDTO?: CursorDTO,
   ) {
     return await this.friendshipService.getFriends(
-      currentUser.sub,
+      currentUser,
       currentUser.username,
       searchUserDTO?.key?.trim(),
       cursorDTO?.cursor,
@@ -126,7 +126,7 @@ export class FriendshipController {
     @Query() cursorDTO?: CursorDTO,
   ) {
     return await this.friendshipService.getFriends(
-      currentUser.sub,
+      currentUser,
       usernameDTO.username,
       searchUserDTO?.key?.trim(),
       cursorDTO?.cursor,
