@@ -44,8 +44,18 @@ export class AccountRepository {
         .execute();
     });
   }
-  async updateUsername(id: number, username: string) {
-    return await this.userRepo.update({ id: id }, { username: username });
+  async updateUsernameAndRevokeAllSession(userId: number, newUsername: string) {
+    return await this.dataSource.transaction(async (manager) => {
+      const userRepo = manager.getRepository(UserEntity);
+      await userRepo.update({ id: userId }, { username: newUsername });
+      const sessionRepo = manager.getRepository(SessionEntity);
+      await sessionRepo
+        .createQueryBuilder()
+        .update(SessionEntity)
+        .set({ isRevoked: true })
+        .where('user_id = :userId', { userId: userId })
+        .execute();
+    });
   }
   async deleteUserAndSessions(userId: number) {
     return await this.dataSource.transaction(async (manager) => {

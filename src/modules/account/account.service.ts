@@ -136,7 +136,10 @@ export class AccountService {
     }
     //update username
     try {
-      await this.accountRepository.updateUsername(sub, username);
+      await this.accountRepository.updateUsernameAndRevokeAllSession(
+        sub,
+        username,
+      );
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
