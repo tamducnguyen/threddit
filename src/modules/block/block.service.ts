@@ -338,4 +338,13 @@ export class BlockService {
       isBlocked: isBlocked,
     });
   }
+  async getBlockedUserCount(currentUserId: number) {
+    const blockedUserCount =
+      await this.blockRepo.getBlockedUserCount(currentUserId);
+    return sendResponse(
+      HttpStatus.OK,
+      message.block.get_blocked_user_count.success,
+      blockedUserCount,
+    );
+  }
 }

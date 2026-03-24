@@ -574,6 +574,9 @@
       user_not_found: 'Không tìm thấy người dùng',
       cant_self_check: 'Không thể kiếm tra chính mình',
     },
+    get_blocked_user_count: {
+      success: 'Lấy số lượng người đã chặn thành công',
+    },
   },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',

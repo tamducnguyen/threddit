@@ -88,4 +88,9 @@ export class BlockRepository {
       blockedUser: { id: blockedId },
     });
   }
+  async getBlockedUserCount(blockerUserId: number) {
+    return await this.blockRepo.count({
+      where: { blocker: { id: blockerUserId } },
+    });
+  }
 }

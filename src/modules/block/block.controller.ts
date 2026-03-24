@@ -70,4 +70,10 @@ export class BlockController {
     // call service to unblock the user
     return await this.blockService.unblock(currentUser, usernameDTO.username);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('count')
+  async getBlockedUserCount(@CurrentUser() currentUser: AuthUser) {
+    return await this.blockService.getBlockedUserCount(currentUser.sub);
+  }
 }
