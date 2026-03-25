@@ -141,7 +141,7 @@ export class ContentRepository {
       ) mf ON true
       WHERE contents.author_user_id = $1
       AND contents.is_pinned = true
-      AND contents.type = 'post'
+      AND contents.type = $6
       ORDER BY contents.id DESC
     `;
     return await this.contentRepo.query<ContentDetail[]>(
@@ -152,6 +152,7 @@ export class ContentRepository {
         ReactionTargetType.CONTENT,
         MediaTargetType.CONTENT,
         currentUserId,
+        ContentType.POST,
       ],
     );
   }
@@ -252,7 +253,7 @@ export class ContentRepository {
         FROM contents 
         WHERE contents.author_user_id = $1
         AND contents.is_pinned = false
-        AND contents.type = 'post'
+        AND contents.type = $7
         UNION 
         SELECT
           shares.created_at as shared_at,
@@ -313,6 +314,7 @@ export class ContentRepository {
       Number(this.configService.getOrThrow<number>('LIMIT_CONTENT_ITEM')),
       MediaTargetType.CONTENT,
       currentUserId,
+      ContentType.POST,
     ];
     if (cursor) {
       params.push(
@@ -323,14 +325,14 @@ export class ContentRepository {
       getTimelineContentQuery += `
         WHERE
         (
-          COALESCE(timeline_items.shared_at, timeline_items.created_at) < $7
+          COALESCE(timeline_items.shared_at, timeline_items.created_at) < $8
           OR (
-            COALESCE(timeline_items.shared_at, timeline_items.created_at) = $7
+            COALESCE(timeline_items.shared_at, timeline_items.created_at) = $8
             AND (
-              (CASE WHEN timeline_items.shared_at IS NOT NULL THEN 2 ELSE 1 END) < $8
+              (CASE WHEN timeline_items.shared_at IS NOT NULL THEN 2 ELSE 1 END) < $9
               OR (
-                (CASE WHEN timeline_items.shared_at IS NOT NULL THEN 2 ELSE 1 END) = $8
-                AND COALESCE(timeline_items.share_id, timeline_items.id) < $9
+                (CASE WHEN timeline_items.shared_at IS NOT NULL THEN 2 ELSE 1 END) = $9
+                AND COALESCE(timeline_items.share_id, timeline_items.id) < $10
               )
             )
           )
@@ -372,7 +374,7 @@ export class ContentRepository {
           contents.type
         FROM contents
         WHERE contents.is_pinned = false
-        AND contents.type = 'post'
+        AND contents.type = $9
         UNION
         SELECT
           shares.created_at AS shared_at,
@@ -389,7 +391,7 @@ export class ContentRepository {
         FROM shares
         INNER JOIN contents shared_content
         ON shares.shared_content_id = shared_content.id
-        WHERE shared_content.type = 'post'
+        WHERE shared_content.type = $9
       ),
       content_stats AS (
         SELECT
@@ -513,7 +515,7 @@ export class ContentRepository {
         WHERE mf.target_id = timeline_items.id
         AND mf.target_type = $5
       ) mf ON true
-      WHERE timeline_items.type = 'post'
+      WHERE timeline_items.type = $9
       AND NOT (timeline_items.id = ANY($6::int[]))
       AND NOT EXISTS (
         SELECT 1
@@ -572,6 +574,7 @@ export class ContentRepository {
       excludedContentIds,
       friendIds,
       followingIds,
+      ContentType.POST,
     ]);
   }
   async getReelItems(
@@ -606,7 +609,7 @@ export class ContentRepository {
             AND reactions.target_type = $3
           ) as reaction_count
         FROM contents
-        WHERE contents.type = 'post'
+        WHERE contents.type = $10
       )
       SELECT
         contents.id as "id",
@@ -690,7 +693,7 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $5
       ) mf ON true
-      WHERE contents.type = 'post'
+      WHERE contents.type = $10
       AND NOT (contents.id = ANY($7::int[]))
       AND (
         SELECT COUNT(*)
@@ -745,6 +748,7 @@ export class ContentRepository {
       excludedContentIds,
       friendIds,
       followingIds,
+      ContentType.POST,
     ]);
   }
   async getSavedContents(currentUserId: number, cursor?: number) {
