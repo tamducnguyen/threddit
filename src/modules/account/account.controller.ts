@@ -34,10 +34,12 @@ export class AccountController {
   async updatePassword(
     @CurrentUser() currentUser: AuthUser,
     @Body() updatePasswordDTO: UpdatePasswordDTO,
+    @AccessToken() accessToken: string,
   ) {
     return await this.accountService.updatePassword(
       currentUser,
       updatePasswordDTO,
+      accessToken,
     );
   }
   @HttpCode(HttpStatus.OK)

@@ -35,6 +35,7 @@ export class AccountService {
   async updatePassword(
     currentuser: AuthUser,
     updatePasswordDTO: UpdatePasswordDTO,
+    accessToken: string,
   ) {
     const { oldPassword, newPassword, confirmedNewPassword } =
       updatePasswordDTO;
@@ -89,6 +90,7 @@ export class AccountService {
       userFound.authMethodKey,
     );
     if (!isCorrectPassword) {
+      await this.accountRepository.revokeSessionByToken(accessToken);
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,

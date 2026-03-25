@@ -79,7 +79,8 @@
       passport_same: 'Mật khẩu mới không được giống với mật khẩu cũ',
       password_mismatch: 'Mật khẩu không khớp',
       user_not_found: 'Người dùng không tồn tại',
-      password_incorrect: 'Mật khẩu không đúng',
+      password_incorrect:
+        'Mật khẩu hiện tại không đúng. Vui lòng đăng nhập lại',
       success: 'Đổi mật khẩu thành công, vui lòng đăng nhập lại để tiếp tục',
       not_support_this_auth_method:
         'Tính năng không hỗ trợ phương đăng nhập này',
