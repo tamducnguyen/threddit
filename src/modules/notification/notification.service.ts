@@ -104,7 +104,6 @@ export class NotificationService {
               type: notificationRaw.type,
               target: this.buildTargetWithActor(rawTarget, actor),
               isRead: notificationRaw.isRead,
-              message: notificationRaw.message,
             };
             subscriber.next({ data: notification });
           } catch {
@@ -211,7 +210,6 @@ export class NotificationService {
       const target = this.buildTargetWithActor(rawTarget, actor);
       return {
         id: notification.id,
-        message: notification.message,
         isRead: notification.isRead,
         type: notification.type,
         target: target,
@@ -315,7 +313,6 @@ export class NotificationService {
       const target = this.buildTargetWithActor(rawTarget, actor);
       return {
         id: notification.id,
-        message: notification.message,
         isRead: notification.isRead,
         type: notification.type,
         target: target,

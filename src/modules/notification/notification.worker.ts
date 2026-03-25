@@ -7,20 +7,8 @@ import { NotificationRepository } from './notification.repository';
 import { NotificationEntity } from '../entities/notification.entity';
 import { NotificationType } from '../enum/notificationtype.enum';
 import {
-  CommentNotificationMessage,
-  FriendAcceptedNotificationMessage,
-  FriendConnectedNotificationMessage,
-  FollowingContentCreationNotificationMessage,
-  FollowNotificationMessage,
-  FriendContentCreationNotificationMessage,
-  FriendRequestNotificationMessage,
   JobNotificationQueue,
-  MentionInCommentNotificationMessage,
-  MentionInContentNotificationMessage,
   NameNotificationQueue,
-  ReactionCommentNotificationMessage,
-  ReactionContentNotificationMessage,
-  ReplyCommentNotificationMessage,
 } from './helper/notification.helper';
 import { CommentEntity } from '../entities/comment.entity';
 import { NotificationTarget } from '../enum/notificationtarget.type';
@@ -68,10 +56,6 @@ export class NotificationWorker extends WorkerHost {
             };
             return {
               owner: friend,
-              message: FriendContentCreationNotificationMessage(
-                data.currentUser.displayName,
-                data.createdContent.type,
-              ),
               target: target,
               type: NotificationType.FRIEND_CONTENT_CREATION,
             };
@@ -88,10 +72,6 @@ export class NotificationWorker extends WorkerHost {
             };
             return {
               owner: follower,
-              message: FollowingContentCreationNotificationMessage(
-                data.currentUser.displayName,
-                data.createdContent.type,
-              ),
               target: target,
               type: NotificationType.FOLLOWING_CONTENT_CREATION,
             };
@@ -130,10 +110,6 @@ export class NotificationWorker extends WorkerHost {
           .map((friend) => {
             return {
               owner: friend,
-              message: MentionInContentNotificationMessage(
-                data.currentUser.displayName,
-                data.mentioningContent.type,
-              ),
               target: target,
               type: NotificationType.MENTION_IN_CONTENT,
             };
@@ -160,7 +136,6 @@ export class NotificationWorker extends WorkerHost {
         };
         const notification: Partial<NotificationEntity> = {
           owner: data.followee,
-          message: FollowNotificationMessage(data.currentUser.displayName),
           type: NotificationType.FOLLOW,
           target: target,
         };
@@ -182,7 +157,6 @@ export class NotificationWorker extends WorkerHost {
         };
         const notification: Partial<NotificationEntity> = {
           owner: data.recipient,
-          message: FriendRequestNotificationMessage(data.requester.displayName),
           type: NotificationType.FRIEND_REQUEST,
           target: target,
         };
@@ -209,17 +183,11 @@ export class NotificationWorker extends WorkerHost {
         const notifications: Partial<NotificationEntity>[] = [
           {
             owner: data.requester,
-            message: FriendAcceptedNotificationMessage(
-              data.recipient.displayName,
-            ),
             type: NotificationType.FRIEND_ACCEPTED,
             target: requesterTarget,
           },
           {
             owner: data.recipient,
-            message: FriendConnectedNotificationMessage(
-              data.requester.displayName,
-            ),
             type: NotificationType.FRIEND_ACCEPTED,
             target: recipientTarget,
           },
@@ -245,9 +213,6 @@ export class NotificationWorker extends WorkerHost {
         };
         const notification: Partial<NotificationEntity> = {
           owner: data.comment.content.author,
-          message: CommentNotificationMessage(
-            data.comment.commenter.displayName,
-          ),
           type: NotificationType.COMMENT,
           target: target,
         };
@@ -271,9 +236,6 @@ export class NotificationWorker extends WorkerHost {
         };
         const notification: Partial<NotificationEntity> = {
           owner: data.parentCommenter,
-          message: ReplyCommentNotificationMessage(
-            data.comment.commenter.displayName,
-          ),
           type: NotificationType.REPLY_COMMENT,
           target: target,
         };
@@ -302,9 +264,6 @@ export class NotificationWorker extends WorkerHost {
         };
         const notification: Partial<NotificationEntity> = {
           owner: data.reactedContent.author,
-          message: ReactionContentNotificationMessage(
-            data.currentUser.displayName,
-          ),
           type: NotificationType.REACTION_CONTENT,
           target: target,
         };
@@ -333,9 +292,6 @@ export class NotificationWorker extends WorkerHost {
         };
         const notification: Partial<NotificationEntity> = {
           owner: data.reactedComment.commenter,
-          message: ReactionCommentNotificationMessage(
-            data.currentUser.displayName,
-          ),
           type: NotificationType.REACTION_COMMENT,
           target: target,
         };
@@ -362,9 +318,6 @@ export class NotificationWorker extends WorkerHost {
           mentionedFriends.map((mentionFriend) => {
             return {
               owner: mentionFriend,
-              message: MentionInCommentNotificationMessage(
-                data.comment.commenter.displayName,
-              ),
               target: target,
               type: NotificationType.MENTION_IN_COMMENT,
             };

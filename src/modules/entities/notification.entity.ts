@@ -21,8 +21,6 @@ export class NotificationEntity {
   owner: UserEntity;
   @Column({ name: 'is_read', type: 'boolean', default: false })
   isRead: boolean;
-  @Column({ name: 'message', type: 'text' })
-  message: string;
   @Column({ name: 'type', type: 'enum', enum: NotificationType })
   type: NotificationType;
   @Column({ name: 'target', type: 'jsonb' })
