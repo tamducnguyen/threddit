@@ -36,6 +36,13 @@ export const errorCode = {
       email_not_exists: '23',
       invalid_or_expired_code: '24',
     },
+    google_auth: {
+      id_token_missing: '25',
+      invalid_token: '26',
+      email_not_verified: '27',
+      already_auth_method: '28',
+      account_not_activate: '29',
+    },
   },
   account: {
     update_password: {

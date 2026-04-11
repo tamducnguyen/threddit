@@ -19,6 +19,7 @@ import { GeneratePayload } from '../common/helper/payload.helper';
 import { GoogleCodeDTO } from './dtos/googlecode.dto';
 import { AuthMethod } from '../enum/authmethod.enum';
 import { generateUniqueUsername } from '../common/helper/username.helper';
+import { errorCode } from '../common/helper/errorcode.helper';
 @Injectable()
 export class GoogleAuthService {
   private client: OAuth2Client;
@@ -49,6 +50,8 @@ export class GoogleAuthService {
         sendResponse(
           HttpStatus.UNAUTHORIZED,
           message.auth.google_auth.id_token_missing,
+          undefined,
+          errorCode.auth.google_auth.id_token_missing,
         ),
       );
     }
@@ -63,6 +66,8 @@ export class GoogleAuthService {
         sendResponse(
           HttpStatus.UNAUTHORIZED,
           message.auth.google_auth.invalid_token,
+          undefined,
+          errorCode.auth.google_auth.invalid_token,
         ),
       );
     }
@@ -72,6 +77,8 @@ export class GoogleAuthService {
         sendResponse(
           HttpStatus.UNAUTHORIZED,
           message.auth.google_auth.email_not_verified,
+          undefined,
+          errorCode.auth.google_auth.email_not_verified,
         ),
       );
     }
@@ -95,6 +102,8 @@ export class GoogleAuthService {
           sendResponse(
             HttpStatus.BAD_REQUEST,
             message.auth.google_auth.already_auth_method,
+            undefined,
+            errorCode.auth.google_auth.already_auth_method,
           ),
         );
       }
@@ -103,6 +112,8 @@ export class GoogleAuthService {
           sendResponse(
             HttpStatus.BAD_REQUEST,
             message.auth.google_auth.account_not_activate,
+            undefined,
+            errorCode.auth.google_auth.account_not_activate,
           ),
         );
       }
