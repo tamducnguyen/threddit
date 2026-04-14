@@ -51,7 +51,7 @@ export class UserEntity {
   @Column({
     name: 'avatar_relative_path',
     type: 'varchar',
-    default: 'avatar/default_avatar.jpg',
+    default: 'avatar/default_avatar.png',
   })
   avatarRelativePath: string;
   @Column({
