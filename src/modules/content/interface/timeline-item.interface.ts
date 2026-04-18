@@ -6,4 +6,5 @@ export interface TimelineItem extends ContentDetail {
   sharedAt: Date | null;
   sharer: UserDTO | null;
   shareMessage: string | null;
+  isSharer: boolean;
 }

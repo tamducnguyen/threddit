@@ -474,6 +474,7 @@ export class ContentRepository {
           FROM users sharer
           WHERE sharer.id = timeline_items.sharer_user_id
         ) as "sharer",
+        COALESCE(timeline_items.sharer_user_id = $1, false) as "isSharer",
         timeline_items.share_id as "shareId",
         timeline_items.shared_at as "sharedAt"
       FROM timeline_items
