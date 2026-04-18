@@ -35,7 +35,7 @@ export class SavedContentController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Delete(':contentId/unsave')
+  @Delete(':contentId/save')
   async unsaveContent(
     @CurrentUser() currentUser: AuthUser,
     @Param() contentIdDTO: ContentIdDTO,
