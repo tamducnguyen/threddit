@@ -129,6 +129,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -296,6 +297,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -505,6 +507,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -683,6 +686,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -836,6 +840,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -996,6 +1001,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -1151,6 +1157,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -1279,6 +1286,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -1407,6 +1415,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -1552,6 +1561,7 @@ export class ContentRepository {
           json_agg(
             json_build_object(
               'url', CONCAT($2, mf.relative_path),
+              'key', mf.relative_path,
               'type', mf.type,
               'id', mf.id,
               'sortOrder', mf.sort_order
@@ -1759,6 +1769,7 @@ export class ContentRepository {
             json_agg(
               json_build_object(
                 'url', CONCAT($3::text, mf.relative_path),
+                'key', mf.relative_path,
                 'type', mf.type,
                 'id', mf.id,
                 'sortOrder', mf.sort_order
