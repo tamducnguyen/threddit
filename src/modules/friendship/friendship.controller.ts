@@ -11,13 +11,13 @@ import {
 } from '@nestjs/common';
 import { FriendshipService } from './friendship.service';
 import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../common/guard/token.guard';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { TokenGuard } from '../../common/guard/token.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { CurrentUser } from '../token/currentuser.decorator';
-import { UsernameDTO } from './dtos/username.dto';
-import { CursorDTO } from './dtos/cursor.dto';
+import { UsernameDTO } from '../../common/dtos/username.dto';
+import { CursorDTO } from '../../common/dtos/cursor.dto';
 import { AuthUser } from '../token/authuser.interface';
-import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
+import { SearchUserOptionalDTO } from '../../common/dtos/search-user.dto';
 import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('friendship')

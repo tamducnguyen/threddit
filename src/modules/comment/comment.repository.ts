@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CommentEntity } from '../entities/comment.entity';
+import { CommentEntity } from '../../entities/comment.entity';
 import { Brackets, In, Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { ContentEntity } from '../entities/content.entity';
-import { BlockEntity } from '../entities/block.entity';
-import { MediaFileEntity } from '../entities/media-file.entity';
-import { FriendshipEntity } from '../entities/friendship.entity';
-import { FriendshipStatus } from '../enum/friendshipstatus.enum';
-import { MediaTargetType } from '../enum/media-target-type.enum';
-import { ReactionTargetType } from '../enum/reactiontargettype.enum';
+import { UserEntity } from '../../entities/user.entity';
+import { ContentEntity } from '../../entities/content.entity';
+import { BlockEntity } from '../../entities/block.entity';
+import { MediaFileEntity } from '../../entities/media-file.entity';
+import { FriendshipEntity } from '../../entities/friendship.entity';
+import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
+import { MediaTargetType } from '../../enum/media-target-type.enum';
+import { ReactionTargetType } from '../../enum/reactiontargettype.enum';
 import { DetailComment } from './interfaces/comment.interface';
 
 type DetailCommentQueryRow = {

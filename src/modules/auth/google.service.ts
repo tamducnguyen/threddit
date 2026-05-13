@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
-import { message } from '../common/helper/message.helper';
+import { message } from '../../common/helper/message.helper';
 import {
   BadRequestException,
   HttpStatus,
@@ -9,17 +9,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
-import { UserEntity } from '../entities/user.entity';
+import { UserEntity } from '../../entities/user.entity';
 import { GoogleData } from './interfaces/googledata.interface';
-import { sendResponse } from '../common/helper/response.helper';
-import { SessionEntity } from '../entities/session.entity';
-import { cookieOptions, sendCookie } from '../common/helper/cookie.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { SessionEntity } from '../../entities/session.entity';
+import { cookieOptions, sendCookie } from '../../common/helper/cookie.helper';
 import { Response } from 'express';
-import { GeneratePayload } from '../common/helper/payload.helper';
+import { GeneratePayload } from '../../common/helper/payload.helper';
 import { GoogleCodeDTO } from './dtos/googlecode.dto';
-import { AuthMethod } from '../enum/authmethod.enum';
-import { generateUniqueUsername } from '../common/helper/username.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { AuthMethod } from '../../enum/authmethod.enum';
+import { generateUniqueUsername } from '../../common/helper/username.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 @Injectable()
 export class GoogleAuthService {
   private client: OAuth2Client;

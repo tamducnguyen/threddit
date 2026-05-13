@@ -1,21 +1,21 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { ContentEntity } from '../entities/content.entity';
+import { ContentEntity } from '../../entities/content.entity';
 import { Brackets, In, Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
+import { UserEntity } from '../../entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { TimelineItem } from './interface/timeline-item.interface';
-import { ReactionTargetType } from '../enum/reactiontargettype.enum';
-import { MediaTargetType } from '../enum/media-target-type.enum';
+import { ReactionTargetType } from '../../enum/reactiontargettype.enum';
+import { MediaTargetType } from '../../enum/media-target-type.enum';
 import { TimelineCursor } from './interface/timeline-cursor.interface';
-import { BlockEntity } from '../entities/block.entity';
-import { MediaFileEntity } from '../entities/media-file.entity';
-import { FriendshipEntity } from '../entities/friendship.entity';
-import { FriendshipStatus } from '../enum/friendshipstatus.enum';
-import { ContentType } from '../enum/contenttype.enum';
+import { BlockEntity } from '../../entities/block.entity';
+import { MediaFileEntity } from '../../entities/media-file.entity';
+import { FriendshipEntity } from '../../entities/friendship.entity';
+import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
+import { ContentType } from '../../enum/contenttype.enum';
 import { ContentDetail } from './interface/content-detail.interface';
 import { SavedContent } from './interface/saved-content.interface';
-import { FollowEntity } from '../entities/follow.entity';
-import { MediaType } from '../enum/media-type.enum';
+import { FollowEntity } from '../../entities/follow.entity';
+import { MediaType } from '../../enum/media-type.enum';
 import { SearchContentCursor } from './interface/search-content-cursor.interface';
 
 export class ContentRepository {

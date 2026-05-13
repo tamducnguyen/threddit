@@ -5,12 +5,12 @@
   NotFoundException,
 } from '@nestjs/common';
 import { FollowRepository } from './follow.repository';
-import { message } from '../common/helper/message.helper';
-import { sendResponse } from '../common/helper/response.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { message } from '../../common/helper/message.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../interface/cursor.interface';
-import { FollowEntity } from '../entities/follow.entity';
+import { Cursor } from '../../interface/cursor.interface';
+import { FollowEntity } from '../../entities/follow.entity';
 import {
   JobNotificationQueue,
   NameNotificationQueue,
@@ -19,7 +19,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
-import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
+import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 
 @Injectable()
 export class FollowService {

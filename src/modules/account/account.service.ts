@@ -5,18 +5,18 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { AccountRepository } from './account.repository';
-import { sendResponse } from '../common/helper/response.helper';
-import { message } from '../common/helper/message.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { message } from '../../common/helper/message.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { UpdatePasswordDTO } from './dtos/updatepassword.dto';
 import { AuthUser } from '../token/authuser.interface';
-import { HashHelper } from '../common/helper/hash.helper';
+import { HashHelper } from '../../common/helper/hash.helper';
 import { UpdateUsernameDTO } from './dtos/updateusername.dto';
-import { AuthMethod } from '../enum/authmethod.enum';
+import { AuthMethod } from '../../enum/authmethod.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { prefixCache, ttlCache } from '../config/cache.config';
-import { generateVerificationCode } from '../common/helper/gencode.helper';
+import { prefixCache, ttlCache } from '../../config/cache.config';
+import { generateVerificationCode } from '../../common/helper/gencode.helper';
 import { MailService } from '../mail/mail.service';
 import { DeleteAccountDTO } from './dtos/deleteaccount.dto';
 import { QueryFailedError } from 'typeorm';

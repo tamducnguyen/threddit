@@ -3,10 +3,10 @@ import { SavedContentController } from './saved-content.controller';
 import { SavedContentService } from './saved-content.service';
 import { SavedContentRepository } from './saved-content.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ContentEntity } from '../entities/content.entity';
-import { UserEntity } from '../entities/user.entity';
-import { SaveEntity } from '../entities/save.entity';
-import { SessionEntity } from '../entities/session.entity';
+import { ContentEntity } from '../../entities/content.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { SaveEntity } from '../../entities/save.entity';
+import { SessionEntity } from '../../entities/session.entity';
 import { SessionModule } from '../token/session.module';
 
 @Module({

@@ -9,12 +9,12 @@ import {
 } from '@nestjs/common';
 import { SavedContentService } from './saved-content.service';
 import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../common/guard/token.guard';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { TokenGuard } from '../../common/guard/token.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
-import { ContentIdDTO } from './dtos/content-id.dto';
+import { ContentIdDTO } from '../../common/dtos/content-id.dto';
 
 @Controller('content')
 @UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)

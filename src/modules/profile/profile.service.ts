@@ -6,17 +6,17 @@ import {
 } from '@nestjs/common';
 import { ProfileRepository } from './profile.repository';
 import { AuthUser } from '../token/authuser.interface';
-import { sendResponse } from '../common/helper/response.helper';
-import { message } from '../common/helper/message.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { message } from '../../common/helper/message.helper';
 import { ConfigService } from '@nestjs/config';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { UpdateProfileDTO } from './dtos/updateprofile.dto';
 import { AvatarPresignDTO } from './dtos/avatarpresign.dto';
 import { AvatarConfirmDTO } from './dtos/avatarconfirm.dto';
 import { BackgroundPresignDTO } from './dtos/backgroundpresign.dto';
 import { BackgroundConfirmDTO } from './dtos/backgroundconfirm.dto';
 import { StorageService } from '../storage/storage.service';
-import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
+import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 import { JwtService } from '@nestjs/jwt';
 import { ProfileCursor } from './interfaces/profile-cursor.interface';
 

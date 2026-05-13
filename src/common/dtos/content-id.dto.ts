@@ -1,4 +1,4 @@
-﻿import { Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsInt, Min } from 'class-validator';
 
 export class ContentIdDTO {

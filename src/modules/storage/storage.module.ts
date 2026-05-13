@@ -4,10 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { StorageService } from './storage.service';
 import { StorageController } from './storage.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SessionEntity } from '../entities/session.entity';
-import { UserEntity } from '../entities/user.entity';
-import { ContentEntity } from '../entities/content.entity';
-import { MediaFileEntity } from '../entities/media-file.entity';
+import { SessionEntity } from '../../entities/session.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { ContentEntity } from '../../entities/content.entity';
+import { MediaFileEntity } from '../../entities/media-file.entity';
 
 @Module({
   imports: [

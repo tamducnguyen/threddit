@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { ContentType } from 'src/modules/enum/contenttype.enum';
+import { ContentType } from 'src/enum/contenttype.enum';
 
 export class CreateContentDTO {
   @IsString()

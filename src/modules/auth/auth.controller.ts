@@ -14,7 +14,7 @@ import { SignInDTO } from './dtos/signin.dto';
 import { Response } from 'express';
 import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { GoogleAuthService } from './google.service';
 import { ResendVerifyDTO } from './dtos/resendverify.dto';
 import { GoogleCodeDTO } from './dtos/googlecode.dto';

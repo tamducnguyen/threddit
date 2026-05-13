@@ -5,11 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FriendshipRepository } from './friendship.repository';
-import { sendResponse } from '../common/helper/response.helper';
-import { message } from '../common/helper/message.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
-import { FriendshipStatus } from '../enum/friendshipstatus.enum';
-import { FriendshipEntity } from '../entities/friendship.entity';
+import { sendResponse } from '../../common/helper/response.helper';
+import { message } from '../../common/helper/message.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
+import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
+import { FriendshipEntity } from '../../entities/friendship.entity';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -17,10 +17,10 @@ import {
   NameNotificationQueue,
 } from '../notification/helper/notification.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../interface/cursor.interface';
+import { Cursor } from '../../interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
-import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
+import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 
 @Injectable()
 export class FriendshipService {

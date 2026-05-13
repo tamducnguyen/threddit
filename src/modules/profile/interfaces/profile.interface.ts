@@ -1,6 +1,6 @@
-import { EducationalLevel } from 'src/modules/enum/educationallevel.enum';
-import { Gender } from 'src/modules/enum/gender.enum';
-import { RelationshipStatus } from 'src/modules/enum/relationshipstatus.enum';
+import { EducationalLevel } from 'src/enum/educationallevel.enum';
+import { Gender } from 'src/enum/gender.enum';
+import { RelationshipStatus } from 'src/enum/relationshipstatus.enum';
 
 export interface Profile {
   email: string;

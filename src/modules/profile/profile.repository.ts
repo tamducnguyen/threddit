@@ -1,9 +1,9 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from '../entities/user.entity';
+import { UserEntity } from '../../entities/user.entity';
 import { Brackets, DataSource, Repository } from 'typeorm';
-import { BlockEntity } from '../entities/block.entity';
-import { FriendshipEntity } from '../entities/friendship.entity';
-import { FriendshipStatus } from '../enum/friendshipstatus.enum';
+import { BlockEntity } from '../../entities/block.entity';
+import { FriendshipEntity } from '../../entities/friendship.entity';
+import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
 import { ConfigService } from '@nestjs/config';
 import { ProfileCursor } from './interfaces/profile-cursor.interface';
 import { Profile } from './interfaces/profile.interface';

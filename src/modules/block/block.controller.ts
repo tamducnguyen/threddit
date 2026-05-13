@@ -12,12 +12,12 @@ import {
 import { BlockService } from './block.service';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
-import { UsernameDTO } from './dto/username.dto';
-import { CursorDTO } from './dto/cursor.dto';
-import { SearchUserOptionalDTO } from './dto/searchuser.dto';
+import { UsernameDTO } from '../../common/dtos/username.dto';
+import { CursorDTO } from '../../common/dtos/cursor.dto';
+import { SearchUserOptionalDTO } from '../../common/dtos/search-user.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../common/guard/token.guard';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { TokenGuard } from '../../common/guard/token.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('block')

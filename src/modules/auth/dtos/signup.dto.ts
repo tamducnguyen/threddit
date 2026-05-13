@@ -8,7 +8,7 @@ import {
   IsStrongPassword,
   Matches,
 } from 'class-validator';
-import { Gender } from 'src/modules/enum/gender.enum';
+import { Gender } from 'src/enum/gender.enum';
 
 export class SignUpDTO {
   @IsEmail({}, { message: 'Email không hợp lệ' })

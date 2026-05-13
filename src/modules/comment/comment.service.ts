@@ -12,13 +12,13 @@ import {
 } from '@nestjs/common';
 import type { Cache } from 'cache-manager';
 import { Queue } from 'bullmq';
-import { errorCode } from '../common/helper/errorcode.helper';
-import { message } from '../common/helper/message.helper';
-import { sendResponse } from '../common/helper/response.helper';
-import { MediaTargetType } from '../enum/media-target-type.enum';
-import { CommentEntity } from '../entities/comment.entity';
-import { MediaFileEntity } from '../entities/media-file.entity';
-import { UserEntity } from '../entities/user.entity';
+import { errorCode } from '../../common/helper/errorcode.helper';
+import { message } from '../../common/helper/message.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { MediaTargetType } from '../../enum/media-target-type.enum';
+import { CommentEntity } from '../../entities/comment.entity';
+import { MediaFileEntity } from '../../entities/media-file.entity';
+import { UserEntity } from '../../entities/user.entity';
 import { HttpsService } from '../http/http.service';
 import {
   JobNotificationQueue,
@@ -27,7 +27,7 @@ import {
 import { StorageService } from '../storage/storage.service';
 import { CommentRepository } from './comment.repository';
 import { CommentContentDTO } from './dtos/comment-content.dto';
-import { Cursor } from '../interface/cursor.interface';
+import { Cursor } from '../../interface/cursor.interface';
 import { UpdateCommentDTO } from './dtos/update-comment.dto';
 
 @Injectable()

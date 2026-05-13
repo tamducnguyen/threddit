@@ -1,10 +1,10 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
-import { FriendshipEntity } from '../entities/friendship.entity';
-import { UserEntity } from '../entities/user.entity';
-import { BlockEntity } from '../entities/block.entity';
-import { FriendshipStatus } from '../enum/friendshipstatus.enum';
-import { Cursor } from '../interface/cursor.interface';
+import { FriendshipEntity } from '../../entities/friendship.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { BlockEntity } from '../../entities/block.entity';
+import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
+import { Cursor } from '../../interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { Friend } from './interfaces/friend.interface';
 

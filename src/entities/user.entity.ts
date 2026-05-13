@@ -5,7 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { SessionEntity } from 'src/modules/entities/session.entity';
+import { SessionEntity } from 'src/entities/session.entity';
 import { FollowEntity } from './follow.entity';
 import { NotificationEntity } from './notification.entity';
 import { Gender } from '../enum/gender.enum';

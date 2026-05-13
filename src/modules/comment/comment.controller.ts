@@ -13,13 +13,13 @@ import {
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../common/guard/token.guard';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { TokenGuard } from '../../common/guard/token.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
-import { ContentIdDTO } from '../content/dtos/content-id.dto';
-import { CursorDTO } from '../content/dtos/cursor.dto';
+import { ContentIdDTO } from '../../common/dtos/content-id.dto';
+import { CursorDTO } from '../../common/dtos/cursor.dto';
 import { CommentContentDTO } from './dtos/comment-content.dto';
 import { CommentIdDTO } from './dtos/comment-id.dto';
 import { UpdateCommentDTO } from './dtos/update-comment.dto';

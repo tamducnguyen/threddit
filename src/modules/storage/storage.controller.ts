@@ -10,12 +10,12 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SkipThrottle } from '@nestjs/throttler';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
-import { TokenGuard } from '../common/guard/token.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
+import { TokenGuard } from '../../common/guard/token.guard';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
 import { StorageService } from './storage.service';
-import { ContentIdDTO } from '../content/dtos/content-id.dto';
+import { ContentIdDTO } from '../../common/dtos/content-id.dto';
 import { MediaFileNumberDTO } from './dtos/media-file-number.dto';
 
 @Controller('storage')

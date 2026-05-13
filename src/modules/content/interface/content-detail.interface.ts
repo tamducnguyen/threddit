@@ -1,5 +1,5 @@
-import { ContentType } from 'src/modules/enum/contenttype.enum';
-import { ReactionType } from 'src/modules/enum/reactiontype.enum';
+import { ContentType } from 'src/enum/contenttype.enum';
+import { ReactionType } from 'src/enum/reactiontype.enum';
 import { MediaFileDTO } from './media-file.interface';
 import { UserDTO } from './user.interface';
 

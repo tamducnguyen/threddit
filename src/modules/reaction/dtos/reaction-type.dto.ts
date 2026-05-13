@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator';
-import { ReactionType } from 'src/modules/enum/reactiontype.enum';
+import { ReactionType } from 'src/enum/reactiontype.enum';
 
 export class ReactionTypeDTO {
   @IsEnum(ReactionType, { message: 'Loại cảm xúc không hợp lệ' })

@@ -12,11 +12,11 @@ import {
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../common/guard/token.guard';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
+import { TokenGuard } from '../../common/guard/token.guard';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
-import { UsernameDTO } from './dtos/username.dto';
+import { UsernameDTO } from '../../common/dtos/username.dto';
 import { UpdateProfileDTO } from './dtos/updateprofile.dto';
 import { AvatarPresignDTO } from './dtos/avatarpresign.dto';
 import { AvatarConfirmDTO } from './dtos/avatarconfirm.dto';

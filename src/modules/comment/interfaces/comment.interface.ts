@@ -1,6 +1,6 @@
 import { MediaFileDTO } from 'src/modules/content/interface/media-file.interface';
 import { UserDTO } from 'src/modules/content/interface/user.interface';
-import { ReactionType } from 'src/modules/enum/reactiontype.enum';
+import { ReactionType } from 'src/enum/reactiontype.enum';
 
 export interface DetailComment {
   id: number;

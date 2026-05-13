@@ -4,9 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { sendResponse } from '../common/helper/response.helper';
-import { message } from '../common/helper/message.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { message } from '../../common/helper/message.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { SavedContentRepository } from './saved-content.repository';
 
 /**

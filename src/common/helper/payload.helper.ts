@@ -1,4 +1,4 @@
-import { UserEntity } from 'src/modules/entities/user.entity';
+import { UserEntity } from 'src/entities/user.entity';
 
 export function GeneratePayload(user: UserEntity) {
   const payload = {

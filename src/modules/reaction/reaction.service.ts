@@ -5,9 +5,9 @@
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { sendResponse } from '../common/helper/response.helper';
-import { message } from '../common/helper/message.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { sendResponse } from '../../common/helper/response.helper';
+import { message } from '../../common/helper/message.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { ReactionRepository } from './reaction.repository';
 import { ReactionTypeDTO } from './dtos/reaction-type.dto';
 import { InjectQueue } from '@nestjs/bullmq';

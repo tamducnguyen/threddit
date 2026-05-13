@@ -7,9 +7,9 @@
   NotFoundException,
   Inject,
 } from '@nestjs/common';
-import { message } from '../common/helper/message.helper';
+import { message } from '../../common/helper/message.helper';
 import { JwtService } from '@nestjs/jwt';
-import { sendResponse } from '../common/helper/response.helper';
+import { sendResponse } from '../../common/helper/response.helper';
 import type { Cache } from 'cache-manager';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -21,20 +21,20 @@ import { HttpsService } from '../http/http.service';
 import { ConfigService } from '@nestjs/config';
 import { ContentRepository } from './content.repository';
 import { TimelineCursor } from './interface/timeline-cursor.interface';
-import { Cursor } from '../interface/cursor.interface';
-import { ContentType } from '../enum/contenttype.enum';
-import { ContentEntity } from '../entities/content.entity';
-import { MediaFileEntity } from '../entities/media-file.entity';
-import { MediaTargetType } from '../enum/media-target-type.enum';
+import { Cursor } from '../../interface/cursor.interface';
+import { ContentType } from '../../enum/contenttype.enum';
+import { ContentEntity } from '../../entities/content.entity';
+import { MediaFileEntity } from '../../entities/media-file.entity';
+import { MediaTargetType } from '../../enum/media-target-type.enum';
 import { StorageService } from '../storage/storage.service';
-import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
+import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CreateContentDTO } from './dtos/create-content.dto';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { ContentDetail } from './interface/content-detail.interface';
 import { UpdateContentDTO } from './dtos/update-content.dto';
 import { TimelineItem } from './interface/timeline-item.interface';
-import { prefixCache, ttlCache } from '../config/cache.config';
+import { prefixCache, ttlCache } from '../../config/cache.config';
 import { SearchContentCursor } from './interface/search-content-cursor.interface';
 
 @Injectable()

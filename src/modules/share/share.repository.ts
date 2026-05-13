@@ -1,10 +1,10 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { ContentEntity } from '../entities/content.entity';
+import { ContentEntity } from '../../entities/content.entity';
 import { Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { ShareEntity } from '../entities/share.entity';
-import { ContentType } from '../enum/contenttype.enum';
-import { BlockEntity } from '../entities/block.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { ShareEntity } from '../../entities/share.entity';
+import { ContentType } from '../../enum/contenttype.enum';
+import { BlockEntity } from '../../entities/block.entity';
 
 export class ShareRepository {
   constructor(

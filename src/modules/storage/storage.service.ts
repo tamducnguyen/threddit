@@ -16,21 +16,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { sendResponse } from '../common/helper/response.helper';
-import { message } from '../common/helper/message.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
-import { MediaType } from '../enum/media-type.enum';
+import { sendResponse } from '../../common/helper/response.helper';
+import { message } from '../../common/helper/message.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
+import { MediaType } from '../../enum/media-type.enum';
 import { ALLOWED_MEDIA_CONTENT_TYPES } from './helper/media-content-types.constant';
 import type { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { ContentEntity } from '../entities/content.entity';
-import { MediaFileEntity } from '../entities/media-file.entity';
-import { MediaTargetType } from '../enum/media-target-type.enum';
-import { ContentType } from '../enum/contenttype.enum';
+import { UserEntity } from '../../entities/user.entity';
+import { ContentEntity } from '../../entities/content.entity';
+import { MediaFileEntity } from '../../entities/media-file.entity';
+import { MediaTargetType } from '../../enum/media-target-type.enum';
+import { ContentType } from '../../enum/contenttype.enum';
 
 @Injectable()
 export class StorageService {

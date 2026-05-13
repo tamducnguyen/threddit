@@ -1,9 +1,9 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { ContentEntity } from '../entities/content.entity';
+import { ContentEntity } from '../../entities/content.entity';
 import { Repository } from 'typeorm';
-import { SaveEntity } from '../entities/save.entity';
-import { UserEntity } from '../entities/user.entity';
-import { ContentType } from '../enum/contenttype.enum';
+import { SaveEntity } from '../../entities/save.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { ContentType } from '../../enum/contenttype.enum';
 
 export class SavedContentRepository {
   constructor(

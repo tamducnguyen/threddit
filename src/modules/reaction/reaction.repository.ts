@@ -1,12 +1,12 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { ContentEntity } from '../entities/content.entity';
+import { ContentEntity } from '../../entities/content.entity';
 import { Repository } from 'typeorm';
-import { UserEntity } from '../entities/user.entity';
-import { ReactionEntity } from '../entities/reaction.entity';
-import { ReactionTargetType } from '../enum/reactiontargettype.enum';
-import { ReactionType } from '../enum/reactiontype.enum';
-import { CommentEntity } from '../entities/comment.entity';
-import { BlockEntity } from '../entities/block.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { ReactionEntity } from '../../entities/reaction.entity';
+import { ReactionTargetType } from '../../enum/reactiontargettype.enum';
+import { ReactionType } from '../../enum/reactiontype.enum';
+import { CommentEntity } from '../../entities/comment.entity';
+import { BlockEntity } from '../../entities/block.entity';
 
 export class ReactionRepository {
   constructor(

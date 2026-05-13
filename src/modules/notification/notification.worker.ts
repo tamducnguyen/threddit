@@ -1,17 +1,17 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { NotificationService } from './notification.service';
-import { UserEntity } from '../entities/user.entity';
-import { ContentEntity } from '../entities/content.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { ContentEntity } from '../../entities/content.entity';
 import { NotificationRepository } from './notification.repository';
-import { NotificationEntity } from '../entities/notification.entity';
-import { NotificationType } from '../enum/notificationtype.enum';
+import { NotificationEntity } from '../../entities/notification.entity';
+import { NotificationType } from '../../enum/notificationtype.enum';
 import {
   JobNotificationQueue,
   NameNotificationQueue,
 } from './helper/notification.helper';
-import { CommentEntity } from '../entities/comment.entity';
-import { NotificationTarget } from '../enum/notificationtarget.type';
+import { CommentEntity } from '../../entities/comment.entity';
+import { NotificationTarget } from '../../enum/notificationtarget.type';
 
 @Processor(NameNotificationQueue, {
   concurrency: parseInt(process.env.NOTIFICATION_CONCURRENCY || '5', 10),

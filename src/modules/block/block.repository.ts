@@ -1,11 +1,11 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { BlockEntity } from '../entities/block.entity';
-import { UserEntity } from '../entities/user.entity';
-import { FollowEntity } from '../entities/follow.entity';
-import { FriendshipEntity } from '../entities/friendship.entity';
+import { BlockEntity } from '../../entities/block.entity';
+import { UserEntity } from '../../entities/user.entity';
+import { FollowEntity } from '../../entities/follow.entity';
+import { FriendshipEntity } from '../../entities/friendship.entity';
 import { ConfigService } from '@nestjs/config';
-import { Cursor } from '../interface/cursor.interface';
+import { Cursor } from '../../interface/cursor.interface';
 
 export class BlockRepository {
   constructor(

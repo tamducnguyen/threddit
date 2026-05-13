@@ -6,15 +6,15 @@ import {
 } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
 import { AuthUser } from '../token/authuser.interface';
-import { NotificationEntity } from '../entities/notification.entity';
+import { NotificationEntity } from '../../entities/notification.entity';
 import { NotificationRepository } from './notification.repository';
-import { message } from '../common/helper/message.helper';
+import { message } from '../../common/helper/message.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../interface/cursor.interface';
-import { sendResponse } from '../common/helper/response.helper';
-import { errorCode } from '../common/helper/errorcode.helper';
+import { Cursor } from '../../interface/cursor.interface';
+import { sendResponse } from '../../common/helper/response.helper';
+import { errorCode } from '../../common/helper/errorcode.helper';
 import { ConfigService } from '@nestjs/config';
-import { ConvertMediaRelativePathToUrl } from '../common/helper/media-url.helper';
+import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 
 @Injectable()
 export class NotificationService {

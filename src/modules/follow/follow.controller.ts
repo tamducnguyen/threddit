@@ -11,12 +11,12 @@
 } from '@nestjs/common';
 import { FollowService } from './follow.service';
 import { CurrentUser } from '../token/currentuser.decorator';
-import { CursorDTO } from './dtos/cursor.dto';
+import { CursorDTO } from '../../common/dtos/cursor.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { UserThrottlerGuard } from '../common/guard/throttler.guard';
-import { UsernameDTO } from './dtos/username.dto';
-import { TokenGuard } from '../common/guard/token.guard';
-import { SearchUserOptionalDTO } from './dtos/searchuser.dto';
+import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
+import { UsernameDTO } from '../../common/dtos/username.dto';
+import { TokenGuard } from '../../common/guard/token.guard';
+import { SearchUserOptionalDTO } from '../../common/dtos/search-user.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { SkipThrottle } from '@nestjs/throttler';
 
