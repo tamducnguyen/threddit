@@ -132,6 +132,7 @@ export class GoogleAuthService {
         accessToken,
       );
       return sendResponse(HttpStatus.OK, message.auth.google_auth.success, {
+        userId: userFound.id,
         THREDDIT_AUTH: accessToken,
       });
     }
@@ -167,6 +168,7 @@ export class GoogleAuthService {
       accessToken,
     );
     return sendResponse(HttpStatus.OK, message.auth.google_auth.success, {
+      userId: userCreated.id,
       AUTH_METHOD: userCreated.authMethod,
       THREDDIT_AUTH: accessToken,
     });

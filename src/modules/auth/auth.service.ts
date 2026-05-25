@@ -385,6 +385,7 @@ export class AuthService {
       accessToken,
     );
     return sendResponse(HttpStatus.OK, message.auth.signin.success, {
+      userId: userFound.id,
       AUTH_METHOD: userFound.authMethod,
       THREDDIT_AUTH: accessToken,
     });
