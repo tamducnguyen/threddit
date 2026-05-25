@@ -50,19 +50,39 @@ export class ContentService {
     private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
-  private async decodeTimelineCursor(
-    cursor: string,
-  ): Promise<TimelineCursor | undefined> {
+  /**
+   * Decode a signed cursor token and validate its payload shape.
+   *
+   * Returns `undefined` when no cursor is provided so callers can pass through
+   * an optional `cursor` argument without an extra null check. Any verify or
+   * `validate` failure is normalized into a single `cursor_invalid` BadRequest
+   * response derived from the supplied message and error code.
+   *
+   * @param cursor Signed cursor token, or `undefined` for the first page.
+   * @param cursorInvalidMessage Domain-specific cursor_invalid message.
+   * @param cursorInvalidErrorCode Domain-specific cursor_invalid error code.
+   * @param validate Optional payload-shape validator for extra runtime checks.
+   */
+  private async decodeCursor<T extends object>(
+    cursor: string | undefined,
+    cursorInvalidMessage: string,
+    cursorInvalidErrorCode: string,
+    validate?: (payload: T) => boolean,
+  ): Promise<T | undefined> {
     if (!cursor) return undefined;
     try {
-      return await this.jwtService.verifyAsync<TimelineCursor>(cursor);
+      const payload = await this.jwtService.verifyAsync<T>(cursor);
+      if (validate && !validate(payload)) {
+        throw new Error('invalid cursor payload');
+      }
+      return payload;
     } catch {
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
-          message.content.get_timeline_content.cursor_invalid,
+          cursorInvalidMessage,
           undefined,
-          errorCode.content.get_timeline_content.cursor_invalid,
+          cursorInvalidErrorCode,
         ),
       );
     }
@@ -71,7 +91,11 @@ export class ContentService {
     let cursorDecoded: TimelineCursor | undefined;
     let pinnedContents: ContentDetail[] | undefined;
     if (cursor) {
-      cursorDecoded = await this.decodeTimelineCursor(cursor);
+      cursorDecoded = await this.decodeCursor<TimelineCursor>(
+        cursor,
+        message.content.get_timeline_content.cursor_invalid,
+        errorCode.content.get_timeline_content.cursor_invalid,
+      );
     } else {
       cursorDecoded = undefined;
       pinnedContents = await this.contentRepo.getPinnedContents(
@@ -192,7 +216,11 @@ export class ContentService {
     let cursorDecoded: TimelineCursor | undefined;
     let pinnedContents: ContentDetail[] | undefined;
     if (cursor) {
-      cursorDecoded = await this.decodeTimelineCursor(cursor);
+      cursorDecoded = await this.decodeCursor<TimelineCursor>(
+        cursor,
+        message.content.get_timeline_content.cursor_invalid,
+        errorCode.content.get_timeline_content.cursor_invalid,
+      );
     } else {
       cursorDecoded = undefined;
       pinnedContents = await this.contentRepo.getPinnedContents(
@@ -440,24 +468,11 @@ export class ContentService {
     });
   }
   async getSavedContents(currentUserId: number, cursor?: string) {
-    //check if has cursor
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_saved_content.cursor_invalid,
-            undefined,
-            errorCode.content.get_saved_content.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_saved_content.cursor_invalid,
+      errorCode.content.get_saved_content.cursor_invalid,
+    );
     //get saved contents
     const savedContents = await this.contentRepo.getSavedContents(
       currentUserId,
@@ -483,33 +498,17 @@ export class ContentService {
     );
   }
   async searchContents(currentUserId: number, key: string, cursor?: string) {
-    let cursorDecoded: SearchContentCursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded =
-          await this.jwtService.verifyAsync<SearchContentCursor>(cursor);
-        if (
-          !Number.isInteger(cursorDecoded?.id) ||
-          typeof cursorDecoded?.recommendationScore !== 'number' ||
-          !Number.isFinite(cursorDecoded.recommendationScore) ||
-          (!(cursorDecoded?.scoredAt instanceof Date) &&
-            typeof cursorDecoded?.scoredAt !== 'string')
-        ) {
-          throw new Error('invalid cursor payload');
-        }
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_content_by_key.cursor_invalid,
-            undefined,
-            errorCode.content.get_content_by_key.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<SearchContentCursor>(
+      cursor,
+      message.content.get_content_by_key.cursor_invalid,
+      errorCode.content.get_content_by_key.cursor_invalid,
+      (payload) =>
+        Number.isInteger(payload.id) &&
+        typeof payload.recommendationScore === 'number' &&
+        Number.isFinite(payload.recommendationScore) &&
+        (payload.scoredAt instanceof Date ||
+          typeof payload.scoredAt === 'string'),
+    );
     const scoredAt = cursorDecoded?.scoredAt ?? new Date().toISOString();
     const contents = await this.contentRepo.searchPostContents(
       currentUserId,
@@ -633,11 +632,13 @@ export class ContentService {
     // Attach uploaded media; rollback post on media processing failures.
     let insertedMediaFiles: MediaFileEntity[] = [];
     try {
-      insertedMediaFiles = await this.attachUploadedMediaToContent(
-        currentUserId,
-        insertedContent.id,
+      insertedMediaFiles = await this.storageService.attachUploadedMedia({
+        ownerId: currentUserId,
+        targetType: MediaTargetType.CONTENT,
+        targetId: insertedContent.id,
         mediaKeys,
-      );
+        persist: (entities) => this.contentRepo.insertMedias(entities),
+      });
     } catch (error) {
       await this.contentRepo.deleteContentById(insertedContent.id);
       if (
@@ -903,37 +904,17 @@ export class ContentService {
         ]),
       );
 
-      // Move all new temp objects to permanent keys and wait for all results.
-      const moveResults = await Promise.allSettled(
-        newTempMediaKeys.map(async (newTempMediaKey) => {
-          const destinationKey = this.storageService.getPermanentMediaKey(
+      // Move all new temp objects to permanent keys; partial failures are
+      // rolled back inside the helper before it rethrows.
+      movedMediaPairs = await this.storageService.moveTempKeysToPermanent(
+        newTempMediaKeys.map((newTempMediaKey) => ({
+          tempKey: newTempMediaKey,
+          destinationKey: this.storageService.getPermanentMediaKey(
             currentUserId,
             contentId,
-          );
-          await this.storageService.moveObject(newTempMediaKey, destinationKey);
-          return { tempKey: newTempMediaKey, destinationKey };
-        }),
+          ),
+        })),
       );
-      movedMediaPairs = moveResults
-        .filter(
-          (
-            moveResult,
-          ): moveResult is PromiseFulfilledResult<{
-            tempKey: string;
-            destinationKey: string;
-          }> => moveResult.status === 'fulfilled',
-        )
-        .map((moveResult) => moveResult.value);
-
-      // Roll back already moved files when at least one move failed.
-      const rejectedMove = moveResults.find(
-        (moveResult): moveResult is PromiseRejectedResult =>
-          moveResult.status === 'rejected',
-      );
-      if (rejectedMove) {
-        await this.rollbackMovedMediaFiles(movedMediaPairs);
-        throw rejectedMove.reason;
-      }
 
       // Build lookup from temp key to permanent key for persistence.
       const destinationKeyByTempKey = new Map(
@@ -1005,7 +986,7 @@ export class ContentService {
     try {
       await this.contentRepo.updatePostContentById(contentId, updatePayload);
     } catch (error) {
-      await this.rollbackMovedMediaFiles(movedMediaPairs);
+      await this.storageService.rollbackMovedMediaFiles(movedMediaPairs);
       throw error;
     }
 
@@ -1082,107 +1063,6 @@ export class ContentService {
     };
   }
 
-  private async rollbackMovedMediaFiles(
-    movedMediaPairs: Array<{ tempKey: string; destinationKey: string }>,
-  ) {
-    if (movedMediaPairs.length === 0) return;
-    await Promise.allSettled(
-      movedMediaPairs.map(async ({ tempKey, destinationKey }) => {
-        const movedObjectSize =
-          await this.storageService.getObjectSize(destinationKey);
-        if (movedObjectSize) {
-          await this.storageService.moveObject(destinationKey, tempKey);
-        }
-      }),
-    );
-  }
-  /**
-   * Attaches uploaded media files to a content.
-   *
-   * Flow:
-   * - parse and validate temporary media keys
-   * - validate uploaded media objects in storage
-   * - move objects from temp path to permanent path
-   * - wait until every move settles before deciding rollback (race-safe)
-   * - persist media metadata to database
-   * - rollback moved objects if any step fails
-   *
-   * @param userId owner user id.
-   * @param contentId Target content id.
-   * @param mediaKeys Temporary media keys from upload session.
-   * @returns Persisted media file entities for the content.
-   */
-  private async attachUploadedMediaToContent(
-    userId: number,
-    contentId: number,
-    mediaKeys: string[],
-  ): Promise<MediaFileEntity[]> {
-    // Skip media attachment when request has no media keys.
-    if (mediaKeys.length === 0) return [];
-    // Validate uploaded objects (existence, size, and MIME type).
-    const mediaMetas =
-      await this.storageService.validateUploadedMediaObjects(mediaKeys);
-
-    // Allocate a unique permanent key per media file to avoid key collisions.
-    const mediaPayloads = mediaMetas.map(({ mediaKey, mediaType }, index) => {
-      return {
-        mediaKey,
-        mediaType,
-        sortOrder: index + 1,
-        destinationKey: this.storageService.getPermanentMediaKey(
-          userId,
-          contentId,
-        ),
-      };
-    });
-
-    // Move all objects to permanent location and wait for every move to settle.
-    const moveResults = await Promise.allSettled(
-      mediaPayloads.map(async ({ mediaKey, destinationKey }) => {
-        await this.storageService.moveObject(mediaKey, destinationKey);
-        return { tempKey: mediaKey, destinationKey };
-      }),
-    );
-
-    // Collect all successfully moved objects for potential rollback.
-    const movedMediaPairs = moveResults
-      .filter(
-        (
-          result,
-        ): result is PromiseFulfilledResult<{
-          tempKey: string;
-          destinationKey: string;
-        }> => result.status === 'fulfilled',
-      )
-      .map((result) => result.value);
-
-    // If any move failed, rollback moved objects and surface the first failure.
-    const rejectedMove = moveResults.find(
-      (result): result is PromiseRejectedResult => result.status === 'rejected',
-    );
-    if (rejectedMove) {
-      await this.rollbackMovedMediaFiles(movedMediaPairs);
-      throw rejectedMove.reason;
-    }
-    // Persist media metadata only after all object moves completed successfully.
-    try {
-      const mediaFileEntities: MediaFileEntity[] = mediaPayloads.map(
-        ({ mediaType, sortOrder, destinationKey }) =>
-          ({
-            targetType: MediaTargetType.CONTENT,
-            targetId: contentId,
-            relativePath: destinationKey,
-            sortOrder: sortOrder,
-            type: mediaType,
-          }) as MediaFileEntity,
-      );
-      return await this.contentRepo.insertMedias(mediaFileEntities);
-    } catch (error) {
-      // Restore moved objects back to temp location when DB insert fails.
-      await this.rollbackMovedMediaFiles(movedMediaPairs);
-      throw error;
-    }
-  }
   private enqueueCreateContentNotifications(
     insertedContent: { id: number; type: ContentType },
     author: { id: number; displayName: string },
@@ -1272,23 +1152,11 @@ export class ContentService {
    * @returns Current stories with next cursor.
    */
   async getMyCurrentStories(currentUserId: number, cursor?: string) {
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_my_current_story.cursor_invalid,
-            undefined,
-            errorCode.content.get_my_current_story.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_my_current_story.cursor_invalid,
+      errorCode.content.get_my_current_story.cursor_invalid,
+    );
     const stories: ContentDetail[] = await this.contentRepo.getCurrentStories(
       currentUserId,
       currentUserId,
@@ -1367,23 +1235,11 @@ export class ContentService {
         ),
       );
     }
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_other_current_story.cursor_invalid,
-            undefined,
-            errorCode.content.get_other_current_story.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_other_current_story.cursor_invalid,
+      errorCode.content.get_other_current_story.cursor_invalid,
+    );
     const stories: ContentDetail[] = await this.contentRepo.getCurrentStories(
       targetUser.id,
       currentUserId,
@@ -1416,23 +1272,11 @@ export class ContentService {
    * @returns Current user's stories with next cursor.
    */
   async getMyStories(currentUserId: number, cursor?: string) {
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_my_story.cursor_invalid,
-            undefined,
-            errorCode.content.get_my_story.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_my_story.cursor_invalid,
+      errorCode.content.get_my_story.cursor_invalid,
+    );
     const stories: ContentDetail[] = await this.contentRepo.getMyStories(
       currentUserId,
       cursorDecoded?.id,
@@ -1460,23 +1304,11 @@ export class ContentService {
    * @returns Stories with next cursor.
    */
   async getFriendStories(currentUserId: number, cursor?: string) {
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_friend_story.cursor_invalid,
-            undefined,
-            errorCode.content.get_friend_story.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_friend_story.cursor_invalid,
+      errorCode.content.get_friend_story.cursor_invalid,
+    );
     const stories: ContentDetail[] = await this.contentRepo.getFriendStories(
       currentUserId,
       cursorDecoded?.id,
@@ -1508,23 +1340,11 @@ export class ContentService {
    * @returns Pinned stories with next cursor.
    */
   async getPinnedStories(currentUserId: number, cursor?: string) {
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_pinned_story.cursor_invalid,
-            undefined,
-            errorCode.content.get_pinned_story.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_pinned_story.cursor_invalid,
+      errorCode.content.get_pinned_story.cursor_invalid,
+    );
     const pinnedStories: ContentDetail[] =
       await this.contentRepo.getPinnedStories(
         currentUserId,
@@ -1619,24 +1439,11 @@ export class ContentService {
       );
     }
     // Decode pagination cursor when provided by client.
-    let cursorDecoded: Cursor | undefined;
-    if (cursor) {
-      try {
-        cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
-      } catch {
-        // Normalize invalid token into a domain-level cursor error response.
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.get_pinned_story.cursor_invalid,
-            undefined,
-            errorCode.content.get_pinned_story.cursor_invalid,
-          ),
-        );
-      }
-    } else {
-      cursorDecoded = undefined;
-    }
+    const cursorDecoded = await this.decodeCursor<Cursor>(
+      cursor,
+      message.content.get_pinned_story.cursor_invalid,
+      errorCode.content.get_pinned_story.cursor_invalid,
+    );
     // Query pinned stories where owner is target user and viewer is current user.
     const pinnedStories: ContentDetail[] =
       await this.contentRepo.getPinnedStories(

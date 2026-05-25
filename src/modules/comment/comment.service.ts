@@ -104,154 +104,6 @@ export class CommentService {
   }
 
   /**
-   * Rolls back media objects that were already moved to permanent storage keys
-   * when a later step fails.
-   *
-   * @param movedMediaPairs Successfully moved temp-to-permanent key pairs.
-   */
-  private async rollbackMovedMediaFiles(
-    movedMediaPairs: Array<{ tempKey: string; destinationKey: string }>,
-  ) {
-    // Nothing to rollback when no file has been moved successfully.
-    if (movedMediaPairs.length === 0) return;
-
-    // Move files back to their temp keys in best-effort mode.
-    await Promise.allSettled(
-      movedMediaPairs.map(async ({ tempKey, destinationKey }) => {
-        const movedObjectSize =
-          await this.storageService.getObjectSize(destinationKey);
-        if (movedObjectSize) {
-          await this.storageService.moveObject(destinationKey, tempKey);
-        }
-      }),
-    );
-  }
-
-  /**
-   * Validates uploaded media objects, moves them to permanent storage, and
-   * builds the media entities that can be persisted for a comment.
-   *
-   * @param currentUserId Media owner id.
-   * @param commentId Target comment id.
-   * @param mediaKeys Temp media keys resolved from the upload session.
-   * @returns Persistable media entities and the successfully moved key pairs.
-   */
-  private async moveUploadedMediaToCommentStorage(
-    currentUserId: number,
-    commentId: number,
-    mediaKeys: string[],
-  ) {
-    // Skip media preparation when the request has no media.
-    if (mediaKeys.length === 0) {
-      return {
-        mediaFileEntities: [] as MediaFileEntity[],
-        movedMediaPairs: [] as Array<{
-          tempKey: string;
-          destinationKey: string;
-        }>,
-      };
-    }
-
-    // Validate existence, size, and detected MIME type of uploaded objects.
-    const mediaMetas =
-      await this.storageService.validateUploadedMediaObjects(mediaKeys);
-
-    // Prepare permanent keys and final sort order before moving files.
-    const mediaPayloads = mediaMetas.map(({ mediaKey, mediaType }, index) => ({
-      mediaKey,
-      mediaType,
-      sortOrder: index + 1,
-      destinationKey: this.storageService.getPermanentMediaKey(
-        currentUserId,
-        commentId,
-      ),
-    }));
-
-    // Move all files to permanent storage and keep track of successful moves.
-    const moveResults = await Promise.allSettled(
-      mediaPayloads.map(async ({ mediaKey, destinationKey }) => {
-        await this.storageService.moveObject(mediaKey, destinationKey);
-        return { tempKey: mediaKey, destinationKey };
-      }),
-    );
-
-    const movedMediaPairs = moveResults
-      .filter(
-        (
-          moveResult,
-        ): moveResult is PromiseFulfilledResult<{
-          tempKey: string;
-          destinationKey: string;
-        }> => moveResult.status === 'fulfilled',
-      )
-      .map((moveResult) => moveResult.value);
-
-    // Roll back already moved files if at least one move fails.
-    const rejectedMove = moveResults.find(
-      (moveResult): moveResult is PromiseRejectedResult =>
-        moveResult.status === 'rejected',
-    );
-    if (rejectedMove) {
-      await this.rollbackMovedMediaFiles(movedMediaPairs);
-      throw rejectedMove.reason;
-    }
-
-    // Build media entities so the caller can persist them transactionally.
-    const mediaFileEntities = mediaPayloads.map(
-      ({ destinationKey, mediaType, sortOrder }) =>
-        ({
-          targetType: MediaTargetType.COMMENT,
-          targetId: commentId,
-          type: mediaType,
-          relativePath: destinationKey,
-          sortOrder,
-        }) as MediaFileEntity,
-    );
-
-    return { mediaFileEntities, movedMediaPairs };
-  }
-
-  /**
-   * Attaches uploaded media from an upload session to a newly created comment.
-   *
-   * Flow:
-   * - validate uploaded media objects in storage
-   * - move media from temp keys to permanent keys
-   * - rollback moved files if any move fails
-   * - persist media metadata into `media_files`
-   *
-   * @param currentUserId Media owner id.
-   * @param commentId Newly created comment id.
-   * @param mediaKeys Temp media keys resolved from the upload session.
-   * @returns Persisted media file entities for the comment.
-   */
-  private async attachUploadedMediaToComment(
-    currentUserId: number,
-    commentId: number,
-    mediaKeys: string[],
-  ) {
-    // Move uploaded files first so the database only ever stores permanent keys.
-    const { mediaFileEntities, movedMediaPairs } =
-      await this.moveUploadedMediaToCommentStorage(
-        currentUserId,
-        commentId,
-        mediaKeys,
-      );
-
-    // Skip persistence when the request has no media.
-    if (mediaFileEntities.length === 0) return [];
-
-    try {
-      // Persist the final media rows after storage moves have succeeded.
-      return await this.commentRepo.insertMedias(mediaFileEntities);
-    } catch (error) {
-      // Restore moved storage objects when database persistence fails.
-      await this.rollbackMovedMediaFiles(movedMediaPairs);
-      throw error;
-    }
-  }
-
-  /**
    * Enqueues mention notifications for users mentioned in a comment.
    *
    * @param comment Comment payload used by the notification worker.
@@ -561,11 +413,13 @@ export class CommentService {
 
     try {
       // Attach uploaded media; failures here must roll back the new comment.
-      await this.attachUploadedMediaToComment(
-        currentUserId,
-        insertedComment.id,
+      await this.storageService.attachUploadedMedia({
+        ownerId: currentUserId,
+        targetType: MediaTargetType.COMMENT,
+        targetId: insertedComment.id,
         mediaKeys,
-      );
+        persist: (entities) => this.commentRepo.insertMedias(entities),
+      });
     } catch (error) {
       // Remove the newly inserted comment to avoid partial persistence.
       await this.commentRepo.deleteCommentById(insertedComment.id);
@@ -806,11 +660,13 @@ export class CommentService {
     let movedMediaPairs: Array<{ tempKey: string; destinationKey: string }> =
       [];
     if (wantsToReplaceMedia) {
-      const movedMedia = await this.moveUploadedMediaToCommentStorage(
-        currentUserId,
-        commentId,
-        uploadedMediaKeys,
-      );
+      const movedMedia =
+        await this.storageService.prepareUploadedMediaForPersistence({
+          ownerId: currentUserId,
+          targetType: MediaTargetType.COMMENT,
+          targetId: commentId,
+          mediaKeys: uploadedMediaKeys,
+        });
       newMediaFileEntities = movedMedia.mediaFileEntities;
       movedMediaPairs = movedMedia.movedMediaPairs;
     }
@@ -839,7 +695,7 @@ export class CommentService {
     } catch (error) {
       // Restore moved files when the database update fails after storage move.
       if (movedMediaPairs.length > 0) {
-        await this.rollbackMovedMediaFiles(movedMediaPairs);
+        await this.storageService.rollbackMovedMediaFiles(movedMediaPairs);
       }
 
       this.logger.error(

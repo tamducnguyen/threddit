@@ -703,4 +703,144 @@ export class StorageService {
     const finalId = id ? id : randomUUID();
     return `media/${userId}/${contentId}/${finalId}`;
   }
+
+  /**
+   * Move uploaded temp keys to their permanent destinations in batch.
+   *
+   * If any move fails, already-moved files are rolled back before rethrowing
+   * the first rejection reason so the storage stays consistent.
+   *
+   * @param pairs Pairs of temp and destination keys to move.
+   * @returns Successfully moved temp-to-permanent key pairs.
+   */
+  async moveTempKeysToPermanent(
+    pairs: Array<{ tempKey: string; destinationKey: string }>,
+  ): Promise<Array<{ tempKey: string; destinationKey: string }>> {
+    if (pairs.length === 0) return [];
+
+    const moveResults = await Promise.allSettled(
+      pairs.map(async ({ tempKey, destinationKey }) => {
+        await this.moveObject(tempKey, destinationKey);
+        return { tempKey, destinationKey };
+      }),
+    );
+    const movedMediaPairs = moveResults
+      .filter(
+        (
+          result,
+        ): result is PromiseFulfilledResult<{
+          tempKey: string;
+          destinationKey: string;
+        }> => result.status === 'fulfilled',
+      )
+      .map((result) => result.value);
+
+    const rejectedMove = moveResults.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (rejectedMove) {
+      await this.rollbackMovedMediaFiles(movedMediaPairs);
+      throw rejectedMove.reason;
+    }
+    return movedMediaPairs;
+  }
+
+  /**
+   * Best-effort restore of media objects already moved to permanent keys when
+   * a later step (database write, etc.) fails.
+   *
+   * @param movedMediaPairs Successfully moved temp-to-permanent key pairs.
+   */
+  async rollbackMovedMediaFiles(
+    movedMediaPairs: Array<{ tempKey: string; destinationKey: string }>,
+  ) {
+    if (movedMediaPairs.length === 0) return;
+    await Promise.allSettled(
+      movedMediaPairs.map(async ({ tempKey, destinationKey }) => {
+        const movedObjectSize = await this.getObjectSize(destinationKey);
+        if (movedObjectSize) {
+          await this.moveObject(destinationKey, tempKey);
+        }
+      }),
+    );
+  }
+
+  /**
+   * Validate uploaded objects, move them to permanent storage, and build the
+   * persistable media rows for a given target. Already-moved files are rolled
+   * back automatically when any single move fails.
+   *
+   * @returns Persistable media entities + the successfully moved key pairs
+   *   (callers use the pairs to roll back when the later DB write fails).
+   */
+  async prepareUploadedMediaForPersistence(args: {
+    ownerId: number;
+    targetType: MediaTargetType;
+    targetId: number;
+    mediaKeys: string[];
+  }): Promise<{
+    mediaFileEntities: MediaFileEntity[];
+    movedMediaPairs: Array<{ tempKey: string; destinationKey: string }>;
+  }> {
+    const { ownerId, targetType, targetId, mediaKeys } = args;
+    if (mediaKeys.length === 0) {
+      return { mediaFileEntities: [], movedMediaPairs: [] };
+    }
+
+    const mediaMetas = await this.validateUploadedMediaObjects(mediaKeys);
+    const mediaPayloads = mediaMetas.map(({ mediaKey, mediaType }, index) => ({
+      mediaKey,
+      mediaType,
+      sortOrder: index + 1,
+      destinationKey: this.getPermanentMediaKey(ownerId, targetId),
+    }));
+
+    const movedMediaPairs = await this.moveTempKeysToPermanent(
+      mediaPayloads.map(({ mediaKey, destinationKey }) => ({
+        tempKey: mediaKey,
+        destinationKey,
+      })),
+    );
+
+    const mediaFileEntities = mediaPayloads.map(
+      ({ destinationKey, mediaType, sortOrder }) =>
+        ({
+          targetType,
+          targetId,
+          type: mediaType,
+          relativePath: destinationKey,
+          sortOrder,
+        }) as MediaFileEntity,
+    );
+    return { mediaFileEntities, movedMediaPairs };
+  }
+
+  /**
+   * Full media-attach pipeline for the common case: validate uploaded media,
+   * move them to permanent storage, persist via the caller-supplied callback,
+   * and roll back the moved files when persistence fails.
+   *
+   * @returns The entities returned by `persist`, or `[]` when there is no media.
+   */
+  async attachUploadedMedia(args: {
+    ownerId: number;
+    targetType: MediaTargetType;
+    targetId: number;
+    mediaKeys: string[];
+    persist: (
+      mediaFileEntities: MediaFileEntity[],
+    ) => Promise<MediaFileEntity[]>;
+  }): Promise<MediaFileEntity[]> {
+    if (args.mediaKeys.length === 0) return [];
+
+    const { mediaFileEntities, movedMediaPairs } =
+      await this.prepareUploadedMediaForPersistence(args);
+
+    try {
+      return await args.persist(mediaFileEntities);
+    } catch (error) {
+      await this.rollbackMovedMediaFiles(movedMediaPairs);
+      throw error;
+    }
+  }
 }
