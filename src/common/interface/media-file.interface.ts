@@ -1,4 +1,4 @@
-export interface MediaFileDTO {
+export interface MediaFile {
   url: string;
   key: string;
   type: string;

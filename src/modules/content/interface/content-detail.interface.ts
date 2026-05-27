@@ -1,7 +1,7 @@
 import { ContentType } from 'src/enum/contenttype.enum';
 import { ReactionType } from 'src/enum/reactiontype.enum';
-import { MediaFileDTO } from 'src/common/interface/media-file.interface';
-import { UserDTO } from 'src/common/interface/user.interface';
+import { MediaFile } from 'src/common/interface/media-file.interface';
+import { User } from 'src/common/interface/user.interface';
 
 export interface ContentDetail {
   id: number;
@@ -11,9 +11,9 @@ export interface ContentDetail {
   type: ContentType;
   isPinned: boolean;
   isOwner: boolean;
-  author: UserDTO;
-  mentionedUsers: UserDTO[];
-  mediaFiles: MediaFileDTO[];
+  author: User;
+  mentionedUsers: User[];
+  mediaFiles: MediaFile[];
   commentNumber: number;
   saveNumber: number;
   shareNumber: number;
