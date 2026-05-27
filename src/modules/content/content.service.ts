@@ -21,7 +21,7 @@ import { HttpsService } from '../http/http.service';
 import { ConfigService } from '@nestjs/config';
 import { ContentRepository } from './content.repository';
 import { TimelineCursor } from './interface/timeline-cursor.interface';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { ContentType } from '../../enum/contenttype.enum';
 import { ContentEntity } from '../../entities/content.entity';
 import { MediaFileEntity } from '../../entities/media-file.entity';

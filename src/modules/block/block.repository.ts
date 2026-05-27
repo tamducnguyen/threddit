@@ -5,7 +5,7 @@ import { UserEntity } from '../../entities/user.entity';
 import { FollowEntity } from '../../entities/follow.entity';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { ConfigService } from '@nestjs/config';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 
 export class BlockRepository {
   constructor(

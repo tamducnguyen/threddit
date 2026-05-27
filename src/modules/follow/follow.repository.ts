@@ -3,7 +3,7 @@ import { FollowEntity } from '../../entities/follow.entity';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../../entities/user.entity';
 import { ConfigService } from '@nestjs/config';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { BlockEntity } from '../../entities/block.entity';
 
 export class FollowRepository {

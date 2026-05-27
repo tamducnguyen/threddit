@@ -10,7 +10,7 @@ import { NotificationEntity } from '../../entities/notification.entity';
 import { NotificationRepository } from './notification.repository';
 import { message } from '../../common/helper/message.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { sendResponse } from '../../common/helper/response.helper';
 import { errorCode } from '../../common/helper/errorcode.helper';
 import { ConfigService } from '@nestjs/config';

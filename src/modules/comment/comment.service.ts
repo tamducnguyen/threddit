@@ -27,7 +27,7 @@ import {
 import { StorageService } from '../storage/storage.service';
 import { CommentRepository } from './comment.repository';
 import { CommentContentDTO } from './dtos/comment-content.dto';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { UpdateCommentDTO } from './dtos/update-comment.dto';
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { ContentType } from 'src/enum/contenttype.enum';
 import { ReactionType } from 'src/enum/reactiontype.enum';
-import { MediaFileDTO } from './media-file.interface';
-import { UserDTO } from './user.interface';
+import { MediaFileDTO } from 'src/common/interface/media-file.interface';
+import { UserDTO } from 'src/common/interface/user.interface';
 
 export interface ContentDetail {
   id: number;

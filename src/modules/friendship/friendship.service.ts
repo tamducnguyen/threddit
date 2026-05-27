@@ -17,7 +17,7 @@ import {
   NameNotificationQueue,
 } from '../notification/helper/notification.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';

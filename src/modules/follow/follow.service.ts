@@ -9,7 +9,7 @@ import { message } from '../../common/helper/message.helper';
 import { sendResponse } from '../../common/helper/response.helper';
 import { errorCode } from '../../common/helper/errorcode.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { FollowEntity } from '../../entities/follow.entity';
 import {
   JobNotificationQueue,

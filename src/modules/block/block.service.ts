@@ -10,7 +10,7 @@ import { sendResponse } from '../../common/helper/response.helper';
 import { message } from '../../common/helper/message.helper';
 import { errorCode } from '../../common/helper/errorcode.helper';
 import { JwtService } from '@nestjs/jwt';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { QueryFailedError } from 'typeorm';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';

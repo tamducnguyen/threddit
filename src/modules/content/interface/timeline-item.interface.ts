@@ -1,5 +1,5 @@
 import { ContentDetail } from './content-detail.interface';
-import { UserDTO } from './user.interface';
+import { UserDTO } from 'src/common/interface/user.interface';
 
 export interface TimelineItem extends ContentDetail {
   shareId: number | null;

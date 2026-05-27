@@ -2,7 +2,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationEntity } from '../../entities/notification.entity';
 import { FindOptionsWhere, In, LessThan, Repository } from 'typeorm';
 import { UserEntity } from '../../entities/user.entity';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { FollowEntity } from '../../entities/follow.entity';
 import { FriendshipEntity } from '../../entities/friendship.entity';

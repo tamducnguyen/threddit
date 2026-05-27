@@ -4,7 +4,7 @@ import { FriendshipEntity } from '../../entities/friendship.entity';
 import { UserEntity } from '../../entities/user.entity';
 import { BlockEntity } from '../../entities/block.entity';
 import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
-import { Cursor } from '../../interface/cursor.interface';
+import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { Friend } from './interfaces/friend.interface';
 
