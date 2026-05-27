@@ -51,6 +51,52 @@ export class ContentService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
   /**
+   * Enforce the bidirectional block rules between the current user and a
+   * target user before exposing target-scoped data.
+   *
+   * - When the target has blocked the current user, hide the resource via
+   *   `NotFound` so the user cannot probe the target's existence.
+   * - When the current user has blocked the target, reject the request via
+   *   `BadRequest` so the action is explicitly refused.
+   *
+   * Returns early for self-checks since a user cannot block themselves.
+   */
+  private async validateNotBlocked(
+    currentUserId: number,
+    targetUserId: number,
+    blockedByTargetError: { message: string; errorCode: string },
+    selfBlockedTargetError: { message: string; errorCode: string },
+  ): Promise<void> {
+    if (currentUserId === targetUserId) return;
+
+    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
+      this.contentRepo.checkBlocked(currentUserId, targetUserId),
+      this.contentRepo.checkBlocked(targetUserId, currentUserId),
+    ]);
+
+    if (isBlockedByTarget) {
+      throw new NotFoundException(
+        sendResponse(
+          HttpStatus.NOT_FOUND,
+          blockedByTargetError.message,
+          undefined,
+          blockedByTargetError.errorCode,
+        ),
+      );
+    }
+    if (isTargetBlocked) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          selfBlockedTargetError.message,
+          undefined,
+          selfBlockedTargetError.errorCode,
+        ),
+      );
+    }
+  }
+
+  /**
    * Decode a signed cursor token and validate its payload shape.
    *
    * Returns `undefined` when no cursor is provided so callers can pass through
@@ -187,32 +233,18 @@ export class ContentService {
     if (currentUserId === timelineOwnerUser.id) {
       return await this.getSelfTimelineContents(currentUserId, cursor);
     }
-    //check if current user got blocked by timeline owner user
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.contentRepo.checkBlocked(currentUserId, timelineOwnerUser.id),
-      this.contentRepo.checkBlocked(timelineOwnerUser.id, currentUserId),
-    ]);
-    if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_timeline_content.user_not_found,
-          undefined,
-          errorCode.content.get_timeline_content.user_not_found,
-        ),
-      );
-    }
-    //check if current user blocked timeline owner
-    if (isTargetBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.get_timeline_content.target_user_block,
-          undefined,
-          errorCode.content.get_timeline_content.target_user_block,
-        ),
-      );
-    }
+    await this.validateNotBlocked(
+      currentUserId,
+      timelineOwnerUser.id,
+      {
+        message: message.content.get_timeline_content.user_not_found,
+        errorCode: errorCode.content.get_timeline_content.user_not_found,
+      },
+      {
+        message: message.content.get_timeline_content.target_user_block,
+        errorCode: errorCode.content.get_timeline_content.target_user_block,
+      },
+    );
     let cursorDecoded: TimelineCursor | undefined;
     let pinnedContents: ContentDetail[] | undefined;
     if (cursor) {
@@ -1211,30 +1243,18 @@ export class ContentService {
     if (targetUser.id === currentUserId) {
       return await this.getMyCurrentStories(currentUserId, cursor);
     }
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.contentRepo.checkBlocked(currentUserId, targetUser.id),
-      this.contentRepo.checkBlocked(targetUser.id, currentUserId),
-    ]);
-    if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_other_current_story.user_not_found,
-          undefined,
-          errorCode.content.get_other_current_story.user_not_found,
-        ),
-      );
-    }
-    if (isTargetBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.get_other_current_story.target_user_block,
-          undefined,
-          errorCode.content.get_other_current_story.target_user_block,
-        ),
-      );
-    }
+    await this.validateNotBlocked(
+      currentUserId,
+      targetUser.id,
+      {
+        message: message.content.get_other_current_story.user_not_found,
+        errorCode: errorCode.content.get_other_current_story.user_not_found,
+      },
+      {
+        message: message.content.get_other_current_story.target_user_block,
+        errorCode: errorCode.content.get_other_current_story.target_user_block,
+      },
+    );
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
       message.content.get_other_current_story.cursor_invalid,
@@ -1411,33 +1431,18 @@ export class ContentService {
     if (targetUser.id === currentUserId) {
       return await this.getPinnedStories(currentUserId, cursor);
     }
-    // Evaluate both block directions in parallel for access control.
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.contentRepo.checkBlocked(currentUserId, targetUser.id),
-      this.contentRepo.checkBlocked(targetUser.id, currentUserId),
-    ]);
-    // Hide target data when current user is blocked by target.
-    if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_pinned_story.user_not_found,
-          undefined,
-          errorCode.content.get_pinned_story.user_not_found,
-        ),
-      );
-    }
-    // Reject access when current user blocked target account.
-    if (isTargetBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.get_pinned_story.target_user_block,
-          undefined,
-          errorCode.content.get_pinned_story.target_user_block,
-        ),
-      );
-    }
+    await this.validateNotBlocked(
+      currentUserId,
+      targetUser.id,
+      {
+        message: message.content.get_pinned_story.user_not_found,
+        errorCode: errorCode.content.get_pinned_story.user_not_found,
+      },
+      {
+        message: message.content.get_pinned_story.target_user_block,
+        errorCode: errorCode.content.get_pinned_story.target_user_block,
+      },
+    );
     // Decode pagination cursor when provided by client.
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
@@ -1503,34 +1508,18 @@ export class ContentService {
     }
 
     // Check both block directions between current user and author.
-    const [isBlockedByAuthor, isAuthorBlocked] = await Promise.all([
-      this.contentRepo.checkBlocked(currentUserId, contentFound.author.id),
-      this.contentRepo.checkBlocked(contentFound.author.id, currentUserId),
-    ]);
-
-    // Hide content when current user is blocked by author.
-    if (isBlockedByAuthor) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_content.not_found,
-          undefined,
-          errorCode.content.get_content.not_found,
-        ),
-      );
-    }
-
-    // Reject request when current user already blocked the author.
-    if (isAuthorBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.get_timeline_content.target_user_block,
-          undefined,
-          errorCode.content.get_timeline_content.target_user_block,
-        ),
-      );
-    }
+    await this.validateNotBlocked(
+      currentUserId,
+      contentFound.author.id,
+      {
+        message: message.content.get_content.not_found,
+        errorCode: errorCode.content.get_content.not_found,
+      },
+      {
+        message: message.content.get_timeline_content.target_user_block,
+        errorCode: errorCode.content.get_timeline_content.target_user_block,
+      },
+    );
 
     // Load full content detail payload after passing access checks.
     const content = await this.contentRepo.getContentDetailById(
