@@ -4,7 +4,6 @@
       success: 'Đăng ký thành công, vui lòng xác minh thông qua email',
       email_exists: 'Email đã tồn tại',
       username_exists: 'Username đã tồn tại',
-      password_mismatch: 'Mật khẩu không khớp',
       mail_throttled:
         'Chờ 60 giây trước khi yêu cầu gửi email đăng ký tiếp theo',
       mail_failed:
@@ -45,7 +44,6 @@
     },
     verify_reset_password: {
       invalid_or_expired_code: 'Mã xác minh không hợp lệ hoặc đã hết hạn',
-      password_mismatch: 'Mật khẩu không khớp',
       email_not_exists: 'Email không tồn tại',
       too_many_attempts:
         'Xác minh quá nhiều lần, vui lòng chờ 5 phút để thử lại',

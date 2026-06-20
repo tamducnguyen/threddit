@@ -40,15 +40,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
   async signUp(signUpDTO: SignUpDTO) {
-    const {
-      email,
-      username,
-      displayName,
-      gender,
-      dateOfBirth,
-      password,
-      confirmedPassword,
-    } = signUpDTO;
+    const { email, username, displayName, password } = signUpDTO;
     //get attemp number and check if user got banned
     const keyAttemps = prefixCache.attemps + email;
     const attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
@@ -78,25 +70,12 @@ export class AuthService {
     }
     const keyVerificationCode = prefixCache.verification + email;
     await this.cacheManager.del(keyVerificationCode);
-    //check if password and confirmed one match
-    if (password !== confirmedPassword) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.auth.signup.password_mismatch,
-          undefined,
-          errorCode.auth.signup.password_mismatch,
-        ),
-      );
-    }
     //hash password
     const hashedPassword = await HashHelper.hash(password);
     const userEntity: Partial<UserEntity> = {
       email: email,
       username: username,
       displayName: displayName,
-      gender: gender,
-      dateOfBirth: dateOfBirth,
       authMethod: AuthMethod.CREDENTIAL,
       authMethodKey: hashedPassword,
       isActivate: false,
@@ -472,8 +451,7 @@ export class AuthService {
    * verify reset password
    */
   async verifyResetPassword(verifyResetPasswordDTO: VerifyResetPasswordDTO) {
-    const { email, verificationCode, newPassword, confirmedNewPassword } =
-      verifyResetPasswordDTO;
+    const { email, verificationCode, newPassword } = verifyResetPasswordDTO;
     //get attemp number and check if user got banned
     const keyAttemps = prefixCache.attemps + email;
     let attemps = (await this.cacheManager.get<number>(keyAttemps)) || 0;
@@ -484,17 +462,6 @@ export class AuthService {
           message.auth.verify_reset_password.too_many_attempts,
           undefined,
           errorCode.auth.verify_reset_password.too_many_attempts,
-        ),
-      );
-    }
-    //check if password is match
-    if (newPassword !== confirmedNewPassword) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.auth.verify_reset_password.password_mismatch,
-          undefined,
-          errorCode.auth.verify_reset_password.password_mismatch,
         ),
       );
     }

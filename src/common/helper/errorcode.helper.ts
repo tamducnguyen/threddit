@@ -3,7 +3,6 @@ export const errorCode = {
     signup: {
       too_many_attempts: '01',
       mail_throttled: '02',
-      password_mismatch: '03',
       email_exists: '04',
       username_exists: '05',
       mail_failed: '06',
@@ -32,7 +31,6 @@ export const errorCode = {
     },
     verify_reset_password: {
       too_many_attempts: '21',
-      password_mismatch: '22',
       email_not_exists: '23',
       invalid_or_expired_code: '24',
     },
