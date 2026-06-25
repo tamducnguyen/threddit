@@ -71,6 +71,7 @@ export class ProfileService {
       email: profileFound.email,
       username: profileFound.username,
       displayName: profileFound.displayName,
+      bio: profileFound.bio,
       dateOfBirth: profileFound.dateOfBirth,
       gender: profileFound.gender,
       educationalLevel: profileFound.educationalLevel,
@@ -210,6 +211,7 @@ export class ProfileService {
     if (
       updateProfileDTO.dateOfBirth === undefined &&
       updateProfileDTO.displayName === undefined &&
+      updateProfileDTO.bio === undefined &&
       updateProfileDTO.gender === undefined &&
       updateProfileDTO.educationalLevel === undefined &&
       updateProfileDTO.relationshipStatus === undefined
@@ -226,6 +228,7 @@ export class ProfileService {
     //update
     const updateInfo = {
       displayName: updateProfileDTO.displayName,
+      bio: updateProfileDTO.bio,
       gender: updateProfileDTO.gender,
       dateOfBirth: updateProfileDTO.dateOfBirth,
       educationalLevel: updateProfileDTO.educationalLevel,
@@ -260,6 +263,7 @@ export class ProfileService {
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
+      bio: updatedProfile.bio,
       dateOfBirth: updatedProfile.dateOfBirth,
       gender: updatedProfile.gender,
       educationalLevel: updatedProfile.educationalLevel,
@@ -380,6 +384,7 @@ export class ProfileService {
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
+      bio: updatedProfile.bio,
       dateOfBirth: updatedProfile.dateOfBirth,
       gender: updatedProfile.gender,
       avatarUrl: avatarUrl,
@@ -500,6 +505,7 @@ export class ProfileService {
     const profile = {
       email: updatedProfile.email,
       displayName: updatedProfile.displayName,
+      bio: updatedProfile.bio,
       dateOfBirth: updatedProfile.dateOfBirth,
       gender: updatedProfile.gender,
       avatarUrl: avatarUrl,

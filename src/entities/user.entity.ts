@@ -30,6 +30,8 @@ export class UserEntity {
   username: string;
   @Column({ name: 'display_name', type: 'varchar' })
   displayName: string;
+  @Column({ name: 'bio', type: 'varchar', nullable: true })
+  bio: string | null;
   @Column({ type: 'enum', enum: Gender, name: 'gender', nullable: true })
   gender: Gender | null;
   @Column({ type: 'date', name: 'date_of_birth', nullable: true })

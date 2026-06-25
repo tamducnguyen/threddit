@@ -19,6 +19,11 @@ export class UpdateProfileDTO {
 
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
+  @IsString({ message: 'Tiểu sử phải là chuỗi (null là xóa thông tin)' })
+  bio?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
   @IsEnum(Gender, {
     message:
       'Giới tính không hợp lệ, phải là male|female|other|null (null là xóa thông tin)',
