@@ -10,4 +10,7 @@ export const typeORMConfig = (
   // logging: ['error', 'warn', 'query'],
   synchronize: true,
   entities: [path.join(__dirname, '..', 'entities', '*.entity{.ts,.js}')],
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
