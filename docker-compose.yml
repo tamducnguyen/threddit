@@ -5,8 +5,6 @@ services:
     restart: always
     env_file:
       - .env.production
-    ports:
-      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -14,21 +12,12 @@ services:
     image: redis:8.6-alpine
     container_name: redis
     restart: always
-    ports:
-      - '6379:6379'
+    env_file:
+      - .env.production
     volumes:
       - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD}
 
-  redisinsight:
-    image: redis/redisinsight:3.6
-    container_name: redis_insight
-    restart: always
-    depends_on:
-      - redis
-    ports:
-      - '5540:5540'
-    volumes:
-      - redisinsight_data:/data
 
   web:
     build: .
@@ -41,9 +30,6 @@ services:
       - judger
     env_file:
       - .env.production
-    ports:
-      - '3000:3000'
-    command: ['node', 'dist/main.js']
 
   nginx:
     image: nginx:alpine
@@ -62,10 +48,7 @@ services:
     image: tamducnguyen/threddit-judger:latest
     container_name: threddit-judger
     restart: always
-    ports:
-      - 8000:8000
 
 volumes:
   postgres_data:
   redis_data:
-  redisinsight_data:
