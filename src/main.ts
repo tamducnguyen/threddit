@@ -6,9 +6,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.use(cookieParser());
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.enableCors({
-    origin: [process.env.FRONTEND_DOMAIN, 'http://localhost:5000'], // domain frontend
+    origin: [process.env.FRONTEND_DOMAIN],
     credentials: true,
   });
   await app.listen(process.env.PORT ?? 3000);
