@@ -8,10 +8,9 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { SkipThrottle } from '@nestjs/throttler';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
 import { StorageService } from './storage.service';
@@ -19,7 +18,7 @@ import { ContentIdDTO } from '../../common/dtos/content-id.dto';
 import { MediaFileNumberDTO } from './dtos/media-file-number.dto';
 
 @Controller('storage')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}

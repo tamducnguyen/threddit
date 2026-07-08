@@ -58,9 +58,6 @@ export class AuthRepository {
       },
     });
   }
-  async saveSession(sessionEntity: Partial<SessionEntity>) {
-    return await this.sessionRepo.save(sessionEntity);
-  }
   async updatePasswordAndRevokeAllToken(userId: number, passwordHash: string) {
     return await this.dataSource.transaction(async (manager) => {
       const userRepo = manager.getRepository(UserEntity);

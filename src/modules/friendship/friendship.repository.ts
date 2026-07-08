@@ -152,8 +152,9 @@ export class FriendshipRepository {
     const limit = this.configService.getOrThrow<number>('LIMIT_FRIEND_ITEM');
     const storageUrl = this.configService.getOrThrow<string>('STORAGE_URL');
     let getFriendsQuery = `
-      SELECT 
+      SELECT
         friend_ids_and_friendship_ids.id as "friendshipId",
+        friend.id as "id",
         friend.username as "username",
         friend.display_name as "displayName",
         concat($4::text, friend.avatar_relative_path) as "avatarUrl", 

@@ -15,13 +15,12 @@ import { AuthUser } from '../token/authuser.interface';
 import { UsernameDTO } from '../../common/dtos/username.dto';
 import { CursorDTO } from '../../common/dtos/cursor.dto';
 import { SearchUserOptionalDTO } from '../../common/dtos/search-user.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('block')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class BlockController {
   constructor(private readonly blockService: BlockService) {}

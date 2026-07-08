@@ -13,16 +13,15 @@ import {
 import { NotificationService } from './notification.service';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { AuthUser } from '../token/authuser.interface';
-import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { CursorDTO } from '../../common/dtos/cursor.dto';
 import { ReadNotificationDTO } from './dtos/readnotification.dto';
 import { SkipThrottle } from '@nestjs/throttler';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { DeleteNotificationDTO } from './dtos/deletenotification.dto';
 
 @Controller('notification')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

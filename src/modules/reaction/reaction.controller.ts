@@ -10,8 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ReactionService } from './reaction.service';
-import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
@@ -21,7 +20,7 @@ import { ReactionTypeDTO } from './dtos/reaction-type.dto';
 import { CommentIdDTO } from '../comment/dtos/comment-id.dto';
 
 @Controller('content')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class ReactionController {
   constructor(private readonly reactionService: ReactionService) {}

@@ -136,9 +136,15 @@ export class FollowService {
    * @param cursor
    * @returns
    */
-  async getFollowers(username: string, currentUserId: number, cursor?: string) {
-    //check if user exist
-    const userFound = await this.followRepo.findUserByUsername(username);
+  async getFollowers(
+    username: string | undefined,
+    currentUserId: number,
+    cursor?: string,
+  ) {
+    //check if user exist (no username means the current user's own list)
+    const userFound = username
+      ? await this.followRepo.findUserByUsername(username)
+      : await this.followRepo.findUserById(currentUserId);
     if (!userFound) {
       throw new NotFoundException(
         sendResponse(
@@ -248,12 +254,14 @@ export class FollowService {
    * @returns
    */
   async getFollowings(
-    username: string,
+    username: string | undefined,
     currentUserId: number,
     cursor?: string,
   ) {
-    //check if user exist
-    const userFound = await this.followRepo.findUserByUsername(username);
+    //check if user exist (no username means the current user's own list)
+    const userFound = username
+      ? await this.followRepo.findUserByUsername(username)
+      : await this.followRepo.findUserById(currentUserId);
     if (!userFound) {
       throw new NotFoundException(
         sendResponse(
@@ -363,13 +371,15 @@ export class FollowService {
    * @returns
    */
   async searchFollowersByKey(
-    username: string,
+    username: string | undefined,
     currentUserId: number,
     key: string,
     cursor?: string,
   ) {
-    //check if user exist
-    const userFound = await this.followRepo.findUserByUsername(username);
+    //check if user exist (no username means the current user's own list)
+    const userFound = username
+      ? await this.followRepo.findUserByUsername(username)
+      : await this.followRepo.findUserById(currentUserId);
     if (!userFound) {
       throw new NotFoundException(
         sendResponse(
@@ -480,13 +490,15 @@ export class FollowService {
    * @returns
    */
   async searchFollowingsByKey(
-    username: string,
+    username: string | undefined,
     currentUserId: number,
     key: string,
     cursor?: string,
   ) {
-    //check if user exist
-    const userFound = await this.followRepo.findUserByUsername(username);
+    //check if user exist (no username means the current user's own list)
+    const userFound = username
+      ? await this.followRepo.findUserByUsername(username)
+      : await this.followRepo.findUserById(currentUserId);
     if (!userFound) {
       throw new NotFoundException(
         sendResponse(
@@ -596,17 +608,6 @@ export class FollowService {
    * @returns
    */
   async postFollow(currentUser: AuthUser, followeeUsername: string) {
-    //check if current user self follow
-    if (followeeUsername === currentUser.username) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.follow.post_follow.cant_self_follow,
-          undefined,
-          errorCode.follow.post_follow.cant_self_follow,
-        ),
-      );
-    }
     //check if current and followee user exist
     const currentUserFound = await this.followRepo.findUserById(
       currentUser.sub,
@@ -620,6 +621,17 @@ export class FollowService {
           message.follow.post_follow.user_not_found,
           undefined,
           errorCode.follow.post_follow.user_not_found,
+        ),
+      );
+    }
+    //check if current user self follow
+    if (currentUserFound.id === followeeUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.follow.post_follow.cant_self_follow,
+          undefined,
+          errorCode.follow.post_follow.cant_self_follow,
         ),
       );
     }

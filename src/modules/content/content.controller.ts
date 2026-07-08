@@ -12,12 +12,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ContentService } from './content.service';
-import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { CursorDTO } from '../../common/dtos/cursor.dto';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { AuthUser } from '../token/authuser.interface';
 import { UsernameDTO } from '../../common/dtos/username.dto';
 import { ContentIdDTO } from '../../common/dtos/content-id.dto';
@@ -26,7 +25,7 @@ import { UpdateContentDTO } from './dtos/update-content.dto';
 import { SearchContentDTO } from './dtos/search-content.dto';
 
 @Controller('content')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}

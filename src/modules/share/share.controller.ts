@@ -10,8 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ShareService } from './share.service';
-import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
@@ -20,7 +19,7 @@ import { ContentIdDTO } from '../../common/dtos/content-id.dto';
 import { ShareContentDTO } from './dtos/share-content.dto';
 
 @Controller('content')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class ShareController {
   constructor(private readonly shareService: ShareService) {}

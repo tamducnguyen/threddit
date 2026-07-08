@@ -12,16 +12,15 @@
 import { FollowService } from './follow.service';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { CursorDTO } from '../../common/dtos/cursor.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { UsernameDTO } from '../../common/dtos/username.dto';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { SearchUserOptionalDTO } from '../../common/dtos/search-user.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('follow')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
@@ -44,7 +43,6 @@ export class FollowController {
   @HttpCode(HttpStatus.OK)
   @Get('followers')
   async getMyFollowers(
-    @CurrentUser('username') username: string,
     @CurrentUser('sub') currentUserId: number,
     @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
@@ -52,14 +50,14 @@ export class FollowController {
     const key = searchUserDTO.key?.trim();
     if (key) {
       return await this.followService.searchFollowersByKey(
-        username,
+        undefined,
         currentUserId,
         key,
         cursorDTO.cursor,
       );
     }
     return await this.followService.getFollowers(
-      username,
+      undefined,
       currentUserId,
       cursorDTO.cursor,
     );
@@ -92,7 +90,6 @@ export class FollowController {
   @HttpCode(HttpStatus.OK)
   @Get('followings')
   async getMyFollowings(
-    @CurrentUser('username') username: string,
     @CurrentUser('sub') currentUserId: number,
     @Query() searchUserDTO: SearchUserOptionalDTO,
     @Query() cursorDTO: CursorDTO,
@@ -100,14 +97,14 @@ export class FollowController {
     const key = searchUserDTO.key?.trim();
     if (key) {
       return await this.followService.searchFollowingsByKey(
-        username,
+        undefined,
         currentUserId,
         key,
         cursorDTO.cursor,
       );
     }
     return await this.followService.getFollowings(
-      username,
+      undefined,
       currentUserId,
       cursorDTO.cursor,
     );

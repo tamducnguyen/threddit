@@ -20,6 +20,7 @@ import { generateVerificationCode } from '../../common/helper/gencode.helper';
 import { MailService } from '../mail/mail.service';
 import { DeleteAccountDTO } from './dtos/deleteaccount.dto';
 import { QueryFailedError } from 'typeorm';
+import { SessionService } from '../token/session.service';
 
 @Injectable()
 export class AccountService {
@@ -27,9 +28,12 @@ export class AccountService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly mailService: MailService,
     private readonly accountRepository: AccountRepository,
+    private readonly sessionService: SessionService,
   ) {}
-  async signOut(accessToken: string) {
+  async signOut(currentUser: AuthUser, accessToken: string) {
     await this.accountRepository.revokeSessionByToken(accessToken);
+    //mark the session revoked in cache after the db write
+    await this.sessionService.revokeSessionCache(accessToken, currentUser.sub);
     return sendResponse(HttpStatus.OK, message.account.signout.success);
   }
   async updatePassword(
@@ -91,6 +95,7 @@ export class AccountService {
     );
     if (!isCorrectPassword) {
       await this.accountRepository.revokeSessionByToken(accessToken);
+      await this.sessionService.revokeSessionCache(accessToken, sub);
       throw new BadRequestException(
         sendResponse(
           HttpStatus.BAD_REQUEST,
@@ -102,10 +107,15 @@ export class AccountService {
     }
     //change password and revoke all session
     const newPasswordHashed = await HashHelper.hash(newPassword);
+    const sessionTokens = await this.sessionService.getSessionTokensOfUser(
+      userFound.id,
+    );
     await this.accountRepository.updatePasswordAndRevokeAllToken(
       userFound.id,
       newPasswordHashed,
     );
+    //mark revoked sessions in cache after the db write
+    await this.sessionService.revokeSessionCaches(sessionTokens, userFound.id);
     return sendResponse(HttpStatus.OK, message.account.update_password.success);
   }
   async updateUsername(
@@ -138,10 +148,7 @@ export class AccountService {
     }
     //update username
     try {
-      await this.accountRepository.updateUsernameAndRevokeAllSession(
-        sub,
-        username,
-      );
+      await this.accountRepository.updateUsername(sub, username);
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
@@ -320,7 +327,12 @@ export class AccountService {
       );
     }
     // Delete user and sessions after successful verification.
+    // Fetch session tokens first, the rows are gone after the transaction.
+    const sessionTokens = await this.sessionService.getSessionTokensOfUser(
+      userFound.id,
+    );
     await this.accountRepository.deleteUserAndSessions(userFound.id);
+    await this.sessionService.revokeSessionCaches(sessionTokens, userFound.id);
     // Clean up related cache keys.
     await this.cacheManager.del(keyAttempts);
     await this.cacheManager.del(keyVerificationCode);

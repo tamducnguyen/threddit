@@ -70,18 +70,6 @@ export class FriendshipService {
    * @param recipientUsername
    */
   async sendFriendRequest(currentUser: AuthUser, recipientUsername: string) {
-    //check if current user sends request to self
-    if (currentUser.username === recipientUsername) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.send_request.cant_self_request,
-          undefined,
-          errorCode.friendship.send_request.cant_self_request,
-        ),
-      );
-    }
-
     //check if users exist
     const currentUserFound = await this.friendshipRepo.findUserById(
       currentUser.sub,
@@ -95,6 +83,18 @@ export class FriendshipService {
           message.friendship.send_request.user_not_found,
           undefined,
           errorCode.friendship.send_request.user_not_found,
+        ),
+      );
+    }
+
+    //check if current user sends request to self
+    if (currentUserFound.id === recipientUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.friendship.send_request.cant_self_request,
+          undefined,
+          errorCode.friendship.send_request.cant_self_request,
         ),
       );
     }
@@ -466,15 +466,15 @@ export class FriendshipService {
    */
   async getFriends(
     currentUser: AuthUser,
-    targetUsername: string,
+    targetUsername?: string,
     key?: string,
     cursor?: string,
   ) {
     const currentUserId = currentUser.sub;
-    const currentUsername = currentUser.username;
-    //check if user exist
-    const targetUserFound =
-      await this.friendshipRepo.findUserByUsername(targetUsername);
+    //check if user exist (no target username means the current user's own list)
+    const targetUserFound = targetUsername
+      ? await this.friendshipRepo.findUserByUsername(targetUsername)
+      : await this.friendshipRepo.findUserById(currentUserId);
     if (!targetUserFound) {
       throw new NotFoundException(
         sendResponse(
@@ -543,7 +543,7 @@ export class FriendshipService {
       key,
     );
     const filterFriendList = friendList.map((friend) => {
-      if (friend.username === currentUsername) {
+      if (friend.id === currentUserId) {
         return {
           username: friend.username,
           displayName: friend.displayName,
@@ -551,7 +551,14 @@ export class FriendshipService {
           friendshipId: friend.friendshipId,
         };
       }
-      return friend;
+      //strip the internal user id to keep the response shape unchanged
+      return {
+        friendshipId: friend.friendshipId,
+        username: friend.username,
+        displayName: friend.displayName,
+        avatarUrl: friend.avatarUrl,
+        friendshipStatus: friend.friendshipStatus,
+      };
     });
     const friendFinal = friendList[friendList.length - 1];
     if (!friendFinal) {
@@ -577,17 +584,6 @@ export class FriendshipService {
    * @param username
    */
   async getFriendStatus(currentUser: AuthUser, username: string) {
-    //check if current check self
-    if (currentUser.username === username) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_friend_status.cant_self_check,
-          undefined,
-          errorCode.friendship.get_friend_status.cant_self_check,
-        ),
-      );
-    }
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
@@ -597,6 +593,17 @@ export class FriendshipService {
           message.friendship.get_friend_status.user_not_found,
           undefined,
           errorCode.friendship.get_friend_status.user_not_found,
+        ),
+      );
+    }
+    //check if current check self
+    if (currentUser.sub === userFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.friendship.get_friend_status.cant_self_check,
+          undefined,
+          errorCode.friendship.get_friend_status.cant_self_check,
         ),
       );
     }
@@ -664,17 +671,6 @@ export class FriendshipService {
    * @param username
    */
   async unfriend(currentUser: AuthUser, username: string) {
-    //check if current user self-unfriend
-    if (currentUser.username === username) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.unfriend.cant_self_unfriend,
-          undefined,
-          errorCode.friendship.unfriend.cant_self_unfriend,
-        ),
-      );
-    }
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
@@ -684,6 +680,17 @@ export class FriendshipService {
           message.friendship.unfriend.user_not_found,
           undefined,
           errorCode.friendship.unfriend.user_not_found,
+        ),
+      );
+    }
+    //check if current user self-unfriend
+    if (currentUser.sub === userFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.friendship.unfriend.cant_self_unfriend,
+          undefined,
+          errorCode.friendship.unfriend.cant_self_unfriend,
         ),
       );
     }
@@ -732,17 +739,6 @@ export class FriendshipService {
     username: string,
     cursor?: string,
   ) {
-    //check if current user self-get mutual friends
-    if (currentUser.username === username) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_mutual_friend_list.cant_self_get,
-          undefined,
-          errorCode.friendship.get_mutual_friend_list.cant_self_get,
-        ),
-      );
-    }
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
@@ -752,6 +748,17 @@ export class FriendshipService {
           message.friendship.get_mutual_friend_list.user_not_found,
           undefined,
           errorCode.friendship.get_mutual_friend_list.user_not_found,
+        ),
+      );
+    }
+    //check if current user self-get mutual friends
+    if (currentUser.sub === userFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.friendship.get_mutual_friend_list.cant_self_get,
+          undefined,
+          errorCode.friendship.get_mutual_friend_list.cant_self_get,
         ),
       );
     }
@@ -916,17 +923,6 @@ export class FriendshipService {
    * @param username
    */
   async getMutualFriendCount(currentUser: AuthUser, username: string) {
-    //check if current user self-get mutual friend number
-    if (currentUser.username === username) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_mutual_friend_count.cant_self_get,
-          undefined,
-          errorCode.friendship.get_mutual_friend_count.cant_self_get,
-        ),
-      );
-    }
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
@@ -936,6 +932,17 @@ export class FriendshipService {
           message.friendship.get_mutual_friend_count.user_not_found,
           undefined,
           errorCode.friendship.get_mutual_friend_count.user_not_found,
+        ),
+      );
+    }
+    //check if current user self-get mutual friend number
+    if (currentUser.sub === userFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.friendship.get_mutual_friend_count.cant_self_get,
+          undefined,
+          errorCode.friendship.get_mutual_friend_count.cant_self_get,
         ),
       );
     }

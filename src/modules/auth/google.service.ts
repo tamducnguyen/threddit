@@ -1,5 +1,4 @@
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { message } from '../../common/helper/message.helper';
 import {
@@ -12,10 +11,9 @@ import { AuthRepository } from './auth.repository';
 import { UserEntity } from '../../entities/user.entity';
 import { GoogleData } from './interfaces/googledata.interface';
 import { sendResponse } from '../../common/helper/response.helper';
-import { SessionEntity } from '../../entities/session.entity';
 import { cookieOptions, sendCookie } from '../../common/helper/cookie.helper';
 import { Response } from 'express';
-import { GeneratePayload } from '../../common/helper/payload.helper';
+import { SessionService } from '../token/session.service';
 import { GoogleCodeDTO } from './dtos/googlecode.dto';
 import { AuthMethod } from '../../enum/authmethod.enum';
 import { generateUniqueUsername } from '../../common/helper/username.helper';
@@ -25,7 +23,7 @@ export class GoogleAuthService {
   private client: OAuth2Client;
   private GOOGLE_CLIENT_IDS = [];
   constructor(
-    private readonly jwtService: JwtService,
+    private readonly sessionService: SessionService,
     private readonly configService: ConfigService,
     private readonly authRepository: AuthRepository,
   ) {
@@ -118,13 +116,7 @@ export class GoogleAuthService {
         );
       }
       // Create session and set auth cookie.
-      const payload = GeneratePayload(userFound);
-      const accessToken = await this.jwtService.signAsync(payload);
-      const sessionEntity: Partial<SessionEntity> = {
-        user: userFound,
-        token: accessToken,
-      };
-      await this.authRepository.saveSession(sessionEntity);
+      const accessToken = await this.sessionService.createSession(userFound);
       sendCookie(
         response,
         this.configService,
@@ -153,14 +145,10 @@ export class GoogleAuthService {
       isActivate: true,
     };
     const userCreated = await this.authRepository.createUser(userEntity);
-    // Issue token and save session for the new user.
-    const payload = GeneratePayload(userCreated as UserEntity);
-    const accessToken = await this.jwtService.signAsync(payload);
-    const sessionEntity: Partial<SessionEntity> = {
-      user: userCreated as UserEntity,
-      token: accessToken,
-    };
-    await this.authRepository.saveSession(sessionEntity);
+    // Create session for the new user.
+    const accessToken = await this.sessionService.createSession(
+      userCreated as UserEntity,
+    );
     sendCookie(
       response,
       this.configService,

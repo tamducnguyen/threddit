@@ -1,16 +1,14 @@
 import { Module } from '@nestjs/common';
-import { JwtAccessStrategy } from './jwt.stragegy';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SessionEntity } from '../../entities/session.entity';
+import { SessionService } from './session.service';
 
 @Module({
-  providers: [JwtAccessStrategy],
+  providers: [SessionService],
   imports: [
     TypeOrmModule.forFeature([SessionEntity]),
-    PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -21,6 +19,6 @@ import { SessionEntity } from '../../entities/session.entity';
       }),
     }),
   ],
-  exports: [JwtModule],
+  exports: [JwtModule, SessionService],
 })
 export class SessionModule {}

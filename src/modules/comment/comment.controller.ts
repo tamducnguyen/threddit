@@ -12,8 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
-import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../token/currentuser.decorator';
@@ -25,7 +24,7 @@ import { CommentIdDTO } from './dtos/comment-id.dto';
 import { UpdateCommentDTO } from './dtos/update-comment.dto';
 
 @Controller('content')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}

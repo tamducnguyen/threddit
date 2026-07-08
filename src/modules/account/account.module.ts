@@ -6,9 +6,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SessionEntity } from '../../entities/session.entity';
 import { UserEntity } from '../../entities/user.entity';
 import { MailService } from '../mail/mail.service';
+import { SessionModule } from '../token/session.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SessionEntity, UserEntity])],
+  imports: [
+    TypeOrmModule.forFeature([SessionEntity, UserEntity]),
+    SessionModule,
+  ],
   providers: [AccountService, AccountRepository, MailService],
   controllers: [AccountController],
 })

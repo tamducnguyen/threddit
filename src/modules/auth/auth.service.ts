@@ -18,14 +18,12 @@ import { UserEntity } from '../../entities/user.entity';
 import { message } from '../../common/helper/message.helper';
 import { errorCode } from '../../common/helper/errorcode.helper';
 import { SignInDTO } from './dtos/signin.dto';
-import { JwtService } from '@nestjs/jwt';
 import { cookieOptions, sendCookie } from '../../common/helper/cookie.helper';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ResetPasswordDTO } from './dtos/resetpassword.dto';
 import { VerifyResetPasswordDTO } from './dtos/verifyresetpassword.dto';
-import { SessionEntity } from '../../entities/session.entity';
-import { GeneratePayload } from '../../common/helper/payload.helper';
+import { SessionService } from '../token/session.service';
 import { AuthMethod } from '../../enum/authmethod.enum';
 import { QueryFailedError } from 'typeorm';
 import { ResendVerifyDTO } from './dtos/resendverify.dto';
@@ -36,7 +34,7 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly mailService: MailService,
     private readonly authRepository: AuthRepository,
-    private readonly jwtService: JwtService,
+    private readonly sessionService: SessionService,
     private readonly configService: ConfigService,
   ) {}
   async signUp(signUpDTO: SignUpDTO) {
@@ -347,15 +345,8 @@ export class AuthService {
         ),
       );
     }
-    //gen token
-    const payload = GeneratePayload(userFound);
-    const accessToken = await this.jwtService.signAsync(payload);
-    const sessionEntity: Partial<SessionEntity> = {
-      user: userFound,
-      token: accessToken,
-    };
-    //save session
-    await this.authRepository.saveSession(sessionEntity);
+    //create session and cache it
+    const accessToken = await this.sessionService.createSession(userFound);
     //send token
     sendCookie(
       res,
@@ -508,10 +499,15 @@ export class AuthService {
     }
     //update password
     const hashedPassword = await HashHelper.hash(newPassword);
+    const sessionTokens = await this.sessionService.getSessionTokensOfUser(
+      userFound.id,
+    );
     await this.authRepository.updatePasswordAndRevokeAllToken(
       userFound.id,
       hashedPassword,
     );
+    //mark revoked sessions in cache after the db write
+    await this.sessionService.revokeSessionCaches(sessionTokens, userFound.id);
     //delete cache
     await this.cacheManager.del(keyAttemps);
     await this.cacheManager.del(keyVerificationCode);

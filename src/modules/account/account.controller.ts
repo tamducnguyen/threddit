@@ -9,9 +9,8 @@ import {
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { AccessToken } from '../token/accesstoken.decorator';
-import { AuthGuard } from '@nestjs/passport';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { UpdatePasswordDTO } from './dtos/updatepassword.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { CurrentUser } from '../token/currentuser.decorator';
@@ -20,14 +19,17 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { DeleteAccountDTO } from './dtos/deleteaccount.dto';
 
 @Controller('account')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
   @HttpCode(HttpStatus.OK)
   @Post('signout')
-  async signOut(@AccessToken() accessToken: string) {
-    return await this.accountService.signOut(accessToken);
+  async signOut(
+    @CurrentUser() currentUser: AuthUser,
+    @AccessToken() accessToken: string,
+  ) {
+    return await this.accountService.signOut(currentUser, accessToken);
   }
   @HttpCode(HttpStatus.OK)
   @Post('updatepassword')

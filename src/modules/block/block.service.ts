@@ -55,18 +55,6 @@ export class BlockService {
     };
   }
   async block(currentUser: AuthUser, blockedUsername: string) {
-    // prevent blocking self
-    if (currentUser.username === blockedUsername) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.post_block.cant_self_block,
-          undefined,
-          errorCode.block.post_block.cant_self_block,
-        ),
-      );
-    }
-
     // ensure current user exists
     const blockerFound = await this.blockRepo.findUserById(currentUser.sub);
     if (!blockerFound) {
@@ -90,6 +78,18 @@ export class BlockService {
           message.block.post_block.user_not_found,
           undefined,
           errorCode.block.post_block.user_not_found,
+        ),
+      );
+    }
+
+    // prevent blocking self
+    if (currentUser.sub === blockedUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.block.post_block.cant_self_block,
+          undefined,
+          errorCode.block.post_block.cant_self_block,
         ),
       );
     }
@@ -155,18 +155,6 @@ export class BlockService {
   }
 
   async unblock(currentUser: AuthUser, blockedUsername: string) {
-    // prevent unblocking self
-    if (currentUser.username === blockedUsername) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.delete_block.cant_self_unblock,
-          undefined,
-          errorCode.block.delete_block.cant_self_unblock,
-        ),
-      );
-    }
-
     // ensure target user exists
     const blockedUserFound =
       await this.blockRepo.findUserByUsername(blockedUsername);
@@ -177,6 +165,18 @@ export class BlockService {
           message.block.delete_block.user_not_found,
           undefined,
           errorCode.block.delete_block.user_not_found,
+        ),
+      );
+    }
+
+    // prevent unblocking self
+    if (currentUser.sub === blockedUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.block.delete_block.cant_self_unblock,
+          undefined,
+          errorCode.block.delete_block.cant_self_unblock,
         ),
       );
     }
@@ -286,18 +286,6 @@ export class BlockService {
   }
 
   async getBlockStatus(currentUser: AuthUser, targetUsername: string) {
-    // prevent checking self
-    if (currentUser.username === targetUsername) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.get_block_status.cant_self_check,
-          undefined,
-          errorCode.block.get_block_status.cant_self_check,
-        ),
-      );
-    }
-
     // ensure target user exists
     const targetUserFound =
       await this.blockRepo.findUserByUsername(targetUsername);
@@ -308,6 +296,18 @@ export class BlockService {
           message.block.get_block_status.user_not_found,
           undefined,
           errorCode.block.get_block_status.user_not_found,
+        ),
+      );
+    }
+
+    // prevent checking self
+    if (currentUser.sub === targetUserFound.id) {
+      throw new BadRequestException(
+        sendResponse(
+          HttpStatus.BAD_REQUEST,
+          message.block.get_block_status.cant_self_check,
+          undefined,
+          errorCode.block.get_block_status.cant_self_check,
         ),
       );
     }

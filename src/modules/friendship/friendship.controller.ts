@@ -10,8 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FriendshipService } from './friendship.service';
-import { AuthGuard } from '@nestjs/passport';
-import { TokenGuard } from '../../common/guard/token.guard';
+import { SessionGuard } from '../../common/guard/session.guard';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { UsernameDTO } from '../../common/dtos/username.dto';
@@ -21,7 +20,7 @@ import { SearchUserOptionalDTO } from '../../common/dtos/search-user.dto';
 import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('friendship')
-@UseGuards(AuthGuard('jwt'), TokenGuard, UserThrottlerGuard)
+@UseGuards(SessionGuard, UserThrottlerGuard)
 @SkipThrottle({ public: true })
 export class FriendshipController {
   constructor(private readonly friendshipService: FriendshipService) {}
@@ -111,7 +110,7 @@ export class FriendshipController {
   ) {
     return await this.friendshipService.getFriends(
       currentUser,
-      currentUser.username,
+      undefined,
       searchUserDTO?.key?.trim(),
       cursorDTO?.cursor,
     );

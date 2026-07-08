@@ -8,6 +8,7 @@ import { SessionEntity } from '../../entities/session.entity';
 import { UserEntity } from '../../entities/user.entity';
 import { ContentEntity } from '../../entities/content.entity';
 import { MediaFileEntity } from '../../entities/media-file.entity';
+import { SessionModule } from '../token/session.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MediaFileEntity } from '../../entities/media-file.entity';
       ContentEntity,
       MediaFileEntity,
     ]),
+    SessionModule,
   ],
   providers: [
     {
