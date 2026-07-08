@@ -18,7 +18,6 @@ import { UserEntity } from '../../entities/user.entity';
 import { message } from '../../common/helper/message.helper';
 import { errorCode } from '../../common/helper/errorcode.helper';
 import { SignInDTO } from './dtos/signin.dto';
-import { cookieOptions, sendCookie } from '../../common/helper/cookie.helper';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ResetPasswordDTO } from './dtos/resetpassword.dto';
@@ -348,12 +347,6 @@ export class AuthService {
     //create session and cache it
     const accessToken = await this.sessionService.createSession(userFound);
     //send token
-    sendCookie(
-      res,
-      this.configService,
-      cookieOptions.name.THREDDIT_AUTH,
-      accessToken,
-    );
     return sendResponse(HttpStatus.OK, message.auth.signin.success, {
       userId: userFound.id,
       AUTH_METHOD: userFound.authMethod,

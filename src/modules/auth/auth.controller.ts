@@ -18,6 +18,8 @@ import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
 import { GoogleAuthService } from './google.service';
 import { ResendVerifyDTO } from './dtos/resendverify.dto';
 import { GoogleCodeDTO } from './dtos/googlecode.dto';
+import { cookieOptions, sendCookie } from 'src/common/helper/cookie.helper';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 @UseGuards(UserThrottlerGuard)
@@ -25,6 +27,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleAuthService: GoogleAuthService,
+    private readonly configService: ConfigService,
   ) {}
   @HttpCode(HttpStatus.OK)
   @Post('signup')
@@ -42,7 +45,15 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Body() signInDTO: SignInDTO,
   ) {
-    return await this.authService.signIn(res, signInDTO);
+    const signInResponse = await this.authService.signIn(res, signInDTO);
+
+    sendCookie(
+      res,
+      this.configService,
+      cookieOptions.name.THREDDIT_AUTH,
+      signInResponse.data?.THREDDIT_AUTH,
+    );
+    return signInResponse;
   }
   @HttpCode(HttpStatus.OK)
   @Post('resetpassword')
