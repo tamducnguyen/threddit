@@ -17,8 +17,8 @@ export interface ContentDetail {
   commentNumber: number;
   saveNumber: number;
   shareNumber: number;
-  reactionNumber: number;
   isSaved: boolean;
   isShared: boolean;
-  reaction: ReactionType | null;
+  myReaction: ReactionType | null;
+  reactions: Record<ReactionType, number>;
 }

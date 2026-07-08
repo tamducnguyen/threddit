@@ -83,12 +83,6 @@ export class ContentRepository {
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
         (
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $3
-        ) AS "reactionNumber",
-        (
           SELECT EXISTS(
             SELECT 1
             FROM saves
@@ -103,7 +97,8 @@ export class ContentRepository {
           AND reactions.target_type = $3
           AND reactions.reacter_user_id = $5
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       LEFT JOIN users author
       ON author.id = contents.author_user_id
@@ -140,6 +135,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $4
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $3
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.author_user_id = $1
       AND contents.is_pinned = true
       AND contents.type = $6
@@ -193,12 +202,6 @@ export class ContentRepository {
           FROM shares
           WHERE shares.shared_content_id = timeline_items.id
         ) AS "shareNumber",
-        ( 
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = timeline_items.id
-          AND reactions.target_type = $3
-        ) AS "reactionNumber",
         (
           SELECT EXISTS(
             SELECT 1
@@ -222,7 +225,8 @@ export class ContentRepository {
           AND reactions.target_type = $3
           AND reactions.reacter_user_id = $6
           LIMIT 1
-        ) AS "reaction",
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions",
         timeline_items.share_message as "shareMessage",
         (
           SELECT 
@@ -308,6 +312,20 @@ export class ContentRepository {
         WHERE mf.target_id = timeline_items.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = timeline_items.id
+          AND reactions.target_type = $3
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
     `;
     const params: Array<string | number | Date> = [
       timelineOwnerId,
@@ -440,7 +458,6 @@ export class ContentRepository {
         stats.comment_count as "commentNumber",
         stats.save_count as "saveNumber",
         stats.share_count as "shareNumber",
-        stats.reaction_count as "reactionNumber",
         (
           SELECT EXISTS(
             SELECT 1
@@ -464,7 +481,8 @@ export class ContentRepository {
           AND reactions.target_type = $3
           AND reactions.reacter_user_id = $1
           LIMIT 1
-        ) AS "reaction",
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions",
         timeline_items.share_message as "shareMessage",
         (
           SELECT
@@ -519,6 +537,20 @@ export class ContentRepository {
         WHERE mf.target_id = timeline_items.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = timeline_items.id
+          AND reactions.target_type = $3
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE timeline_items.type = $9
       AND NOT (timeline_items.id = ANY($6::int[]))
       AND NOT EXISTS (
@@ -633,7 +665,6 @@ export class ContentRepository {
         stats.comment_count as "commentNumber",
         stats.save_count as "saveNumber",
         stats.share_count as "shareNumber",
-        stats.reaction_count as "reactionNumber",
         (
           SELECT EXISTS(
             SELECT 1
@@ -657,7 +688,8 @@ export class ContentRepository {
           AND reactions.target_type = $3
           AND reactions.reacter_user_id = $1
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       INNER JOIN content_stats stats
       ON stats.content_id = contents.id
@@ -698,6 +730,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $3
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.type = $10
       AND NOT (contents.id = ANY($7::int[]))
       AND (
@@ -798,12 +844,6 @@ export class ContentRepository {
           FROM shares
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
-        (
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $3
-        ) AS "reactionNumber",
         true as "isSaved",
         (
           SELECT reactions.type
@@ -812,7 +852,8 @@ export class ContentRepository {
           AND reactions.target_type = $3
           AND reactions.reacter_user_id = $1
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM saves
       INNER JOIN contents
       ON saves.saved_content_id = contents.id
@@ -851,6 +892,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $3
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE saves.saver_user_id = $1
     `;
     const params: Array<string | number> = [
@@ -948,7 +1003,6 @@ export class ContentRepository {
         stats.comment_count as "commentNumber",
         stats.save_count as "saveNumber",
         stats.share_count as "shareNumber",
-        stats.reaction_count as "reactionNumber",
         (
           SELECT EXISTS(
             SELECT 1
@@ -972,7 +1026,8 @@ export class ContentRepository {
           AND reactions.target_type = $4
           AND reactions.reacter_user_id = $1
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       INNER JOIN content_stats stats
       ON stats.content_id = contents.id
@@ -1013,6 +1068,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $4
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.type = $3
       AND (
         author.username ILIKE $6
@@ -1102,12 +1171,6 @@ export class ContentRepository {
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
         (
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $5
-        ) AS "reactionNumber",
-        (
           SELECT EXISTS(
             SELECT 1
             FROM saves
@@ -1130,7 +1193,8 @@ export class ContentRepository {
           AND reactions.target_type = $5
           AND reactions.reacter_user_id = $6
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       LEFT JOIN users author
       ON author.id = contents.author_user_id
@@ -1169,6 +1233,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $4
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $5
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.type = $3
       AND contents.author_user_id = $1
       AND contents.created_at >= NOW() - INTERVAL '24 hours'
@@ -1231,12 +1309,6 @@ export class ContentRepository {
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
         (
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $5
-        ) AS "reactionNumber",
-        (
           SELECT EXISTS(
             SELECT 1
             FROM saves
@@ -1259,7 +1331,8 @@ export class ContentRepository {
           AND reactions.target_type = $5
           AND reactions.reacter_user_id = $1
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       LEFT JOIN users author
       ON author.id = contents.author_user_id
@@ -1298,6 +1371,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $4
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $5
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.type = $3
       AND contents.author_user_id = $1
     `;
@@ -1360,12 +1447,6 @@ export class ContentRepository {
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
         (
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $6
-        ) AS "reactionNumber",
-        (
           SELECT EXISTS(
             SELECT 1
             FROM saves
@@ -1388,7 +1469,8 @@ export class ContentRepository {
           AND reactions.target_type = $6
           AND reactions.reacter_user_id = $1
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       LEFT JOIN users author
       ON author.id = contents.author_user_id
@@ -1427,6 +1509,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $6
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.type = $3
       AND contents.created_at >= NOW() - INTERVAL '24 hours'
       AND contents.author_user_id IN (
@@ -1506,12 +1602,6 @@ export class ContentRepository {
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
         (
-          SELECT COUNT(*) :: int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $5
-        ) AS "reactionNumber",
-        (
           SELECT EXISTS(
             SELECT 1
           FROM saves
@@ -1534,7 +1624,8 @@ export class ContentRepository {
           AND reactions.target_type = $5
           AND reactions.reacter_user_id = $6
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       LEFT JOIN users author
       ON author.id = contents.author_user_id
@@ -1573,6 +1664,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $4
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $5
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.author_user_id = $1
       AND contents.type = $3
       AND contents.is_pinned = true
@@ -1713,12 +1818,6 @@ export class ContentRepository {
           WHERE shares.shared_content_id = contents.id
         ) AS "shareNumber",
         (
-          SELECT COUNT(*)::int
-          FROM reactions
-          WHERE reactions.target_id = contents.id
-          AND reactions.target_type = $4
-        ) AS "reactionNumber",
-        (
           SELECT EXISTS(
             SELECT 1
             FROM saves
@@ -1741,7 +1840,8 @@ export class ContentRepository {
           AND reactions.target_type = $4
           AND reactions.reacter_user_id = $2
           LIMIT 1
-        ) AS "reaction"
+        ) AS "myReaction",
+        reaction_types."reactions" as "reactions"
       FROM contents
       LEFT JOIN users author
       ON author.id = contents.author_user_id
@@ -1782,6 +1882,20 @@ export class ContentRepository {
         WHERE mf.target_id = contents.id
         AND mf.target_type = $5
       ) mf ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_object_agg(rt.type, COALESCE(counts.cnt, 0)),
+          '{}'::json
+        ) AS "reactions"
+        FROM (VALUES ('like'),('love'),('haha'),('wow'),('sad'),('angry')) AS rt(type)
+        LEFT JOIN (
+          SELECT reactions.type, COUNT(*)::int AS cnt
+          FROM reactions
+          WHERE reactions.target_id = contents.id
+          AND reactions.target_type = $4
+          GROUP BY reactions.type
+        ) counts ON counts.type::text = rt.type
+      ) reaction_types ON true
       WHERE contents.id = $1
       LIMIT 1
       `,
@@ -1799,10 +1913,10 @@ export class ContentRepository {
       commentNumber: Number(contentDetail.commentNumber ?? 0),
       saveNumber: Number(contentDetail.saveNumber ?? 0),
       shareNumber: Number(contentDetail.shareNumber ?? 0),
-      reactionNumber: Number(contentDetail.reactionNumber ?? 0),
       isSaved: Boolean(contentDetail.isSaved),
       isShared: Boolean(contentDetail.isShared),
-      reaction: contentDetail.reaction ?? null,
+      myReaction: contentDetail.myReaction ?? null,
+      reactions: contentDetail.reactions,
     };
   }
   /**
