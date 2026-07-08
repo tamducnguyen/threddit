@@ -6,8 +6,6 @@
       username_exists: 'Username đã tồn tại',
       mail_throttled:
         'Chờ 60 giây trước khi yêu cầu gửi email đăng ký tiếp theo',
-      mail_failed:
-        'Không thể gửi email xác minh, vui lòng kiểm tra lại địa chỉ email',
     },
     verify: {
       success: 'Xác minh tài khoản thành công',
@@ -22,8 +20,6 @@
         'Xác minh quá nhiều lần, vui lòng chờ 5 phút để thử lại',
       mail_throttled:
         'Chờ 60 giây trước khi yêu cầu gửi email đăng ký tiếp theo',
-      mail_failed:
-        'Không thể gửi email xác minh, vui lòng kiểm tra lại địa chỉ email',
       already_verified: 'Tài khoản đã được xác minh trước đó',
       email_not_exists: 'Email không tồn tại',
     },
@@ -35,8 +31,6 @@
     },
     reset_password: {
       email_not_exists: 'Email không tồn tại',
-      mail_failed:
-        'Không thể gửi email xác minh, vui lòng kiểm tra lại địa chỉ email',
       success:
         'Yêu cầu đặt lại mật khẩu thành công, vui lòng xác minh thông qua email',
       mail_throttled:
@@ -66,7 +60,6 @@
       success: 'Xóa tài khoản thành công',
       user_not_found: 'Người dùng không tồn tại',
       mail_throttled: 'Chờ 60s trước khi yêu cầu xóa tài khoản tiếp theo',
-      mail_failed: 'Không thể gửi email xác minh, vui lòng thử lại',
       invalid_or_expired_code: 'Mã xác minh không hợp lệ hoặc đã hết hạn',
       too_many_attempts: 'Thử quá nhiều lần, vui lòng thử lại sau 5 phút',
     },

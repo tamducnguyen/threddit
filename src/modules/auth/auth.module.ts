@@ -3,16 +3,17 @@ import { AuthService } from './auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../../entities/user.entity';
 import { AuthController } from './auth.controller';
-import { MailService } from 'src/modules/mail/mail.service';
+import { MailModule } from 'src/modules/mail/mail.module';
 import { AuthRepository } from './auth.repository';
 import { SessionEntity } from '../../entities/session.entity';
 import { SessionModule } from '../token/session.module';
 import { GoogleAuthService } from './google.service';
 
 @Module({
-  providers: [AuthService, MailService, AuthRepository, GoogleAuthService],
+  providers: [AuthService, AuthRepository, GoogleAuthService],
   imports: [
     SessionModule,
+    MailModule,
     TypeOrmModule.forFeature([UserEntity, SessionEntity]),
   ],
   controllers: [AuthController],

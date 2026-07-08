@@ -10,7 +10,12 @@ import { HashHelper } from '../../common/helper/hash.helper';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { prefixCache, ttlCache } from 'src/config/cache.config';
-import { MailService } from 'src/modules/mail/mail.service';
+import {
+  JobMailQueue,
+  NameMailQueue,
+} from 'src/modules/mail/helper/mail.helper';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { generateVerificationCode } from '../../common/helper/gencode.helper';
 import { sendResponse } from '../../common/helper/response.helper';
 import { VerifyAccountDTO } from './dtos/verifyaccount.dto';
@@ -31,7 +36,7 @@ import { ResendVerifyDTO } from './dtos/resendverify.dto';
 export class AuthService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    private readonly mailService: MailService,
+    @InjectQueue(NameMailQueue) private readonly mailQueue: Queue,
     private readonly authRepository: AuthRepository,
     private readonly sessionService: SessionService,
     private readonly configService: ConfigService,
@@ -112,23 +117,8 @@ export class AuthService {
       }
       throw error;
     }
-    //generate and send verification code via mail, cache to avoid brute force
+    //generate verification code, cache to avoid brute force
     const verificationCode = generateVerificationCode();
-    const isSent = await this.mailService.sendVerifyCode(
-      email,
-      verificationCode,
-    );
-    if (!isSent) {
-      await this.authRepository.deleteUserByEmail(email);
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.auth.signup.mail_failed,
-          undefined,
-          errorCode.auth.signup.mail_failed,
-        ),
-      );
-    }
     const keyAlreadyMail = prefixCache.alreadymail + email;
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
     //cache verification code
@@ -137,6 +127,18 @@ export class AuthService {
       verificationCode,
       ttlCache.code,
     );
+    //enqueue verification mail so signup doesn't wait on the mail provider
+    this.mailQueue
+      .add(JobMailQueue.SEND_VERIFY_CODE, {
+        email,
+        verificationCode,
+      })
+      .catch((error) => {
+        console.error(
+          `Failed to enqueue signup verification mail for ${email}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
     return sendResponse(HttpStatus.OK, message.auth.signup.success);
   }
   async verifyAccount(verifyAccountDTO: VerifyAccountDTO) {
@@ -266,23 +268,8 @@ export class AuthService {
     //delete key already sent mail cache if have
     const keyVerificationCode = prefixCache.verification + email;
     await this.cacheManager.del(keyVerificationCode);
-    //send verfication code
-    const verificationCode = generateVerificationCode();
-    const isSent = await this.mailService.sendVerifyCode(
-      email,
-      verificationCode,
-    );
-    if (!isSent) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.auth.resend_verification_code.mail_failed,
-          undefined,
-          errorCode.auth.resend_verification_code.mail_failed,
-        ),
-      );
-    }
     //cache key already sent mail
+    const verificationCode = generateVerificationCode();
     const keyAlreadyMail = prefixCache.alreadymail + email;
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
     await this.cacheManager.set(
@@ -290,6 +277,18 @@ export class AuthService {
       verificationCode,
       ttlCache.code,
     );
+    //enqueue verification mail so resend doesn't wait on the mail provider
+    this.mailQueue
+      .add(JobMailQueue.SEND_VERIFY_CODE, {
+        email,
+        verificationCode,
+      })
+      .catch((error) => {
+        console.error(
+          `Failed to enqueue resend verification mail for ${email}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
     return sendResponse(
       HttpStatus.OK,
       message.auth.resend_verification_code.success,
@@ -406,29 +405,26 @@ export class AuthService {
     //delete previous verfication code if have
     const keyVerificationCode = prefixCache.verification + email;
     await this.cacheManager.del(keyVerificationCode);
-    //generate verification code and send it via email
+    //generate verification code and cache mail and verification code
     const verificationCode = generateVerificationCode();
-    const isEmailSent = await this.mailService.sendForgotPassword(
-      email,
-      verificationCode,
-    );
-    if (!isEmailSent) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.auth.reset_password.mail_failed,
-          undefined,
-          errorCode.auth.reset_password.mail_failed,
-        ),
-      );
-    }
-    //cache mail and verification code
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
     await this.cacheManager.set(
       keyVerificationCode,
       verificationCode,
       ttlCache.code,
     );
+    //enqueue verification mail so reset password doesn't wait on the mail provider
+    this.mailQueue
+      .add(JobMailQueue.SEND_FORGOT_PASSWORD, {
+        email,
+        verificationCode,
+      })
+      .catch((error) => {
+        console.error(
+          `Failed to enqueue forgot password mail for ${email}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
     return sendResponse(HttpStatus.OK, message.auth.reset_password.success);
   }
   /**

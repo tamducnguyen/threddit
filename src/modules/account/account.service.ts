@@ -17,16 +17,18 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { prefixCache, ttlCache } from '../../config/cache.config';
 import { generateVerificationCode } from '../../common/helper/gencode.helper';
-import { MailService } from '../mail/mail.service';
 import { DeleteAccountDTO } from './dtos/deleteaccount.dto';
 import { QueryFailedError } from 'typeorm';
 import { SessionService } from '../token/session.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { JobMailQueue, NameMailQueue } from '../mail/helper/mail.helper';
 
 @Injectable()
 export class AccountService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    private readonly mailService: MailService,
+    @InjectQueue(NameMailQueue) private readonly mailQueue: Queue,
     private readonly accountRepository: AccountRepository,
     private readonly sessionService: SessionService,
   ) {}
@@ -241,21 +243,6 @@ export class AccountService {
       prefixCache.deleteaccount_code + userFound.email;
     await this.cacheManager.del(keyVerificationCode);
     const verificationCode = generateVerificationCode();
-    // Send verification email; abort on failure.
-    const isSent = await this.mailService.sendDeleteAccount(
-      userFound.email,
-      verificationCode,
-    );
-    if (!isSent) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.mail_failed,
-          undefined,
-          errorCode.account.delete_account.mail_failed,
-        ),
-      );
-    }
     // Cache throttle + code with TTL.
     await this.cacheManager.set(keyAlreadyMail, true, ttlCache.mail);
     await this.cacheManager.set(
@@ -263,6 +250,18 @@ export class AccountService {
       verificationCode,
       ttlCache.code,
     );
+    // Enqueue verification mail so the request doesn't wait on the mail provider.
+    this.mailQueue
+      .add(JobMailQueue.SEND_DELETE_ACCOUNT, {
+        email: userFound.email,
+        verificationCode,
+      })
+      .catch((error) => {
+        console.error(
+          `Failed to enqueue delete account verification mail for ${userFound.email}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
     return sendResponse(
       HttpStatus.OK,
       message.account.delete_account.mail_sent,

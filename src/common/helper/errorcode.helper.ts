@@ -5,7 +5,6 @@ export const errorCode = {
       mail_throttled: '02',
       email_exists: '04',
       username_exists: '05',
-      mail_failed: '06',
     },
     verify: {
       too_many_attempts: '07',
@@ -17,7 +16,6 @@ export const errorCode = {
       mail_throttled: '11',
       email_not_exists: '12',
       already_verified: '13',
-      mail_failed: '14',
     },
     signin: {
       credential_incorrect: '15',
@@ -27,7 +25,6 @@ export const errorCode = {
       too_many_attempts: '17',
       mail_throttled: '18',
       email_not_exists: '19',
-      mail_failed: '20',
     },
     verify_reset_password: {
       too_many_attempts: '21',
@@ -62,7 +59,6 @@ export const errorCode = {
       user_not_found: '39',
       too_many_attempts: '40',
       mail_throttled: '41',
-      mail_failed: '42',
       invalid_or_expired_code: '43',
     },
   },
