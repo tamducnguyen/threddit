@@ -393,14 +393,7 @@ export class AuthService {
       userFound.authMethod !== AuthMethod.CREDENTIAL ||
       !userFound.isActivate
     ) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.auth.reset_password.email_not_exists,
-          undefined,
-          errorCode.auth.reset_password.email_not_exists,
-        ),
-      );
+      return sendResponse(HttpStatus.OK, message.auth.reset_password.success);
     }
     //delete previous verfication code if have
     const keyVerificationCode = prefixCache.verification + email;

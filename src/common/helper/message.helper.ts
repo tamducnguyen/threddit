@@ -30,7 +30,6 @@
         'Tài khoản của bạn chưa được kích hoạt! Vui lòng xác thực để kích hoạt tài khoản',
     },
     reset_password: {
-      email_not_exists: 'Email không tồn tại',
       success:
         'Yêu cầu đặt lại mật khẩu thành công, vui lòng xác minh thông qua email',
       mail_throttled:

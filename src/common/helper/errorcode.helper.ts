@@ -24,7 +24,6 @@ export const errorCode = {
     reset_password: {
       too_many_attempts: '17',
       mail_throttled: '18',
-      email_not_exists: '19',
     },
     verify_reset_password: {
       too_many_attempts: '21',
