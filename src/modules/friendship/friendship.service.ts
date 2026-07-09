@@ -1,13 +1,35 @@
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  FriendshipAcceptRequestRequestNotFoundException,
+  FriendshipCancelRequestRequestNotFoundException,
+  FriendshipGetFriendListCursorInvalidException,
+  FriendshipGetFriendListTargetUserBlockException,
+  FriendshipGetFriendListUserNotFoundException,
+  FriendshipGetFriendStatusCantSelfCheckException,
+  FriendshipGetFriendStatusTargetUserBlockException,
+  FriendshipGetFriendStatusUserNotFoundException,
+  FriendshipGetMutualFriendCountCantSelfGetException,
+  FriendshipGetMutualFriendCountTargetUserBlockException,
+  FriendshipGetMutualFriendCountUserNotFoundException,
+  FriendshipGetMutualFriendListCantSelfGetException,
+  FriendshipGetMutualFriendListCursorInvalidException,
+  FriendshipGetMutualFriendListTargetUserBlockException,
+  FriendshipGetMutualFriendListUserNotFoundException,
+  FriendshipGetReceivedRequestsCursorInvalidException,
+  FriendshipGetSentRequestsCursorInvalidException,
+  FriendshipGetUserFriendCountTargetUserBlockException,
+  FriendshipGetUserFriendCountUserNotFoundException,
+  FriendshipRejectRequestRequestNotFoundException,
+  FriendshipSendRequestCantSelfRequestException,
+  FriendshipSendRequestFriendshipExistsException,
+  FriendshipSendRequestRecipientBlockedException,
+  FriendshipSendRequestRequestAlreadySentException,
+  FriendshipSendRequestUserNotFoundException,
+  FriendshipUnfriendCantSelfUnfriendException,
+  FriendshipUnfriendFriendNotFoundException,
+  FriendshipUnfriendUserNotFoundException,
+} from '../../common/exception';
 import { FriendshipRepository } from './friendship.repository';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -77,26 +99,12 @@ export class FriendshipService {
     const recipientUserFound =
       await this.friendshipRepo.findUserByUsername(recipientUsername);
     if (!currentUserFound || !recipientUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.send_request.user_not_found,
-          undefined,
-          errorCode.friendship.send_request.user_not_found,
-        ),
-      );
+      throw new FriendshipSendRequestUserNotFoundException();
     }
 
     //check if current user sends request to self
     if (currentUserFound.id === recipientUserFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.send_request.cant_self_request,
-          undefined,
-          errorCode.friendship.send_request.cant_self_request,
-        ),
-      );
+      throw new FriendshipSendRequestCantSelfRequestException();
     }
 
     //check existing friendship
@@ -112,25 +120,11 @@ export class FriendshipService {
       friendshipFromCurrent?.status === FriendshipStatus.ACCEPTED ||
       friendshipFromRecipient?.status === FriendshipStatus.ACCEPTED
     ) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.send_request.friendship_exists,
-          undefined,
-          errorCode.friendship.send_request.friendship_exists,
-        ),
-      );
+      throw new FriendshipSendRequestFriendshipExistsException();
     }
     //check if current user already sent request to recipient -> throw
     if (friendshipFromCurrent?.status === FriendshipStatus.PENDING) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.send_request.request_already_sent,
-          undefined,
-          errorCode.friendship.send_request.request_already_sent,
-        ),
-      );
+      throw new FriendshipSendRequestRequestAlreadySentException();
     }
 
     //check if current user is blocked by recipient
@@ -139,14 +133,7 @@ export class FriendshipService {
       recipientUserFound.id,
     );
     if (isBlocked) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.send_request.user_not_found,
-          undefined,
-          errorCode.friendship.send_request.user_not_found,
-        ),
-      );
+      throw new FriendshipSendRequestUserNotFoundException();
     }
 
     //check if current user blocked recipient
@@ -155,14 +142,7 @@ export class FriendshipService {
       currentUserFound.id,
     );
     if (isRecipientBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.send_request.recipient_blocked,
-          undefined,
-          errorCode.friendship.send_request.recipient_blocked,
-        ),
-      );
+      throw new FriendshipSendRequestRecipientBlockedException();
     }
 
     //check if recipient already sent request to current user -> auto-accept
@@ -176,10 +156,7 @@ export class FriendshipService {
         },
         { priority: 1 },
       );
-      return sendResponse(
-        HttpStatus.OK,
-        message.friendship.send_request.friendship_accepted,
-      );
+      return { kind: 'friendship_accepted' };
     }
 
     //create friendship request
@@ -198,7 +175,7 @@ export class FriendshipService {
       { priority: 1 },
     );
 
-    return sendResponse(HttpStatus.OK, message.friendship.send_request.success);
+    return { kind: 'success' };
   }
 
   /**
@@ -217,14 +194,7 @@ export class FriendshipService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_received_requests.cursor_invalid,
-            undefined,
-            errorCode.friendship.get_received_requests.cursor_invalid,
-          ),
-        );
+        throw new FriendshipGetReceivedRequestsCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -239,11 +209,10 @@ export class FriendshipService {
     const requestFinal =
       receivedFriendRequestListRaw[receivedFriendRequestListRaw.length - 1];
     if (!requestFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.friendship.get_received_requests.success,
-        { receivedFriendRequestList: [], cursor: null },
-      );
+      return {
+        kind: 'success',
+        data: { receivedFriendRequestList: [], cursor: null },
+      };
     }
     const receivedFriendRequestList = receivedFriendRequestListRaw.map(
       (request) => ({
@@ -255,14 +224,13 @@ export class FriendshipService {
     //sign next cursor
     const cursorPayload: Cursor = { id: requestFinal.id };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_received_requests.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         receivedFriendRequestList: receivedFriendRequestList,
         cursor: cursorToken,
       },
-    );
+    };
   }
 
   /**
@@ -281,14 +249,7 @@ export class FriendshipService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_sent_requests.cursor_invalid,
-            undefined,
-            errorCode.friendship.get_sent_requests.cursor_invalid,
-          ),
-        );
+        throw new FriendshipGetSentRequestsCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -303,11 +264,10 @@ export class FriendshipService {
     const requestFinal =
       sentFriendRequestListRaw[sentFriendRequestListRaw.length - 1];
     if (!requestFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.friendship.get_sent_requests.success,
-        { sentFriendRequestList: [], cursor: null },
-      );
+      return {
+        kind: 'success',
+        data: { sentFriendRequestList: [], cursor: null },
+      };
     }
     const sentFriendRequestList = sentFriendRequestListRaw.map((request) => ({
       friendshipId: request.id,
@@ -317,11 +277,13 @@ export class FriendshipService {
     //sign next cursor
     const cursorPayload: Cursor = { id: requestFinal.id };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_sent_requests.success,
-      { sentFriendRequestList: sentFriendRequestList, cursor: cursorToken },
-    );
+    return {
+      kind: 'success',
+      data: {
+        sentFriendRequestList: sentFriendRequestList,
+        cursor: cursorToken,
+      },
+    };
   }
 
   /**
@@ -334,14 +296,7 @@ export class FriendshipService {
     const requester =
       await this.friendshipRepo.findUserByUsername(requesterUsername);
     if (!requester) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.accept_request.request_not_found,
-          undefined,
-          errorCode.friendship.accept_request.request_not_found,
-        ),
-      );
+      throw new FriendshipAcceptRequestRequestNotFoundException();
     }
     //check if request exists
     const friendship = await this.friendshipRepo.findFriendRequest(
@@ -349,14 +304,7 @@ export class FriendshipService {
       currentUserId,
     );
     if (!friendship) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.accept_request.request_not_found,
-          undefined,
-          errorCode.friendship.accept_request.request_not_found,
-        ),
-      );
+      throw new FriendshipAcceptRequestRequestNotFoundException();
     }
     //accept request
     await this.friendshipRepo.acceptFriendRequest(friendship.id);
@@ -369,10 +317,7 @@ export class FriendshipService {
       },
       { priority: 1 },
     );
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.accept_request.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -385,14 +330,7 @@ export class FriendshipService {
     const requester =
       await this.friendshipRepo.findUserByUsername(requesterUsername);
     if (!requester) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.reject_request.request_not_found,
-          undefined,
-          errorCode.friendship.reject_request.request_not_found,
-        ),
-      );
+      throw new FriendshipRejectRequestRequestNotFoundException();
     }
     //check if request exists
     const friendship = await this.friendshipRepo.findFriendRequest(
@@ -400,21 +338,11 @@ export class FriendshipService {
       currentUserId,
     );
     if (!friendship) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.reject_request.request_not_found,
-          undefined,
-          errorCode.friendship.reject_request.request_not_found,
-        ),
-      );
+      throw new FriendshipRejectRequestRequestNotFoundException();
     }
     //delete friendship
     await this.friendshipRepo.deleteFriendshipById(friendship.id);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.reject_request.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -427,14 +355,7 @@ export class FriendshipService {
     const recipient =
       await this.friendshipRepo.findUserByUsername(recipientUsername);
     if (!recipient) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.cancel_request.request_not_found,
-          undefined,
-          errorCode.friendship.cancel_request.request_not_found,
-        ),
-      );
+      throw new FriendshipCancelRequestRequestNotFoundException();
     }
     //check if request exists
     const friendship = await this.friendshipRepo.findFriendRequest(
@@ -442,20 +363,10 @@ export class FriendshipService {
       recipient.id,
     );
     if (!friendship) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.cancel_request.request_not_found,
-          undefined,
-          errorCode.friendship.cancel_request.request_not_found,
-        ),
-      );
+      throw new FriendshipCancelRequestRequestNotFoundException();
     }
     await this.friendshipRepo.deleteFriendshipById(friendship.id);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.cancel_request.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -476,14 +387,7 @@ export class FriendshipService {
       ? await this.friendshipRepo.findUserByUsername(targetUsername)
       : await this.friendshipRepo.findUserById(currentUserId);
     if (!targetUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.get_friend_list.user_not_found,
-          undefined,
-          errorCode.friendship.get_friend_list.user_not_found,
-        ),
-      );
+      throw new FriendshipGetFriendListUserNotFoundException();
     }
     //check if current user is blocked by target user
     if (currentUserId !== targetUserFound.id) {
@@ -492,14 +396,7 @@ export class FriendshipService {
         targetUserFound.id,
       );
       if (isBlocked) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.friendship.get_friend_list.user_not_found,
-            undefined,
-            errorCode.friendship.get_friend_list.user_not_found,
-          ),
-        );
+        throw new FriendshipGetFriendListUserNotFoundException();
       }
       //check if current user blocked target user
       const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
@@ -507,14 +404,7 @@ export class FriendshipService {
         currentUserId,
       );
       if (isTargetUserBlocked) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_friend_list.target_user_block,
-            undefined,
-            errorCode.friendship.get_friend_list.target_user_block,
-          ),
-        );
+        throw new FriendshipGetFriendListTargetUserBlockException();
       }
     }
     //check cursor and decode
@@ -523,14 +413,7 @@ export class FriendshipService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_friend_list.cursor_invalid,
-            undefined,
-            errorCode.friendship.get_friend_list.cursor_invalid,
-          ),
-        );
+        throw new FriendshipGetFriendListCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -562,20 +445,15 @@ export class FriendshipService {
     });
     const friendFinal = friendList[friendList.length - 1];
     if (!friendFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.friendship.get_friend_list.success,
-        { friendList: [], cursor: null },
-      );
+      return { kind: 'success', data: { friendList: [], cursor: null } };
     }
 
     const cursorPayload: Cursor = { id: friendFinal.friendshipId };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_friend_list.success,
-      { friendList: filterFriendList, cursor: cursorToken },
-    );
+    return {
+      kind: 'success',
+      data: { friendList: filterFriendList, cursor: cursorToken },
+    };
   }
 
   /**
@@ -587,25 +465,11 @@ export class FriendshipService {
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.get_friend_status.user_not_found,
-          undefined,
-          errorCode.friendship.get_friend_status.user_not_found,
-        ),
-      );
+      throw new FriendshipGetFriendStatusUserNotFoundException();
     }
     //check if current check self
     if (currentUser.sub === userFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_friend_status.cant_self_check,
-          undefined,
-          errorCode.friendship.get_friend_status.cant_self_check,
-        ),
-      );
+      throw new FriendshipGetFriendStatusCantSelfCheckException();
     }
     //check if current user got blocked
     const isBlocked = await this.friendshipRepo.checkBlocked(
@@ -613,14 +477,7 @@ export class FriendshipService {
       userFound.id,
     );
     if (isBlocked) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.get_friend_status.user_not_found,
-          undefined,
-          errorCode.friendship.get_friend_status.user_not_found,
-        ),
-      );
+      throw new FriendshipGetFriendStatusUserNotFoundException();
     }
     //check if current user blocked target user
     const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
@@ -628,14 +485,7 @@ export class FriendshipService {
       currentUser.sub,
     );
     if (isTargetUserBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_friend_status.target_user_block,
-          undefined,
-          errorCode.friendship.get_friend_status.target_user_block,
-        ),
-      );
+      throw new FriendshipGetFriendStatusTargetUserBlockException();
     }
     const friendship = await this.friendshipRepo.findFriendshipBetween(
       currentUser.sub,
@@ -658,11 +508,7 @@ export class FriendshipService {
     } else {
       friendshipStatus = null;
     }
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_friend_status.success,
-      { friendshipStatus },
-    );
+    return { kind: 'success', data: { friendshipStatus } };
   }
 
   /**
@@ -674,25 +520,11 @@ export class FriendshipService {
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.unfriend.user_not_found,
-          undefined,
-          errorCode.friendship.unfriend.user_not_found,
-        ),
-      );
+      throw new FriendshipUnfriendUserNotFoundException();
     }
     //check if current user self-unfriend
     if (currentUser.sub === userFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.unfriend.cant_self_unfriend,
-          undefined,
-          errorCode.friendship.unfriend.cant_self_unfriend,
-        ),
-      );
+      throw new FriendshipUnfriendCantSelfUnfriendException();
     }
     //check if current user got blocked
     const isBlocked = await this.friendshipRepo.checkBlocked(
@@ -700,14 +532,7 @@ export class FriendshipService {
       userFound.id,
     );
     if (isBlocked) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.unfriend.user_not_found,
-          undefined,
-          errorCode.friendship.unfriend.user_not_found,
-        ),
-      );
+      throw new FriendshipUnfriendUserNotFoundException();
     }
     //check friendship exist and accepted
     const friendship = await this.friendshipRepo.findFriendshipBetween(
@@ -715,17 +540,10 @@ export class FriendshipService {
       userFound.id,
     );
     if (!friendship || friendship.status !== FriendshipStatus.ACCEPTED) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.unfriend.friend_not_found,
-          undefined,
-          errorCode.friendship.unfriend.friend_not_found,
-        ),
-      );
+      throw new FriendshipUnfriendFriendNotFoundException();
     }
     await this.friendshipRepo.deleteFriendshipById(friendship.id);
-    return sendResponse(HttpStatus.OK, message.friendship.unfriend.success);
+    return { kind: 'success' };
   }
 
   /**
@@ -742,25 +560,11 @@ export class FriendshipService {
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.get_mutual_friend_list.user_not_found,
-          undefined,
-          errorCode.friendship.get_mutual_friend_list.user_not_found,
-        ),
-      );
+      throw new FriendshipGetMutualFriendListUserNotFoundException();
     }
     //check if current user self-get mutual friends
     if (currentUser.sub === userFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_mutual_friend_list.cant_self_get,
-          undefined,
-          errorCode.friendship.get_mutual_friend_list.cant_self_get,
-        ),
-      );
+      throw new FriendshipGetMutualFriendListCantSelfGetException();
     }
     //check if current user is blocked by target user
     if (currentUser.sub !== userFound.id) {
@@ -769,14 +573,7 @@ export class FriendshipService {
         userFound.id,
       );
       if (isBlocked) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.friendship.get_mutual_friend_list.user_not_found,
-            undefined,
-            errorCode.friendship.get_mutual_friend_list.user_not_found,
-          ),
-        );
+        throw new FriendshipGetMutualFriendListUserNotFoundException();
       }
       //check if current user blocked target user
       const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
@@ -784,14 +581,7 @@ export class FriendshipService {
         currentUser.sub,
       );
       if (isTargetUserBlocked) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_mutual_friend_list.target_user_block,
-            undefined,
-            errorCode.friendship.get_mutual_friend_list.target_user_block,
-          ),
-        );
+        throw new FriendshipGetMutualFriendListTargetUserBlockException();
       }
     }
     //check cursor and decode
@@ -800,14 +590,7 @@ export class FriendshipService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_mutual_friend_list.cursor_invalid,
-            undefined,
-            errorCode.friendship.get_mutual_friend_list.cursor_invalid,
-          ),
-        );
+        throw new FriendshipGetMutualFriendListCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -820,11 +603,7 @@ export class FriendshipService {
     );
     const friendFinal = mutualFriendListRaw[mutualFriendListRaw.length - 1];
     if (!friendFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.friendship.get_mutual_friend_list.success,
-        { mutualFriendList: [], cursor: null },
-      );
+      return { kind: 'success', data: { mutualFriendList: [], cursor: null } };
     }
     const mutualFriendList = mutualFriendListRaw.map((friendship) => {
       const friend =
@@ -839,11 +618,10 @@ export class FriendshipService {
     });
     const cursorPayload: Cursor = { id: friendFinal.id };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_mutual_friend_list.success,
-      { mutualFriendList: mutualFriendList, cursor: cursorToken },
-    );
+    return {
+      kind: 'success',
+      data: { mutualFriendList: mutualFriendList, cursor: cursorToken },
+    };
   }
 
   /**
@@ -852,11 +630,7 @@ export class FriendshipService {
    */
   async getFriendCount(currentUser: AuthUser) {
     const friendCount = await this.friendshipRepo.countFriends(currentUser.sub);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_friend_count.success,
-      { friendCount },
-    );
+    return { kind: 'success', data: { friendCount } };
   }
 
   /**
@@ -868,14 +642,7 @@ export class FriendshipService {
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.get_user_friend_count.user_not_found,
-          undefined,
-          errorCode.friendship.get_user_friend_count.user_not_found,
-        ),
-      );
+      throw new FriendshipGetUserFriendCountUserNotFoundException();
     }
     //check if current user got blocked
     if (currentUser.sub !== userFound.id) {
@@ -884,14 +651,7 @@ export class FriendshipService {
         userFound.id,
       );
       if (isBlocked) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.friendship.get_user_friend_count.user_not_found,
-            undefined,
-            errorCode.friendship.get_user_friend_count.user_not_found,
-          ),
-        );
+        throw new FriendshipGetUserFriendCountUserNotFoundException();
       }
       //check if current user blocked target user
       const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
@@ -899,22 +659,11 @@ export class FriendshipService {
         currentUser.sub,
       );
       if (isTargetUserBlocked) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_user_friend_count.target_user_block,
-            undefined,
-            errorCode.friendship.get_user_friend_count.target_user_block,
-          ),
-        );
+        throw new FriendshipGetUserFriendCountTargetUserBlockException();
       }
     }
     const friendCount = await this.friendshipRepo.countFriends(userFound.id);
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_user_friend_count.success,
-      { friendCount },
-    );
+    return { kind: 'success', data: { friendCount } };
   }
 
   /**
@@ -926,25 +675,11 @@ export class FriendshipService {
     //check if user exist
     const userFound = await this.friendshipRepo.findUserByUsername(username);
     if (!userFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.friendship.get_mutual_friend_count.user_not_found,
-          undefined,
-          errorCode.friendship.get_mutual_friend_count.user_not_found,
-        ),
-      );
+      throw new FriendshipGetMutualFriendCountUserNotFoundException();
     }
     //check if current user self-get mutual friend number
     if (currentUser.sub === userFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.friendship.get_mutual_friend_count.cant_self_get,
-          undefined,
-          errorCode.friendship.get_mutual_friend_count.cant_self_get,
-        ),
-      );
+      throw new FriendshipGetMutualFriendCountCantSelfGetException();
     }
     //check if current user got blocked
     if (currentUser.sub !== userFound.id) {
@@ -953,14 +688,7 @@ export class FriendshipService {
         userFound.id,
       );
       if (isBlocked) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.friendship.get_mutual_friend_count.user_not_found,
-            undefined,
-            errorCode.friendship.get_mutual_friend_count.user_not_found,
-          ),
-        );
+        throw new FriendshipGetMutualFriendCountUserNotFoundException();
       }
       //check if current user blocked target user
       const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
@@ -968,25 +696,14 @@ export class FriendshipService {
         currentUser.sub,
       );
       if (isTargetUserBlocked) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.friendship.get_mutual_friend_count.target_user_block,
-            undefined,
-            errorCode.friendship.get_mutual_friend_count.target_user_block,
-          ),
-        );
+        throw new FriendshipGetMutualFriendCountTargetUserBlockException();
       }
     }
     const mutualCount = await this.friendshipRepo.countMutualFriends(
       currentUser.sub,
       userFound.id,
     );
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_mutual_friend_count.success,
-      { mutualCount },
-    );
+    return { kind: 'success', data: { mutualCount } };
   }
 
   /**
@@ -997,11 +714,7 @@ export class FriendshipService {
     const sentCount = await this.friendshipRepo.countSentFriendRequests(
       currentUser.sub,
     );
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_sent_request_count.success,
-      { sentCount },
-    );
+    return { kind: 'success', data: { sentCount } };
   }
 
   /**
@@ -1012,10 +725,6 @@ export class FriendshipService {
     const receivedCount = await this.friendshipRepo.countReceivedFriendRequests(
       currentUser.sub,
     );
-    return sendResponse(
-      HttpStatus.OK,
-      message.friendship.get_received_request_count.success,
-      { receivedCount },
-    );
+    return { kind: 'success', data: { receivedCount } };
   }
 }

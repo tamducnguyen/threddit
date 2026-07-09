@@ -11,5 +11,6 @@ export function sendResponse<T>(
     message,
     data,
     ...(errorCode ? { errorCode } : {}),
+    timestamp: new Date().toISOString(),
   };
 }

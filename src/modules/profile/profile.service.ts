@@ -1,15 +1,22 @@
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  ProfileGetProfileTargetUserBlockException,
+  ProfileGetProfileUserNotFoundException,
+  ProfileSearchProfileCursorInvalidException,
+  ProfileUpdateAvatarInvalidKeyException,
+  ProfileUpdateAvatarInvalidSizeException,
+  ProfileUpdateAvatarUploadNotFoundException,
+  ProfileUpdateAvatarUploadTooLargeException,
+  ProfileUpdateBackgroundInvalidKeyException,
+  ProfileUpdateBackgroundInvalidSizeException,
+  ProfileUpdateBackgroundUploadNotFoundException,
+  ProfileUpdateBackgroundUploadTooLargeException,
+  ProfileUpdateProfileNoFieldToUpdateException,
+  ProfileUpdateProfileUserNotFoundException,
+} from '../../common/exception';
 import { ProfileRepository } from './profile.repository';
 import { AuthUser } from '../token/authuser.interface';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
 import { ConfigService } from '@nestjs/config';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { UpdateProfileDTO } from './dtos/updateprofile.dto';
 import { AvatarPresignDTO } from './dtos/avatarpresign.dto';
 import { AvatarConfirmDTO } from './dtos/avatarconfirm.dto';
@@ -48,14 +55,7 @@ export class ProfileService {
       currentUser.sub,
     );
     if (!profileFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.get_profile.user_not_found,
-          undefined,
-          errorCode.profile.get_profile.user_not_found,
-        ),
-      );
+      throw new ProfileGetProfileUserNotFoundException();
     }
     //convert relative path into url
     const avatarUrl = ConvertMediaRelativePathToUrl(
@@ -82,24 +82,13 @@ export class ProfileService {
       followingNumber: profileFound.followingNumber,
       friendNumber: profileFound.friendNumber,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.get_profile.success,
-      profile,
-    );
+    return { kind: 'success', data: profile };
   }
   async getOtherProfile(currentUser: AuthUser, otherUsername: string) {
     //check if user exist
     const userFound = await this.profileRepo.findUserByUsername(otherUsername);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.get_profile.user_not_found,
-          undefined,
-          errorCode.profile.get_profile.user_not_found,
-        ),
-      );
+      throw new ProfileGetProfileUserNotFoundException();
     }
     //check if whose username is current user
     if (userFound.id === currentUser.sub) {
@@ -111,14 +100,7 @@ export class ProfileService {
       userFound.id,
     );
     if (!profileFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.get_profile.user_not_found,
-          undefined,
-          errorCode.profile.get_profile.user_not_found,
-        ),
-      );
+      throw new ProfileGetProfileUserNotFoundException();
     }
     //check if current user got blocked
     const isBlocked = await this.profileRepo.checkBlocked(
@@ -126,14 +108,7 @@ export class ProfileService {
       userFound.id,
     );
     if (isBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.get_profile.user_not_found,
-          undefined,
-          errorCode.profile.get_profile.user_not_found,
-        ),
-      );
+      throw new ProfileGetProfileUserNotFoundException();
     }
     //check if current user block target user
     const isTargetUserBlocked = await this.profileRepo.checkBlocked(
@@ -141,20 +116,9 @@ export class ProfileService {
       currentUser.sub,
     );
     if (isTargetUserBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.get_profile.target_user_block,
-          undefined,
-          errorCode.profile.get_profile.target_user_block,
-        ),
-      );
+      throw new ProfileGetProfileTargetUserBlockException();
     }
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.get_profile.success,
-      profileFound,
-    );
+    return { kind: 'success', data: profileFound };
   }
 
   async searchProfiles(currentUserId: number, key: string, cursor?: string) {
@@ -164,14 +128,7 @@ export class ProfileService {
         profileCursor =
           await this.jwtService.verifyAsync<ProfileCursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.profile.search_profile.cursor_invalid,
-            undefined,
-            errorCode.profile.search_profile.cursor_invalid,
-          ),
-        );
+        throw new ProfileSearchProfileCursorInvalidException();
       }
     } else {
       profileCursor = undefined;
@@ -183,21 +140,20 @@ export class ProfileService {
     );
     const finalProfile = searchProfiles[searchProfiles.length - 1];
     if (!finalProfile) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.profile.search_profile.no_content,
-        { searchProfiles: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { searchProfiles: [], cursor: null } };
     }
     const cursorPayload: ProfileCursor = {
       followerNumber: finalProfile.followerNumber,
       username: finalProfile.username,
     };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(HttpStatus.OK, message.profile.search_profile.success, {
-      searchProfiles: searchProfiles,
-      cursor: nextCursor,
-    });
+    return {
+      kind: 'success',
+      data: {
+        searchProfiles: searchProfiles,
+        cursor: nextCursor,
+      },
+    };
   }
   /**
    * update user profile
@@ -216,14 +172,7 @@ export class ProfileService {
       updateProfileDTO.educationalLevel === undefined &&
       updateProfileDTO.relationshipStatus === undefined
     ) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_profile.no_field_to_update,
-          undefined,
-          errorCode.profile.update_profile.no_field_to_update,
-        ),
-      );
+      throw new ProfileUpdateProfileNoFieldToUpdateException();
     }
     //update
     const updateInfo = {
@@ -242,14 +191,7 @@ export class ProfileService {
       updateResult.affected == 0 ||
       !updatedProfile
     ) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.profile.update_profile.user_not_found,
-          undefined,
-          errorCode.profile.update_profile.user_not_found,
-        ),
-      );
+      throw new ProfileUpdateProfileUserNotFoundException();
     }
     //convert relative path into url
     const avatarUrl = ConvertMediaRelativePathToUrl(
@@ -271,11 +213,7 @@ export class ProfileService {
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.update_profile.success,
-      profile,
-    );
+    return { kind: 'success', data: profile };
   }
   /**
    * request update avatar
@@ -287,25 +225,14 @@ export class ProfileService {
     const { sub } = currentUser;
     // Check if content length exceed the avatar max size
     if (avatarPresignDTO.contentLength > this.avatarMaxSize) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_avatar.invalid_size,
-          undefined,
-          errorCode.profile.update_avatar.invalid_size,
-        ),
-      );
+      throw new ProfileUpdateAvatarInvalidSizeException();
     }
     // Generate presigned URL for the current user's avatar upload.
     const presignData = await this.storageService.generateAvatarPresignUrl(
       String(sub),
       avatarPresignDTO.contentType,
     );
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.update_avatar.presign_success,
-      presignData,
-    );
+    return { kind: 'presign_success', data: presignData };
   }
 
   async confirmAvatarUpload(
@@ -316,39 +243,18 @@ export class ProfileService {
     const expectedKey = `temp/avatar/${sub}`;
     // Ensure the client reports the expected object key.
     if (avatarConfirmDTO.key !== expectedKey) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_avatar.invalid_key,
-          undefined,
-          errorCode.profile.update_avatar.invalid_key,
-        ),
-      );
+      throw new ProfileUpdateAvatarInvalidKeyException();
     }
     const objectSize = await this.storageService.getObjectSize(
       avatarConfirmDTO.key,
     );
     // Prevent DB update if the upload is missing on storage.
     if (!objectSize) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_avatar.upload_not_found,
-          undefined,
-          errorCode.profile.update_avatar.upload_not_found,
-        ),
-      );
+      throw new ProfileUpdateAvatarUploadNotFoundException();
     }
     if (objectSize > this.avatarMaxSize) {
       await this.storageService.deleteObject(avatarConfirmDTO.key);
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_avatar.upload_too_large,
-          undefined,
-          errorCode.profile.update_avatar.upload_too_large,
-        ),
-      );
+      throw new ProfileUpdateAvatarUploadTooLargeException();
     }
     //Move object from temp into avatar
     const desinationKey = `avatar/${sub}`;
@@ -364,14 +270,7 @@ export class ProfileService {
       updateResult.affected == 0 ||
       !updatedProfile
     ) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.profile.update_profile.user_not_found,
-          undefined,
-          errorCode.profile.update_profile.user_not_found,
-        ),
-      );
+      throw new ProfileUpdateProfileUserNotFoundException();
     }
     const avatarUrl = ConvertMediaRelativePathToUrl(
       this.configService,
@@ -390,11 +289,7 @@ export class ProfileService {
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.update_avatar.success,
-      profile,
-    );
+    return { kind: 'success', data: profile };
   }
 
   /**
@@ -407,14 +302,7 @@ export class ProfileService {
     const { sub } = currentUser;
     // Check if content length exceed the background max size
     if (backgroundPresignDTO.contentLength > this.backgroundMaxSize) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_background.invalid_size,
-          undefined,
-          errorCode.profile.update_background.invalid_size,
-        ),
-      );
+      throw new ProfileUpdateBackgroundInvalidSizeException();
     }
     // Generate presigned URL for the current user's background upload.
     const presignData =
@@ -422,11 +310,7 @@ export class ProfileService {
         String(sub),
         backgroundPresignDTO.contentType,
       );
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.update_background.presign_success,
-      presignData,
-    );
+    return { kind: 'presign_success', data: presignData };
   }
 
   async confirmBackgroundUpload(
@@ -437,39 +321,18 @@ export class ProfileService {
     const expectedKey = `temp/background_image/${sub}`;
     // Ensure the client reports the expected object key.
     if (backgroundConfirmDTO.key !== expectedKey) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_background.invalid_key,
-          undefined,
-          errorCode.profile.update_background.invalid_key,
-        ),
-      );
+      throw new ProfileUpdateBackgroundInvalidKeyException();
     }
     const objectSize = await this.storageService.getObjectSize(
       backgroundConfirmDTO.key,
     );
     // Prevent DB update if the upload is missing on storage.
     if (!objectSize) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_background.upload_not_found,
-          undefined,
-          errorCode.profile.update_background.upload_not_found,
-        ),
-      );
+      throw new ProfileUpdateBackgroundUploadNotFoundException();
     }
     if (objectSize > this.backgroundMaxSize) {
       await this.storageService.deleteObject(backgroundConfirmDTO.key);
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.profile.update_background.upload_too_large,
-          undefined,
-          errorCode.profile.update_background.upload_too_large,
-        ),
-      );
+      throw new ProfileUpdateBackgroundUploadTooLargeException();
     }
     //Move object from temp into background
     const desinationKey = `background_image/${sub}`;
@@ -485,14 +348,7 @@ export class ProfileService {
       updateResult.affected == 0 ||
       !updatedProfile
     ) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.profile.update_profile.user_not_found,
-          undefined,
-          errorCode.profile.update_profile.user_not_found,
-        ),
-      );
+      throw new ProfileUpdateProfileUserNotFoundException();
     }
     const avatarUrl = ConvertMediaRelativePathToUrl(
       this.configService,
@@ -511,10 +367,6 @@ export class ProfileService {
       avatarUrl: avatarUrl,
       backgroundImageUrl: backgroundImageUrl,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.profile.update_background.success,
-      profile,
-    );
+    return { kind: 'success', data: profile };
   }
 }

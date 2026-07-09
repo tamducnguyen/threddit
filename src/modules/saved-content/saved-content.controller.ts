@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Controller,
   Delete,
@@ -21,6 +23,7 @@ import { ContentIdDTO } from '../../common/dtos/content-id.dto';
 export class SavedContentController {
   constructor(private readonly savedContentService: SavedContentService) {}
 
+  @ResponseMessage({ success: message.content.save_content.success })
   @HttpCode(HttpStatus.OK)
   @Post(':contentId/save')
   async saveContent(
@@ -33,6 +36,7 @@ export class SavedContentController {
     );
   }
 
+  @ResponseMessage({ success: message.content.unsave_content.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':contentId/save')
   async unsaveContent(

@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -29,6 +31,10 @@ import { SearchContentDTO } from './dtos/search-content.dto';
 @SkipThrottle({ public: true })
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
+  @ResponseMessage({
+    no_content: message.content.get_timeline_content.no_content,
+    success: message.content.get_timeline_content.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('timeline-content')
   async getSelfTimelineContent(
@@ -40,6 +46,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_timeline_content.no_content,
+    success: message.content.get_timeline_content.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':username/timeline-content')
   async getOtherTimelineContent(
@@ -53,6 +63,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_saved_content.no_content,
+    success: message.content.get_saved_content.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('saved-content')
   async getSavedContent(
@@ -64,16 +78,28 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_feed.no_content,
+    success: message.content.get_feed.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('feed')
   async getFeed(@CurrentUser() currentUser: AuthUser) {
     return await this.contentService.getFeed(currentUser.sub);
   }
+  @ResponseMessage({
+    no_content: message.content.get_reel.no_content,
+    success: message.content.get_reel.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('reel')
   async getReel(@CurrentUser() currentUser: AuthUser) {
     return await this.contentService.getReel(currentUser.sub);
   }
+  @ResponseMessage({
+    no_content: message.content.get_my_story.no_content,
+    success: message.content.get_my_story.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('stories')
   async getMyStories(
@@ -85,6 +111,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_my_current_story.no_content,
+    success: message.content.get_my_current_story.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('current-stories')
   async getMyCurrentStories(
@@ -96,6 +126,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_other_current_story.no_content,
+    success: message.content.get_other_current_story.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':username/current-stories')
   async getOtherCurrentStories(
@@ -109,6 +143,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_friend_story.no_content,
+    success: message.content.get_friend_story.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('friend-stories')
   async getFriendStories(
@@ -120,6 +158,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_pinned_story.no_content,
+    success: message.content.get_pinned_story.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('pinned-stories')
   async getPinnedStories(
@@ -131,6 +173,10 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_content_by_key.no_content,
+    success: message.content.get_content_by_key.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get()
   async searchContents(
@@ -143,6 +189,10 @@ export class ContentController {
       searchContentDTO.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.content.get_pinned_story.no_content,
+    success: message.content.get_pinned_story.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':username/pinned-stories')
   async getOtherPinnedStories(
@@ -156,6 +206,7 @@ export class ContentController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({ success: message.content.get_content.success })
   @HttpCode(HttpStatus.OK)
   @Get(':contentId')
   async getContent(
@@ -167,6 +218,7 @@ export class ContentController {
       contentIdDTO.contentId,
     );
   }
+  @ResponseMessage({ success: message.content.create_post.success })
   @HttpCode(HttpStatus.CREATED)
   @Post()
   async createContent(
@@ -178,6 +230,7 @@ export class ContentController {
       createContentDTO,
     );
   }
+  @ResponseMessage({ success: message.content.update_content.success })
   @HttpCode(HttpStatus.OK)
   @Patch(':contentId')
   async updateContent(
@@ -191,6 +244,7 @@ export class ContentController {
       updateContentDTO,
     );
   }
+  @ResponseMessage({ success: message.content.pin_content.success })
   @HttpCode(HttpStatus.OK)
   @Post(':contentId/pin')
   async pinContent(
@@ -202,6 +256,7 @@ export class ContentController {
       contentIdDTO.contentId,
     );
   }
+  @ResponseMessage({ success: message.content.unpin_content.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':contentId/pin')
   async unpinContent(
@@ -218,6 +273,7 @@ export class ContentController {
   /**
    * Deletes an owned content by id.
    */
+  @ResponseMessage({ success: message.content.delete_content.success })
   async deleteContent(
     @CurrentUser() currentUser: AuthUser,
     @Param() contentIdDTO: ContentIdDTO,

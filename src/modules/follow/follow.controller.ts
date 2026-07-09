@@ -10,6 +10,8 @@
   UseGuards,
 } from '@nestjs/common';
 import { FollowService } from './follow.service';
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import { CurrentUser } from '../token/currentuser.decorator';
 import { CursorDTO } from '../../common/dtos/cursor.dto';
 import { UserThrottlerGuard } from '../../common/guard/throttler.guard';
@@ -24,11 +26,13 @@ import { SkipThrottle } from '@nestjs/throttler';
 @SkipThrottle({ public: true })
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
+  @ResponseMessage({ success: message.follow.get_follow_number.success })
   @HttpCode(HttpStatus.OK)
   @Get('count')
   async getMyFollowNumber(@CurrentUser() currentUser: AuthUser) {
     return await this.followService.getFollowNumber(currentUser);
   }
+  @ResponseMessage({ success: message.follow.get_follow_number.success })
   @HttpCode(HttpStatus.OK)
   @Get(':username/count')
   async getUserFollowNumber(
@@ -40,6 +44,7 @@ export class FollowController {
       usernameDTO.username,
     );
   }
+  @ResponseMessage({ success: message.follow.get_follower_list.success })
   @HttpCode(HttpStatus.OK)
   @Get('followers')
   async getMyFollowers(
@@ -63,6 +68,7 @@ export class FollowController {
     );
   }
 
+  @ResponseMessage({ success: message.follow.get_follower_list.success })
   @HttpCode(HttpStatus.OK)
   @Get(':username/followers')
   async getUserFollowers(
@@ -87,6 +93,7 @@ export class FollowController {
     );
   }
 
+  @ResponseMessage({ success: message.follow.get_following_list.success })
   @HttpCode(HttpStatus.OK)
   @Get('followings')
   async getMyFollowings(
@@ -110,6 +117,7 @@ export class FollowController {
     );
   }
 
+  @ResponseMessage({ success: message.follow.get_following_list.success })
   @HttpCode(HttpStatus.OK)
   @Get(':username/followings')
   async getUserFollowings(
@@ -133,6 +141,7 @@ export class FollowController {
       cursorDTO.cursor,
     );
   }
+  @ResponseMessage({ success: message.follow.post_follow.success })
   @HttpCode(HttpStatus.OK)
   @Post(':username')
   async postFollow(
@@ -144,6 +153,7 @@ export class FollowController {
       usernameDTO.username,
     );
   }
+  @ResponseMessage({ success: message.follow.delete_follow.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':username')
   async deleteFollow(
@@ -155,6 +165,7 @@ export class FollowController {
       usernameDTO.username,
     );
   }
+  @ResponseMessage({ sucess: message.follow.get_follow_state.sucess })
   @HttpCode(HttpStatus.OK)
   @Get(':username/status')
   async getFollowState(

@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -23,6 +25,9 @@ import { MediaFileNumberDTO } from './dtos/media-file-number.dto';
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
+  @ResponseMessage({
+    request_upload_success: message.storage.request_upload_success,
+  })
   @HttpCode(HttpStatus.OK)
   @Post('request/upload')
   async requestUpload(
@@ -34,6 +39,9 @@ export class StorageController {
       currentUser.sub,
     );
   }
+  @ResponseMessage({
+    request_upload_success: message.storage.request_upload_success,
+  })
   @HttpCode(HttpStatus.OK)
   @Patch('request/upload/:contentId')
   async requestUpdateUpload(

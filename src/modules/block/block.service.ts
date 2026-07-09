@@ -1,14 +1,18 @@
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  BlockDeleteBlockCantSelfUnblockException,
+  BlockDeleteBlockNotBlockedException,
+  BlockDeleteBlockUserNotFoundException,
+  BlockGetBlockStatusCantSelfCheckException,
+  BlockGetBlockStatusUserNotFoundException,
+  BlockGetBlockedListCursorInvalidException,
+  BlockGetBlockedListUserNotFoundException,
+  BlockPostBlockAlreadyBlockedException,
+  BlockPostBlockCantSelfBlockException,
+  BlockPostBlockUserNotFoundException,
+} from '../../common/exception';
 import { BlockRepository } from './block.repository';
 import { AuthUser } from '../token/authuser.interface';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { JwtService } from '@nestjs/jwt';
 import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
@@ -58,40 +62,19 @@ export class BlockService {
     // ensure current user exists
     const blockerFound = await this.blockRepo.findUserById(currentUser.sub);
     if (!blockerFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.post_block.user_not_found,
-          undefined,
-          errorCode.block.post_block.user_not_found,
-        ),
-      );
+      throw new BlockPostBlockUserNotFoundException();
     }
 
     // ensure target user exists
     const blockedUserFound =
       await this.blockRepo.findUserByUsername(blockedUsername);
     if (!blockedUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.post_block.user_not_found,
-          undefined,
-          errorCode.block.post_block.user_not_found,
-        ),
-      );
+      throw new BlockPostBlockUserNotFoundException();
     }
 
     // prevent blocking self
     if (currentUser.sub === blockedUserFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.post_block.cant_self_block,
-          undefined,
-          errorCode.block.post_block.cant_self_block,
-        ),
-      );
+      throw new BlockPostBlockCantSelfBlockException();
     }
 
     // hide existence if current user is blocked by target user
@@ -100,14 +83,7 @@ export class BlockService {
       blockerFound.id,
     );
     if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.post_block.user_not_found,
-          undefined,
-          errorCode.block.post_block.user_not_found,
-        ),
-      );
+      throw new BlockPostBlockUserNotFoundException();
     }
 
     // avoid duplicate block
@@ -116,14 +92,7 @@ export class BlockService {
       blockedUserFound.id,
     );
     if (isBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.post_block.already_blocked,
-          undefined,
-          errorCode.block.post_block.already_blocked,
-        ),
-      );
+      throw new BlockPostBlockAlreadyBlockedException();
     }
 
     // create block and remove follow/friendship if present
@@ -138,20 +107,13 @@ export class BlockService {
         // postgres unique violation
         (err as { code?: string }).code === '23505'
       ) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.block.post_block.already_blocked,
-            undefined,
-            errorCode.block.post_block.already_blocked,
-          ),
-        );
+        throw new BlockPostBlockAlreadyBlockedException();
       }
       throw err;
     }
 
     // return success response
-    return sendResponse(HttpStatus.OK, message.block.post_block.success);
+    return { kind: 'success' };
   }
 
   async unblock(currentUser: AuthUser, blockedUsername: string) {
@@ -159,26 +121,12 @@ export class BlockService {
     const blockedUserFound =
       await this.blockRepo.findUserByUsername(blockedUsername);
     if (!blockedUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.delete_block.user_not_found,
-          undefined,
-          errorCode.block.delete_block.user_not_found,
-        ),
-      );
+      throw new BlockDeleteBlockUserNotFoundException();
     }
 
     // prevent unblocking self
     if (currentUser.sub === blockedUserFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.delete_block.cant_self_unblock,
-          undefined,
-          errorCode.block.delete_block.cant_self_unblock,
-        ),
-      );
+      throw new BlockDeleteBlockCantSelfUnblockException();
     }
 
     // hide existence if current user is blocked by target user
@@ -187,14 +135,7 @@ export class BlockService {
       currentUser.sub,
     );
     if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.delete_block.user_not_found,
-          undefined,
-          errorCode.block.delete_block.user_not_found,
-        ),
-      );
+      throw new BlockDeleteBlockUserNotFoundException();
     }
 
     // ensure block exists
@@ -203,35 +144,21 @@ export class BlockService {
       blockedUserFound.id,
     );
     if (!isBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.delete_block.not_blocked,
-          undefined,
-          errorCode.block.delete_block.not_blocked,
-        ),
-      );
+      throw new BlockDeleteBlockNotBlockedException();
     }
 
     // delete block record
     await this.blockRepo.deleteBlock(currentUser.sub, blockedUserFound.id);
 
     // return success response
-    return sendResponse(HttpStatus.OK, message.block.delete_block.success);
+    return { kind: 'success' };
   }
 
   async getBlockedList(currentUser: AuthUser, key?: string, cursor?: string) {
     // ensure current user exists
     const blockerFound = await this.blockRepo.findUserById(currentUser.sub);
     if (!blockerFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.get_blocked_list.user_not_found,
-          undefined,
-          errorCode.block.get_blocked_list.user_not_found,
-        ),
-      );
+      throw new BlockGetBlockedListUserNotFoundException();
     }
 
     // verify and decode cursor if provided
@@ -240,14 +167,7 @@ export class BlockService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.block.get_blocked_list.cursor_invalid,
-            undefined,
-            errorCode.block.get_blocked_list.cursor_invalid,
-          ),
-        );
+        throw new BlockGetBlockedListCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -262,11 +182,7 @@ export class BlockService {
 
     const blockedFinal = blockedListRaw[blockedListRaw.length - 1];
     if (!blockedFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.block.get_blocked_list.success,
-        { blockedList: [], cursor: null },
-      );
+      return { kind: 'success', data: { blockedList: [], cursor: null } };
     }
 
     // map response data
@@ -279,10 +195,13 @@ export class BlockService {
     const cursorPayload: Cursor = { id: blockedFinal.id };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
 
-    return sendResponse(HttpStatus.OK, message.block.get_blocked_list.success, {
-      blockedList: blockedList,
-      cursor: cursorToken,
-    });
+    return {
+      kind: 'success',
+      data: {
+        blockedList: blockedList,
+        cursor: cursorToken,
+      },
+    };
   }
 
   async getBlockStatus(currentUser: AuthUser, targetUsername: string) {
@@ -290,26 +209,12 @@ export class BlockService {
     const targetUserFound =
       await this.blockRepo.findUserByUsername(targetUsername);
     if (!targetUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.get_block_status.user_not_found,
-          undefined,
-          errorCode.block.get_block_status.user_not_found,
-        ),
-      );
+      throw new BlockGetBlockStatusUserNotFoundException();
     }
 
     // prevent checking self
     if (currentUser.sub === targetUserFound.id) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.block.get_block_status.cant_self_check,
-          undefined,
-          errorCode.block.get_block_status.cant_self_check,
-        ),
-      );
+      throw new BlockGetBlockStatusCantSelfCheckException();
     }
 
     // hide existence if current user is blocked by target user
@@ -318,14 +223,7 @@ export class BlockService {
       currentUser.sub,
     );
     if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.block.get_block_status.user_not_found,
-          undefined,
-          errorCode.block.get_block_status.user_not_found,
-        ),
-      );
+      throw new BlockGetBlockStatusUserNotFoundException();
     }
 
     // check block status
@@ -334,17 +232,16 @@ export class BlockService {
       targetUserFound.id,
     );
 
-    return sendResponse(HttpStatus.OK, message.block.get_block_status.success, {
-      isBlocked: isBlocked,
-    });
+    return {
+      kind: 'success',
+      data: {
+        isBlocked: isBlocked,
+      },
+    };
   }
   async getBlockedUserCount(currentUserId: number) {
     const blockedUserCount =
       await this.blockRepo.getBlockedUserCount(currentUserId);
-    return sendResponse(
-      HttpStatus.OK,
-      message.block.get_blocked_user_count.success,
-      blockedUserCount,
-    );
+    return { kind: 'success', data: blockedUserCount };
   }
 }

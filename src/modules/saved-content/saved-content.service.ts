@@ -1,12 +1,12 @@
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
+  ContentSaveContentAlreadyException,
+  ContentSaveContentNotFoundException,
+  ContentSaveContentUserNotFoundException,
+  ContentUnsaveContentNotFoundException,
+  ContentUnsaveContentNotSaveException,
+  ContentUnsaveContentUserNotFoundException,
+} from '../../common/exception';
 import { SavedContentRepository } from './saved-content.repository';
 
 /**
@@ -33,26 +33,12 @@ export class SavedContentService {
 
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.save_content.user_not_found,
-          undefined,
-          errorCode.content.save_content.user_not_found,
-        ),
-      );
+      throw new ContentSaveContentUserNotFoundException();
     }
 
     // Reject the request if the post content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.save_content.not_found,
-          undefined,
-          errorCode.content.save_content.not_found,
-        ),
-      );
+      throw new ContentSaveContentNotFoundException();
     }
 
     // Check whether the content is already saved by this user.
@@ -63,14 +49,7 @@ export class SavedContentService {
 
     // Prevent duplicate save operations.
     if (isAlreadySaved) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.save_content.already,
-          undefined,
-          errorCode.content.save_content.already,
-        ),
-      );
+      throw new ContentSaveContentAlreadyException();
     }
 
     // Create a new saved-content record.
@@ -87,42 +66,21 @@ export class SavedContentService {
         this.savedContentRepo.findPostById(contentId),
       ]);
       if (!currentUserStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.save_content.user_not_found,
-            undefined,
-            errorCode.content.save_content.user_not_found,
-          ),
-        );
+        throw new ContentSaveContentUserNotFoundException();
       }
       if (!contentStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.save_content.not_found,
-            undefined,
-            errorCode.content.save_content.not_found,
-          ),
-        );
+        throw new ContentSaveContentNotFoundException();
       }
       throw error;
     }
 
     // Handle unexpected insert failure.
     if (!isSaved) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.save_content.already,
-          undefined,
-          errorCode.content.save_content.already,
-        ),
-      );
+      throw new ContentSaveContentAlreadyException();
     }
 
     // Return a standardized success response.
-    return sendResponse(HttpStatus.OK, message.content.save_content.success);
+    return { kind: 'success' };
   }
 
   /**
@@ -142,26 +100,12 @@ export class SavedContentService {
 
     // Reject the request if the user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.unsave_content.user_not_found,
-          undefined,
-          errorCode.content.unsave_content.user_not_found,
-        ),
-      );
+      throw new ContentUnsaveContentUserNotFoundException();
     }
 
     // Reject the request if the post content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.unsave_content.not_found,
-          undefined,
-          errorCode.content.unsave_content.not_found,
-        ),
-      );
+      throw new ContentUnsaveContentNotFoundException();
     }
 
     // Delete the saved-content record.
@@ -177,36 +121,15 @@ export class SavedContentService {
         this.savedContentRepo.findPostById(contentId),
       ]);
       if (!currentUserStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.unsave_content.user_not_found,
-            undefined,
-            errorCode.content.unsave_content.user_not_found,
-          ),
-        );
+        throw new ContentUnsaveContentUserNotFoundException();
       }
       if (!contentStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.unsave_content.not_found,
-            undefined,
-            errorCode.content.unsave_content.not_found,
-          ),
-        );
+        throw new ContentUnsaveContentNotFoundException();
       }
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.unsave_content.not_save,
-          undefined,
-          errorCode.content.unsave_content.not_save,
-        ),
-      );
+      throw new ContentUnsaveContentNotSaveException();
     }
 
     // Return a standardized success response.
-    return sendResponse(HttpStatus.OK, message.content.unsave_content.success);
+    return { kind: 'success' };
   }
 }

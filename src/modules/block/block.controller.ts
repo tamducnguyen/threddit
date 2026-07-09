@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Controller,
   Delete,
@@ -24,6 +26,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 @SkipThrottle({ public: true })
 export class BlockController {
   constructor(private readonly blockService: BlockService) {}
+  @ResponseMessage({ success: message.block.post_block.success })
   @HttpCode(HttpStatus.OK)
   @Post(':username')
   async block(
@@ -34,6 +37,7 @@ export class BlockController {
     return await this.blockService.block(currentUser, usernameDTO.username);
   }
 
+  @ResponseMessage({ success: message.block.get_blocked_list.success })
   @HttpCode(HttpStatus.OK)
   @Get()
   async getBlockedList(
@@ -48,6 +52,7 @@ export class BlockController {
     );
   }
 
+  @ResponseMessage({ success: message.block.get_block_status.success })
   @HttpCode(HttpStatus.OK)
   @Get(':username/status')
   async getBlockStatus(
@@ -60,6 +65,7 @@ export class BlockController {
     );
   }
 
+  @ResponseMessage({ success: message.block.delete_block.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':username')
   async unblock(
@@ -70,6 +76,7 @@ export class BlockController {
     return await this.blockService.unblock(currentUser, usernameDTO.username);
   }
 
+  @ResponseMessage({ success: message.block.get_blocked_user_count.success })
   @HttpCode(HttpStatus.OK)
   @Get('count')
   async getBlockedUserCount(@CurrentUser() currentUser: AuthUser) {

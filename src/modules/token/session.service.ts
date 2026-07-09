@@ -1,20 +1,17 @@
 import { randomBytes } from 'node:crypto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable } from '@nestjs/common';
 import {
-  HttpStatus,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+  CommonAccountNotActivateException,
+  CommonSessionRevokedException,
+  CommonTokenNotFoundException,
+} from '../../common/exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { prefixCache, ttlCache } from '../../config/cache.config';
 import { SessionEntity } from '../../entities/session.entity';
 import { UserEntity } from '../../entities/user.entity';
-import { errorCode } from '../../common/helper/errorcode.helper';
-import { message } from '../../common/helper/message.helper';
-import { sendResponse } from '../../common/helper/response.helper';
 import { AuthUser } from './authuser.interface';
 
 interface SessionCacheEntry {
@@ -58,14 +55,7 @@ export class SessionService {
     const cached = await this.cacheManager.get<SessionCacheEntry>(cacheKey);
     if (cached) {
       if (cached.isRevoked) {
-        throw new UnauthorizedException(
-          sendResponse(
-            HttpStatus.UNAUTHORIZED,
-            message.common.session_revoked,
-            undefined,
-            errorCode.common.session_revoked,
-          ),
-        );
+        throw new CommonSessionRevokedException();
       }
       //extend ttl on hit
       await this.cacheManager.set<SessionCacheEntry>(
@@ -85,14 +75,7 @@ export class SessionService {
       relations: { user: true },
     });
     if (!sessionFound) {
-      throw new UnauthorizedException(
-        sendResponse(
-          HttpStatus.UNAUTHORIZED,
-          message.common.token_not_found,
-          undefined,
-          errorCode.common.token_not_found,
-        ),
-      );
+      throw new CommonTokenNotFoundException();
     }
     if (sessionFound.isRevoked != false) {
       await this.cacheManager.set<SessionCacheEntry>(
@@ -100,24 +83,10 @@ export class SessionService {
         { sub: sessionFound.user.id, isRevoked: true },
         ttlCache.session,
       );
-      throw new UnauthorizedException(
-        sendResponse(
-          HttpStatus.UNAUTHORIZED,
-          message.common.session_revoked,
-          undefined,
-          errorCode.common.session_revoked,
-        ),
-      );
+      throw new CommonSessionRevokedException();
     }
     if (sessionFound.user.isActivate != true) {
-      throw new UnauthorizedException(
-        sendResponse(
-          HttpStatus.UNAUTHORIZED,
-          message.common.account_not_activate,
-          undefined,
-          errorCode.common.account_not_activate,
-        ),
-      );
+      throw new CommonAccountNotActivateException();
     }
     await this.cacheManager.set<SessionCacheEntry>(
       cacheKey,

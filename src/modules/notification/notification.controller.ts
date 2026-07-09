@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Controller,
   Delete,
@@ -29,6 +31,10 @@ export class NotificationController {
   async createStream(@CurrentUser() currentUser: AuthUser) {
     return await this.notificationService.createStream(currentUser);
   }
+  @ResponseMessage({
+    no_content: message.notification.get_notification.no_content,
+    success: message.notification.get_notification.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get()
   async getNotification(
@@ -40,6 +46,10 @@ export class NotificationController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({
+    no_content: message.notification.get_unread_notification.no_content,
+    success: message.notification.get_unread_notification.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('unread')
   async getUnreadNotification(
@@ -51,6 +61,7 @@ export class NotificationController {
       cursorDTO?.cursor,
     );
   }
+  @ResponseMessage({ success: message.notification.read_notification.success })
   @HttpCode(HttpStatus.OK)
   @Post(':notificationId/read')
   async readNotification(
@@ -62,6 +73,9 @@ export class NotificationController {
       readnotifDTO.notificationId,
     );
   }
+  @ResponseMessage({
+    success: message.notification.delete_notification.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Delete(':notificationId')
   async deleteNotification(
@@ -73,11 +87,15 @@ export class NotificationController {
       deleteNotificationDTO.notificationId,
     );
   }
+  @ResponseMessage({ success: message.notification.get_count_unread.success })
   @HttpCode(HttpStatus.OK)
   @Get('count/unread')
   async getCountUnreadNotification(@CurrentUser('sub') id: number) {
     return await this.notificationService.getCountUnreadNotification(id);
   }
+  @ResponseMessage({
+    success: message.notification.read_all_notifications.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Post('readall')
   async readAllNotifications(@CurrentUser() currentUser: AuthUser) {

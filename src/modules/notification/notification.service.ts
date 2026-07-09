@@ -1,18 +1,20 @@
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  NotificationCreateStreamUserNotFoundException,
+  NotificationDeleteNotificationNotFoundException,
+  NotificationGetCountUnreadUserNotFoundException,
+  NotificationGetNotificationCursorInvalidException,
+  NotificationGetNotificationUserNotFoundException,
+  NotificationGetUnreadNotificationCursorInvalidException,
+  NotificationGetUnreadNotificationUserNotFoundException,
+  NotificationReadNotificationNotFoundOrAlreadyReadException,
+} from '../../common/exception';
 import { Observable, Subject } from 'rxjs';
 import { AuthUser } from '../token/authuser.interface';
 import { NotificationEntity } from '../../entities/notification.entity';
 import { NotificationRepository } from './notification.repository';
-import { message } from '../../common/helper/message.helper';
 import { JwtService } from '@nestjs/jwt';
 import { Cursor } from '../../common/interface/cursor.interface';
-import { sendResponse } from '../../common/helper/response.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { ConfigService } from '@nestjs/config';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 
@@ -59,14 +61,7 @@ export class NotificationService {
     //check if user exist
     const userFound = await this.notificationRepo.findUserById(currentUser.sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.notification.create_stream.user_not_found,
-          undefined,
-          errorCode.notification.create_stream.user_not_found,
-        ),
-      );
+      throw new NotificationCreateStreamUserNotFoundException();
     }
     //create stream
     const heartbeatIntervalMs =
@@ -139,14 +134,7 @@ export class NotificationService {
     const { sub } = currentUser;
     const userFound = await this.notificationRepo.findUserById(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.notification.get_notification.user_not_found,
-          undefined,
-          errorCode.notification.get_notification.user_not_found,
-        ),
-      );
+      throw new NotificationGetNotificationUserNotFoundException();
     }
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
@@ -154,14 +142,7 @@ export class NotificationService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.notification.get_notification.cursor_invalid,
-            undefined,
-            errorCode.notification.get_notification.cursor_invalid,
-          ),
-        );
+        throw new NotificationGetNotificationCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -174,11 +155,7 @@ export class NotificationService {
     //check if has notification
     const notificationFinal = notificationsRaw[notificationsRaw.length - 1];
     if (!notificationFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.notification.get_notification.no_content,
-        { notifications: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { notifications: [], cursor: null } };
     }
     //load actor info for response (backward-compatible fields)
     const actorIds = Array.from(
@@ -226,11 +203,7 @@ export class NotificationService {
       notifications: notifications,
       cursor: cursorToken,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.notification.get_notification.success,
-      data,
-    );
+    return { kind: 'success', data: data };
   }
   /**
    * get unread notifications
@@ -243,14 +216,7 @@ export class NotificationService {
     const { sub } = currentUser;
     const userFound = await this.notificationRepo.findUserById(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.notification.get_unread_notification.user_not_found,
-          undefined,
-          errorCode.notification.get_unread_notification.user_not_found,
-        ),
-      );
+      throw new NotificationGetUnreadNotificationUserNotFoundException();
     }
     //check if has cursor
     let cursorDecoded: Cursor | undefined;
@@ -258,14 +224,7 @@ export class NotificationService {
       try {
         cursorDecoded = await this.jwtService.verifyAsync<Cursor>(cursor);
       } catch {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.notification.get_unread_notification.cursor_invalid,
-            undefined,
-            errorCode.notification.get_unread_notification.cursor_invalid,
-          ),
-        );
+        throw new NotificationGetUnreadNotificationCursorInvalidException();
       }
     } else {
       cursorDecoded = undefined;
@@ -280,11 +239,10 @@ export class NotificationService {
     const unreadNotificationFinal =
       unreadNotificationRaw[unreadNotificationRaw.length - 1];
     if (!unreadNotificationFinal) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.notification.get_unread_notification.no_content,
-        { unreadNotifications: [], cursor: null },
-      );
+      return {
+        kind: 'no_content',
+        data: { unreadNotifications: [], cursor: null },
+      };
     }
     const actorIds = Array.from(
       new Set(
@@ -329,11 +287,7 @@ export class NotificationService {
       unreadNotifications: unreadNotifications,
       cursor: cursorToken,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.notification.get_unread_notification.success,
-      data,
-    );
+    return { kind: 'success', data: data };
   }
   /**
    * read notification
@@ -348,19 +302,9 @@ export class NotificationService {
       userId,
     );
     if (!updateResult.affected) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.notification.read_notification.not_found_or_already_read,
-          undefined,
-          errorCode.notification.read_notification.not_found_or_already_read,
-        ),
-      );
+      throw new NotificationReadNotificationNotFoundOrAlreadyReadException();
     }
-    return sendResponse(
-      HttpStatus.OK,
-      message.notification.read_notification.success,
-    );
+    return { kind: 'success' };
   }
   async deleteNotification(userId: number, notificationId: number) {
     const deleteResult = await this.notificationRepo.deleteNotification(
@@ -368,48 +312,24 @@ export class NotificationService {
       userId,
     );
     if (!deleteResult.affected) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.notification.delete_notification.not_found,
-          undefined,
-          errorCode.notification.delete_notification.not_found,
-        ),
-      );
+      throw new NotificationDeleteNotificationNotFoundException();
     }
-    return sendResponse(
-      HttpStatus.OK,
-      message.notification.delete_notification.success,
-    );
+    return { kind: 'success' };
   }
   async getCountUnreadNotification(sub: number) {
     //check if user exist
     const userFound = await this.notificationRepo.findUserById(sub);
     if (!userFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.notification.get_count_unread.user_not_found,
-          undefined,
-          errorCode.notification.get_count_unread.user_not_found,
-        ),
-      );
+      throw new NotificationGetCountUnreadUserNotFoundException();
     }
     //get unread notification number
     const unreadNotificationNumber =
       await this.notificationRepo.getUnreadNotificationCount(userFound);
-    return sendResponse(
-      HttpStatus.OK,
-      message.notification.get_count_unread.success,
-      unreadNotificationNumber,
-    );
+    return { kind: 'success', data: unreadNotificationNumber };
   }
   async readAllNotifications(currentUser: AuthUser) {
     //switch is_read status to true
     await this.notificationRepo.readAllNotifications(currentUser.sub);
-    return sendResponse(
-      HttpStatus.OK,
-      message.notification.read_all_notifications.success,
-    );
+    return { kind: 'success' };
   }
 }

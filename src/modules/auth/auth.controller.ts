@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -29,16 +31,19 @@ export class AuthController {
     private readonly googleAuthService: GoogleAuthService,
     private readonly configService: ConfigService,
   ) {}
+  @ResponseMessage({ success: message.auth.signup.success })
   @HttpCode(HttpStatus.OK)
   @Post('signup')
   async signUp(@Body() signUpDTO: SignUpDTO) {
     return await this.authService.signUp(signUpDTO);
   }
+  @ResponseMessage({ success: message.auth.verify.success })
   @HttpCode(HttpStatus.OK)
   @Post('verifyaccount')
   async verifyAccount(@Body() verifyAccountDTO: VerifyAccountDTO) {
     return await this.authService.verifyAccount(verifyAccountDTO);
   }
+  @ResponseMessage({ success: message.auth.signin.success })
   @HttpCode(HttpStatus.OK)
   @Post('signin')
   async signIn(
@@ -55,11 +60,13 @@ export class AuthController {
     );
     return signInResponse;
   }
+  @ResponseMessage({ success: message.auth.reset_password.success })
   @HttpCode(HttpStatus.OK)
   @Post('resetpassword')
   async resetPassword(@Body() resetPasswordDTO: ResetPasswordDTO) {
     return await this.authService.resetPassword(resetPasswordDTO);
   }
+  @ResponseMessage({ success: message.auth.verify_reset_password.success })
   @HttpCode(HttpStatus.OK)
   @Post('verifyresetpassword')
   async verifyResetPassword(
@@ -67,11 +74,13 @@ export class AuthController {
   ) {
     return await this.authService.verifyResetPassword(verifyResetPasswordDTO);
   }
+  @ResponseMessage({ success: message.auth.resend_verification_code.success })
   @HttpCode(HttpStatus.OK)
   @Post('resendverify')
   async resendVerify(@Body() resendVerifyDTO: ResendVerifyDTO) {
     return await this.authService.resendVerify(resendVerifyDTO);
   }
+  @ResponseMessage({ success: message.auth.google_auth.success })
   @HttpCode(HttpStatus.OK)
   @Post('google')
   async googleCode(

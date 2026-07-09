@@ -1,23 +1,22 @@
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
-import { message } from '../../common/helper/message.helper';
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+  AuthGoogleAuthAccountNotActivateException,
+  AuthGoogleAuthAlreadyAuthMethodException,
+  AuthGoogleAuthEmailNotVerifiedException,
+  AuthGoogleAuthIdTokenMissingException,
+  AuthGoogleAuthInvalidTokenException,
+} from '../../common/exception';
 import { AuthRepository } from './auth.repository';
 import { UserEntity } from '../../entities/user.entity';
 import { GoogleData } from './interfaces/googledata.interface';
-import { sendResponse } from '../../common/helper/response.helper';
 import { cookieOptions, sendCookie } from '../../common/helper/cookie.helper';
 import { Response } from 'express';
 import { SessionService } from '../token/session.service';
 import { GoogleCodeDTO } from './dtos/googlecode.dto';
 import { AuthMethod } from '../../enum/authmethod.enum';
 import { generateUniqueUsername } from '../../common/helper/username.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
 @Injectable()
 export class GoogleAuthService {
   private client: OAuth2Client;
@@ -44,14 +43,7 @@ export class GoogleAuthService {
     // Exchange authorization code for tokens and validate id_token.
     const { tokens } = await this.client.getToken(googleCode);
     if (!tokens.id_token) {
-      throw new UnauthorizedException(
-        sendResponse(
-          HttpStatus.UNAUTHORIZED,
-          message.auth.google_auth.id_token_missing,
-          undefined,
-          errorCode.auth.google_auth.id_token_missing,
-        ),
-      );
+      throw new AuthGoogleAuthIdTokenMissingException();
     }
     // Verify token audience and extract payload.
     const ticket = await this.client.verifyIdToken({
@@ -60,25 +52,11 @@ export class GoogleAuthService {
     });
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {
-      throw new UnauthorizedException(
-        sendResponse(
-          HttpStatus.UNAUTHORIZED,
-          message.auth.google_auth.invalid_token,
-          undefined,
-          errorCode.auth.google_auth.invalid_token,
-        ),
-      );
+      throw new AuthGoogleAuthInvalidTokenException();
     }
     // Only allow verified Google emails.
     if (!payload.email_verified) {
-      throw new UnauthorizedException(
-        sendResponse(
-          HttpStatus.UNAUTHORIZED,
-          message.auth.google_auth.email_not_verified,
-          undefined,
-          errorCode.auth.google_auth.email_not_verified,
-        ),
-      );
+      throw new AuthGoogleAuthEmailNotVerifiedException();
     }
     // Return minimal Google identity info for later steps.
     const googleData: GoogleData = { email: payload.email, sub: payload.sub };
@@ -96,24 +74,10 @@ export class GoogleAuthService {
     const userFound = await this.authRepository.findUser(email);
     if (userFound) {
       if (userFound.authMethod == AuthMethod.CREDENTIAL) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.auth.google_auth.already_auth_method,
-            undefined,
-            errorCode.auth.google_auth.already_auth_method,
-          ),
-        );
+        throw new AuthGoogleAuthAlreadyAuthMethodException();
       }
       if (userFound.isActivate == false) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.auth.google_auth.account_not_activate,
-            undefined,
-            errorCode.auth.google_auth.account_not_activate,
-          ),
-        );
+        throw new AuthGoogleAuthAccountNotActivateException();
       }
       // Create session and set auth cookie.
       const accessToken = await this.sessionService.createSession(userFound);
@@ -123,10 +87,13 @@ export class GoogleAuthService {
         cookieOptions.name.THREDDIT_AUTH,
         accessToken,
       );
-      return sendResponse(HttpStatus.OK, message.auth.google_auth.success, {
-        userId: userFound.id,
-        THREDDIT_AUTH: accessToken,
-      });
+      return {
+        kind: 'success',
+        data: {
+          userId: userFound.id,
+          THREDDIT_AUTH: accessToken,
+        },
+      };
     }
     // Generate a globally unique username from email prefix.
     const baseUsername = email.split('@')[0];
@@ -155,10 +122,13 @@ export class GoogleAuthService {
       cookieOptions.name.THREDDIT_AUTH,
       accessToken,
     );
-    return sendResponse(HttpStatus.OK, message.auth.google_auth.success, {
-      userId: userCreated.id,
-      AUTH_METHOD: userCreated.authMethod,
-      THREDDIT_AUTH: accessToken,
-    });
+    return {
+      kind: 'success',
+      data: {
+        userId: userCreated.id,
+        AUTH_METHOD: userCreated.authMethod,
+        THREDDIT_AUTH: accessToken,
+      },
+    };
   }
 }

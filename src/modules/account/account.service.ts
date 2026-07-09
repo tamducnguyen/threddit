@@ -1,13 +1,20 @@
+import { Inject, Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+  AccountDeleteAccountInvalidOrExpiredCodeException,
+  AccountDeleteAccountMailThrottledException,
+  AccountDeleteAccountTooManyAttemptsException,
+  AccountDeleteAccountUserNotFoundException,
+  AccountGetUserInfoUserNotFoundException,
+  AccountUpdatePasswordNotSupportThisAuthMethodException,
+  AccountUpdatePasswordPassportSameException,
+  AccountUpdatePasswordPasswordIncorrectException,
+  AccountUpdatePasswordPasswordMismatchException,
+  AccountUpdatePasswordUserNotFoundException,
+  AccountUpdateUsernameUserNotFoundException,
+  AccountUpdateUsernameUsernameDuplicateException,
+  AccountUpdateUsernameUsernameExistException,
+} from '../../common/exception';
 import { AccountRepository } from './account.repository';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { UpdatePasswordDTO } from './dtos/updatepassword.dto';
 import { AuthUser } from '../token/authuser.interface';
 import { HashHelper } from '../../common/helper/hash.helper';
@@ -36,7 +43,7 @@ export class AccountService {
     await this.accountRepository.revokeSessionByToken(accessToken);
     //mark the session revoked in cache after the db write
     await this.sessionService.revokeSessionCache(accessToken, currentUser.sub);
-    return sendResponse(HttpStatus.OK, message.account.signout.success);
+    return { kind: 'success' };
   }
   async updatePassword(
     currentuser: AuthUser,
@@ -49,46 +56,18 @@ export class AccountService {
     //check auth method
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_password.user_not_found,
-          undefined,
-          errorCode.account.update_password.user_not_found,
-        ),
-      );
+      throw new AccountUpdatePasswordUserNotFoundException();
     }
     if (userFound.authMethod != AuthMethod.CREDENTIAL) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_password.not_support_this_auth_method,
-          undefined,
-          errorCode.account.update_password.not_support_this_auth_method,
-        ),
-      );
+      throw new AccountUpdatePasswordNotSupportThisAuthMethodException();
     }
     //compare old password and new password
     if (oldPassword === newPassword) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_password.passport_same,
-          undefined,
-          errorCode.account.update_password.passport_same,
-        ),
-      );
+      throw new AccountUpdatePasswordPassportSameException();
     }
     //compare new password and confirmed one
     if (newPassword !== confirmedNewPassword) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_password.password_mismatch,
-          undefined,
-          errorCode.account.update_password.password_mismatch,
-        ),
-      );
+      throw new AccountUpdatePasswordPasswordMismatchException();
     }
     //compare old password with stored one
     const isCorrectPassword = await HashHelper.compare(
@@ -98,14 +77,7 @@ export class AccountService {
     if (!isCorrectPassword) {
       await this.accountRepository.revokeSessionByToken(accessToken);
       await this.sessionService.revokeSessionCache(accessToken, sub);
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_password.password_incorrect,
-          undefined,
-          errorCode.account.update_password.password_incorrect,
-        ),
-      );
+      throw new AccountUpdatePasswordPasswordIncorrectException();
     }
     //change password and revoke all session
     const newPasswordHashed = await HashHelper.hash(newPassword);
@@ -118,7 +90,7 @@ export class AccountService {
     );
     //mark revoked sessions in cache after the db write
     await this.sessionService.revokeSessionCaches(sessionTokens, userFound.id);
-    return sendResponse(HttpStatus.OK, message.account.update_password.success);
+    return { kind: 'success' };
   }
   async updateUsername(
     currentUser: AuthUser,
@@ -129,24 +101,10 @@ export class AccountService {
     //check if username duplicated
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_username.user_not_found,
-          undefined,
-          errorCode.account.update_username.user_not_found,
-        ),
-      );
+      throw new AccountUpdateUsernameUserNotFoundException();
     }
     if (username == userFound.username) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.update_username.username_duplicate,
-          undefined,
-          errorCode.account.update_username.username_duplicate,
-        ),
-      );
+      throw new AccountUpdateUsernameUsernameDuplicateException();
     }
     //update username
     try {
@@ -157,18 +115,11 @@ export class AccountService {
         (error as { driverError?: { code?: string } })?.driverError?.code ===
           '23505'
       ) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.account.update_username.username_exist,
-            undefined,
-            errorCode.account.update_username.username_exist,
-          ),
-        );
+        throw new AccountUpdateUsernameUsernameExistException();
       }
       throw error;
     }
-    return sendResponse(HttpStatus.OK, message.account.update_username.success);
+    return { kind: 'success' };
   }
   /**
    * get user information
@@ -177,66 +128,34 @@ export class AccountService {
     const { sub } = currentUser;
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.get_user_info.user_not_found,
-          undefined,
-          errorCode.account.get_user_info.user_not_found,
-        ),
-      );
+      throw new AccountGetUserInfoUserNotFoundException();
     }
     const accountinfo = {
       email: userFound.email,
       username: userFound.username,
       authMethod: userFound.authMethod,
     };
-    return sendResponse(
-      HttpStatus.OK,
-      message.account.get_user_info.success,
-      accountinfo,
-    );
+    return { kind: 'success', data: accountinfo };
   }
   async requestDeleteAccount(currentUser: AuthUser) {
     const { sub } = currentUser;
     // Ensure user exists before sending delete verification.
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.user_not_found,
-          undefined,
-          errorCode.account.delete_account.user_not_found,
-        ),
-      );
+      throw new AccountDeleteAccountUserNotFoundException();
     }
     // Rate limit attemp verification by email.
     const keyAttempts = prefixCache.deleteaccount_attemps + userFound.email;
     const attempts = (await this.cacheManager.get<number>(keyAttempts)) || 0;
     if (attempts >= 5) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.too_many_attempts,
-          undefined,
-          errorCode.account.delete_account.too_many_attempts,
-        ),
-      );
+      throw new AccountDeleteAccountTooManyAttemptsException();
     }
     // Throttle repeated mail sends.
     const keyAlreadyMail = prefixCache.deleteaccount_mail + userFound.email;
     const isAlreadySendMail =
       await this.cacheManager.get<boolean>(keyAlreadyMail);
     if (isAlreadySendMail) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.mail_throttled,
-          undefined,
-          errorCode.account.delete_account.mail_throttled,
-        ),
-      );
+      throw new AccountDeleteAccountMailThrottledException();
     }
     // Replace any previous code with a fresh one.
     const keyVerificationCode =
@@ -262,10 +181,7 @@ export class AccountService {
           error instanceof Error ? error.stack : String(error),
         );
       });
-    return sendResponse(
-      HttpStatus.OK,
-      message.account.delete_account.mail_sent,
-    );
+    return { kind: 'mail_sent' };
   }
   async verifyDeleteAccount(
     currentUser: AuthUser,
@@ -276,27 +192,13 @@ export class AccountService {
     // Ensure user exists before processing verification.
     const userFound = await this.accountRepository.findUser(sub);
     if (!userFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.user_not_found,
-          undefined,
-          errorCode.account.delete_account.user_not_found,
-        ),
-      );
+      throw new AccountDeleteAccountUserNotFoundException();
     }
     // Rate limit verification attempts.
     const keyAttempts = prefixCache.deleteaccount_attemps + userFound.email;
     let attempts = (await this.cacheManager.get<number>(keyAttempts)) || 0;
     if (attempts >= 5) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.too_many_attempts,
-          undefined,
-          errorCode.account.delete_account.too_many_attempts,
-        ),
-      );
+      throw new AccountDeleteAccountTooManyAttemptsException();
     }
     // Validate cached verification code.
     const keyVerificationCode =
@@ -304,26 +206,12 @@ export class AccountService {
     const verificationCodeCached =
       await this.cacheManager.get<string>(keyVerificationCode);
     if (!verificationCodeCached) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.invalid_or_expired_code,
-          undefined,
-          errorCode.account.delete_account.invalid_or_expired_code,
-        ),
-      );
+      throw new AccountDeleteAccountInvalidOrExpiredCodeException();
     }
     if (String(verificationCode) !== String(verificationCodeCached)) {
       // Count bad attempts to slow brute force.
       await this.cacheManager.set(keyAttempts, ++attempts, ttlCache.attemps);
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.account.delete_account.invalid_or_expired_code,
-          undefined,
-          errorCode.account.delete_account.invalid_or_expired_code,
-        ),
-      );
+      throw new AccountDeleteAccountInvalidOrExpiredCodeException();
     }
     // Delete user and sessions after successful verification.
     // Fetch session tokens first, the rows are gone after the transaction.
@@ -338,6 +226,6 @@ export class AccountService {
     await this.cacheManager.del(
       prefixCache.deleteaccount_mail + userFound.email,
     );
-    return sendResponse(HttpStatus.OK, message.account.delete_account.success);
+    return { kind: 'success' };
   }
 }

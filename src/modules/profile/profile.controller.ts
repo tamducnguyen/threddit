@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -29,12 +31,17 @@ import { SearchProfileDTO } from './dtos/search-profile.dto';
 @SkipThrottle({ public: true })
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+  @ResponseMessage({ success: message.profile.get_profile.success })
   @HttpCode(HttpStatus.OK)
   @Get()
   async getCurrentProfile(@CurrentUser() currentUser: AuthUser) {
     return await this.profileService.getSelfProfile(currentUser);
   }
 
+  @ResponseMessage({
+    no_content: message.profile.search_profile.no_content,
+    success: message.profile.search_profile.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('search')
   async searchProfiles(
@@ -48,6 +55,7 @@ export class ProfileController {
     );
   }
 
+  @ResponseMessage({ success: message.profile.get_profile.success })
   @HttpCode(HttpStatus.OK)
   @Get('/:username')
   async getProfile(
@@ -59,6 +67,9 @@ export class ProfileController {
       usernameDTO.username,
     );
   }
+  @ResponseMessage({
+    presign_success: message.profile.update_avatar.presign_success,
+  })
   @HttpCode(HttpStatus.OK)
   @Post('avatar/presign')
   async requestAvatarPresignUrl(
@@ -70,6 +81,7 @@ export class ProfileController {
       avatarPresignDTO,
     );
   }
+  @ResponseMessage({ success: message.profile.update_avatar.success })
   @HttpCode(HttpStatus.OK)
   @Post('avatar/confirm')
   async confirmAvatarUpload(
@@ -81,6 +93,9 @@ export class ProfileController {
       avatarConfirmDTO,
     );
   }
+  @ResponseMessage({
+    presign_success: message.profile.update_background.presign_success,
+  })
   @HttpCode(HttpStatus.OK)
   @Post('background/presign')
   async requestBackgroundPresignUrl(
@@ -92,6 +107,7 @@ export class ProfileController {
       backgroundPresignDTO,
     );
   }
+  @ResponseMessage({ success: message.profile.update_background.success })
   @HttpCode(HttpStatus.OK)
   @Post('background/confirm')
   async confirmBackgroundUpload(
@@ -103,6 +119,7 @@ export class ProfileController {
       backgroundConfirmDTO,
     );
   }
+  @ResponseMessage({ success: message.profile.update_profile.success })
   @HttpCode(HttpStatus.OK)
   @Patch('info')
   async updateProfile(

@@ -1,16 +1,8 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CommonTokenNotFoundException } from '../exception';
 import { Request } from 'express';
 import { SessionService } from '../../modules/token/session.service';
 import { AuthUser } from '../../modules/token/authuser.interface';
-import { message } from '../helper/message.helper';
-import { sendResponse } from '../helper/response.helper';
-import { errorCode } from '../helper/errorcode.helper';
 
 @Injectable()
 export class SessionGuard implements CanActivate {
@@ -32,13 +24,6 @@ export class SessionGuard implements CanActivate {
       request.user = await this.sessionService.validateSession(sessionId);
       return true;
     }
-    throw new UnauthorizedException(
-      sendResponse(
-        HttpStatus.UNAUTHORIZED,
-        message.common.token_not_found,
-        undefined,
-        errorCode.common.token_not_found,
-      ),
-    );
+    throw new CommonTokenNotFoundException();
   }
 }

@@ -1,20 +1,36 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { InjectQueue } from '@nestjs/bullmq';
 import { JwtService } from '@nestjs/jwt';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+  BaseServiceException,
+  ContentCommentConfirmMediaFailedException,
+  ContentCommentContentNotFoundException,
+  ContentCommentOnlyOneMediaAllowedException,
+  ContentCommentParentCommentNotFoundException,
+  ContentCommentParentCommenterBlockException,
+  ContentCommentTargetUserBlockException,
+  ContentCommentTextOrMediaRequiredException,
+  ContentCommentUserNotFoundException,
+  ContentDeleteCommentNotFoundException,
+  ContentGetChildCommentsNotFoundException,
+  ContentGetCommentContentNotFoundException,
+  ContentGetCommentCursorInvalidException,
+  ContentGetCommentTargetUserBlockException,
+  ContentGetDetailCommentNotFoundException,
+  ContentGetDetailCommentTargetUserBlockException,
+  ContentUpdateCommentConfirmMediaFailedException,
+  ContentUpdateCommentMediaActionConflictException,
+  ContentUpdateCommentNoFieldToUpdateException,
+  ContentUpdateCommentNotFoundException,
+  ContentUpdateCommentOnlyOneMediaAllowedException,
+  ContentUpdateCommentParentCommenterBlockException,
+  ContentUpdateCommentTargetUserBlockException,
+  ContentUpdateCommentTextOrMediaRequiredException,
+  ServiceExceptionClass,
+} from '../../common/exception';
 import type { Cache } from 'cache-manager';
 import { Queue } from 'bullmq';
-import { errorCode } from '../../common/helper/errorcode.helper';
-import { message } from '../../common/helper/message.helper';
-import { sendResponse } from '../../common/helper/response.helper';
 import { MediaTargetType } from '../../enum/media-target-type.enum';
 import { CommentEntity } from '../../entities/comment.entity';
 import { MediaFileEntity } from '../../entities/media-file.entity';
@@ -62,10 +78,8 @@ export class CommentService {
   private async validateCommentAccess(
     currentUserId: number,
     targetUserId: number,
-    notFoundMessage: string,
-    notFoundErrorCode: string,
-    targetBlockedMessage: string,
-    targetBlockedErrorCode: string,
+    NotFoundException: ServiceExceptionClass,
+    TargetBlockedException: ServiceExceptionClass,
   ) {
     // Skip block validation when the user comments on their own post.
     if (currentUserId === targetUserId) {
@@ -80,26 +94,12 @@ export class CommentService {
 
     // Hide the post when the author has blocked the current user.
     if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          notFoundMessage,
-          undefined,
-          notFoundErrorCode,
-        ),
-      );
+      throw new NotFoundException();
     }
 
     // Reject the request when the current user already blocked the author.
     if (isTargetBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          targetBlockedMessage,
-          undefined,
-          targetBlockedErrorCode,
-        ),
-      );
+      throw new TargetBlockedException();
     }
   }
 
@@ -199,14 +199,7 @@ export class CommentService {
     try {
       return await this.jwtService.verifyAsync<Cursor>(cursor);
     } catch {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.get_comment.cursor_invalid,
-          undefined,
-          errorCode.content.get_comment.cursor_invalid,
-        ),
-      );
+      throw new ContentGetCommentCursorInvalidException();
     }
   }
 
@@ -224,10 +217,8 @@ export class CommentService {
   private async validateCommentChainVisibility(
     currentUserId: number,
     commenterIds: number[],
-    notFoundMessage: string,
-    notFoundErrorCode: string,
-    targetBlockedMessage: string,
-    targetBlockedErrorCode: string,
+    NotFoundException: ServiceExceptionClass,
+    TargetBlockedException: ServiceExceptionClass,
   ) {
     const [isBlockedByAnyCommenter, isAnyCommenterBlocked] = await Promise.all([
       this.commentRepo.isBlockedByAnyTarget(currentUserId, commenterIds),
@@ -238,25 +229,11 @@ export class CommentService {
     ]);
 
     if (isBlockedByAnyCommenter) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          notFoundMessage,
-          undefined,
-          notFoundErrorCode,
-        ),
-      );
+      throw new NotFoundException();
     }
 
     if (isAnyCommenterBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          targetBlockedMessage,
-          undefined,
-          targetBlockedErrorCode,
-        ),
-      );
+      throw new TargetBlockedException();
     }
   }
 
@@ -297,48 +274,25 @@ export class CommentService {
 
     // Stop early when the current user cannot be found.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.comment.user_not_found,
-          undefined,
-          errorCode.content.comment.user_not_found,
-        ),
-      );
+      throw new ContentCommentUserNotFoundException();
     }
 
     // Only allow commenting on an existing post.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.comment.content_not_found,
-          undefined,
-          errorCode.content.comment.content_not_found,
-        ),
-      );
+      throw new ContentCommentContentNotFoundException();
     }
 
     // Reject reply creation when the parent comment does not belong to this post.
     if (commentContentDTO.parentCommentId && !parentCommentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.comment.parent_comment_not_found,
-          undefined,
-          errorCode.content.comment.parent_comment_not_found,
-        ),
-      );
+      throw new ContentCommentParentCommentNotFoundException();
     }
 
     // Enforce access rules derived from the block relationship.
     await this.validateCommentAccess(
       currentUserId,
       contentFound.author.id,
-      message.content.comment.content_not_found,
-      errorCode.content.comment.content_not_found,
-      message.content.comment.target_user_block,
-      errorCode.content.comment.target_user_block,
+      ContentCommentContentNotFoundException,
+      ContentCommentTargetUserBlockException,
     );
 
     // Apply the same block validation against the parent comment owner for replies.
@@ -346,10 +300,8 @@ export class CommentService {
       await this.validateCommentAccess(
         currentUserId,
         parentCommentFound.commenter.id,
-        message.content.comment.parent_comment_not_found,
-        errorCode.content.comment.parent_comment_not_found,
-        message.content.comment.parent_commenter_block,
-        errorCode.content.comment.parent_commenter_block,
+        ContentCommentParentCommentNotFoundException,
+        ContentCommentParentCommenterBlockException,
       );
     }
 
@@ -375,26 +327,12 @@ export class CommentService {
           );
     // Comments currently support at most one attached media file.
     if (mediaKeys.length > 1) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.comment.only_one_media_allowed,
-          undefined,
-          errorCode.content.comment.only_one_media_allowed,
-        ),
-      );
+      throw new ContentCommentOnlyOneMediaAllowedException();
     }
 
     // Reject empty comments when both text and media are missing.
     if (!hasText && !hasMedia) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.comment.text_or_media_required,
-          undefined,
-          errorCode.content.comment.text_or_media_required,
-        ),
-      );
+      throw new ContentCommentTextOrMediaRequiredException();
     }
 
     // Only run toxicity validation when text is actually present.
@@ -425,10 +363,7 @@ export class CommentService {
       await this.commentRepo.deleteCommentById(insertedComment.id);
 
       // Preserve already classified business exceptions.
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
+      if (error instanceof BaseServiceException) {
         throw error;
       }
 
@@ -436,14 +371,7 @@ export class CommentService {
         `Failed to attach media for comment ${insertedComment.id}.`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new InternalServerErrorException(
-        sendResponse(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          message.content.comment.confirm_media_failed,
-          undefined,
-          errorCode.content.comment.confirm_media_failed,
-        ),
-      );
+      throw new ContentCommentConfirmMediaFailedException();
     }
 
     // Clear the upload session after media has been attached successfully.
@@ -489,9 +417,12 @@ export class CommentService {
       currentUserFound.id,
     );
     // Return the standardized success response after the full flow completes.
-    return sendResponse(HttpStatus.OK, message.content.comment.success, {
-      createdComment,
-    });
+    return {
+      kind: 'success',
+      data: {
+        createdComment,
+      },
+    };
   }
 
   /**
@@ -522,25 +453,13 @@ export class CommentService {
       updateCommentDTO.removeMedia === true ||
       updateCommentDTO.mentionedUsers !== undefined;
     if (!hasAnyFieldToUpdate) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_comment.no_field_to_update,
-          undefined,
-          errorCode.content.update_comment.no_field_to_update,
-        ),
-      );
+      throw new ContentUpdateCommentNoFieldToUpdateException();
     }
     //Avoid action conflict
     const wantsToReplaceMedia = Boolean(updateCommentDTO.uploadSessionId);
     const wantsToRemoveMedia = updateCommentDTO.removeMedia === true;
     if (wantsToRemoveMedia && wantsToReplaceMedia) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_comment.media_action_conflict,
-        ),
-      );
+      throw new ContentUpdateCommentMediaActionConflictException();
     }
 
     // Load the owned comment with all relations needed for validation and diffing.
@@ -550,24 +469,15 @@ export class CommentService {
         currentUserId,
       );
     if (!ownedComment) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_comment.not_found,
-          undefined,
-          errorCode.content.update_comment.not_found,
-        ),
-      );
+      throw new ContentUpdateCommentNotFoundException();
     }
 
     // Re-apply post-author visibility rules before allowing the edit.
     await this.validateCommentAccess(
       currentUserId,
       ownedComment.content.author.id,
-      message.content.update_comment.not_found,
-      errorCode.content.update_comment.not_found,
-      message.content.update_comment.target_user_block,
-      errorCode.content.update_comment.target_user_block,
+      ContentUpdateCommentNotFoundException,
+      ContentUpdateCommentTargetUserBlockException,
     );
 
     // Re-apply parent-commenter visibility rules when the comment is a reply.
@@ -575,10 +485,8 @@ export class CommentService {
       await this.validateCommentAccess(
         currentUserId,
         ownedComment.parentComment.commenter.id,
-        message.content.update_comment.not_found,
-        errorCode.content.update_comment.not_found,
-        message.content.update_comment.parent_commenter_block,
-        errorCode.content.update_comment.parent_commenter_block,
+        ContentUpdateCommentNotFoundException,
+        ContentUpdateCommentParentCommenterBlockException,
       );
     }
 
@@ -601,14 +509,7 @@ export class CommentService {
 
     // Comments still support at most one media after the update.
     if (uploadedMediaKeys.length > 1) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_comment.only_one_media_allowed,
-          undefined,
-          errorCode.content.update_comment.only_one_media_allowed,
-        ),
-      );
+      throw new ContentUpdateCommentOnlyOneMediaAllowedException();
     }
 
     // Preserve current media unless the request explicitly removes or replaces it.
@@ -620,14 +521,7 @@ export class CommentService {
 
     // Reject updates that would leave the comment empty.
     if (!finalText && !hasFinalMedia) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_comment.text_or_media_required,
-          undefined,
-          errorCode.content.update_comment.text_or_media_required,
-        ),
-      );
+      throw new ContentUpdateCommentTextOrMediaRequiredException();
     }
 
     // Only scan text for toxicity when client actually sends non-empty text.
@@ -704,14 +598,7 @@ export class CommentService {
       );
 
       if (wantsToReplaceMedia) {
-        throw new InternalServerErrorException(
-          sendResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            message.content.update_comment.confirm_media_failed,
-            undefined,
-            errorCode.content.update_comment.confirm_media_failed,
-          ),
-        );
+        throw new ContentUpdateCommentConfirmMediaFailedException();
       }
 
       throw error;
@@ -749,9 +636,12 @@ export class CommentService {
       currentUserId,
     );
 
-    return sendResponse(HttpStatus.OK, message.content.update_comment.success, {
-      updatedComment,
-    });
+    return {
+      kind: 'success',
+      data: {
+        updatedComment,
+      },
+    };
   }
 
   /**
@@ -774,14 +664,7 @@ export class CommentService {
       currentUserId,
     );
     if (!ownedComment) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.delete_comment.not_found,
-          undefined,
-          errorCode.content.delete_comment.not_found,
-        ),
-      );
+      throw new ContentDeleteCommentNotFoundException();
     }
 
     // Load the full comment subtree because deleting a parent cascades to replies.
@@ -801,7 +684,7 @@ export class CommentService {
       }),
     );
 
-    return sendResponse(HttpStatus.OK, message.content.delete_comment.success);
+    return { kind: 'success' };
   }
 
   /**
@@ -816,33 +699,23 @@ export class CommentService {
     const { comment, commenterIds } =
       await this.commentRepo.getDetailCommentRows(commentId, currentUserId);
     if (!comment) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_detail_comment.not_found,
-          undefined,
-          errorCode.content.get_detail_comment.not_found,
-        ),
-      );
+      throw new ContentGetDetailCommentNotFoundException();
     }
 
     // Check block relationships against every commenter present in the returned chain.
     await this.validateCommentChainVisibility(
       currentUserId,
       commenterIds,
-      message.content.get_detail_comment.not_found,
-      errorCode.content.get_detail_comment.not_found,
-      message.content.get_detail_comment.target_user_block,
-      errorCode.content.get_detail_comment.target_user_block,
+      ContentGetDetailCommentNotFoundException,
+      ContentGetDetailCommentTargetUserBlockException,
     );
 
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_detail_comment.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         comment,
       },
-    );
+    };
   }
 
   /**
@@ -863,24 +736,15 @@ export class CommentService {
     const contentFound =
       await this.commentRepo.findContentWithAuthorById(contentId);
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_comment.content_not_found,
-          undefined,
-          errorCode.content.get_comment.content_not_found,
-        ),
-      );
+      throw new ContentGetCommentContentNotFoundException();
     }
 
     // Apply the same author-level block rules before exposing any comment list.
     await this.validateCommentAccess(
       currentUserId,
       contentFound.author.id,
-      message.content.get_comment.content_not_found,
-      errorCode.content.get_comment.content_not_found,
-      message.content.get_comment.target_user_block,
-      errorCode.content.get_comment.target_user_block,
+      ContentGetCommentContentNotFoundException,
+      ContentGetCommentTargetUserBlockException,
     );
 
     // Decode the paging cursor before querying the next slice.
@@ -895,14 +759,13 @@ export class CommentService {
 
     // Return the empty-state response when the post has no visible top-level comments.
     if (comments.length === 0) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_comment.no_content,
-        {
+      return {
+        kind: 'no_content',
+        data: {
           comments: [],
           cursor: null,
         },
-      );
+      };
     }
 
     // Sign the next cursor from the last item of the current page.
@@ -911,10 +774,13 @@ export class CommentService {
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
 
     // Return the mapped top-level comments in the expected response shape.
-    return sendResponse(HttpStatus.OK, message.content.get_comment.success, {
-      comments,
-      cursor: nextCursor,
-    });
+    return {
+      kind: 'success',
+      data: {
+        comments,
+        cursor: nextCursor,
+      },
+    };
   }
 
   /**
@@ -943,34 +809,23 @@ export class CommentService {
         parentCommentId,
       );
     if (!parentCommentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_child_comments.not_found,
-          undefined,
-          errorCode.content.get_child_comments.not_found,
-        ),
-      );
+      throw new ContentGetChildCommentsNotFoundException();
     }
 
     // Respect content-author visibility before exposing any reply list.
     await this.validateCommentAccess(
       currentUserId,
       parentCommentFound.content.author.id,
-      message.content.get_detail_comment.not_found,
-      errorCode.content.get_detail_comment.not_found,
-      message.content.get_detail_comment.target_user_block,
-      errorCode.content.get_detail_comment.target_user_block,
+      ContentGetDetailCommentNotFoundException,
+      ContentGetDetailCommentTargetUserBlockException,
     );
 
     // Respect parent-commenter visibility before exposing any direct reply list.
     await this.validateCommentAccess(
       currentUserId,
       parentCommentFound.commenter.id,
-      message.content.comment.parent_comment_not_found,
-      errorCode.content.comment.parent_comment_not_found,
-      message.content.comment.parent_commenter_block,
-      errorCode.content.comment.parent_commenter_block,
+      ContentCommentParentCommentNotFoundException,
+      ContentCommentParentCommenterBlockException,
     );
 
     // Decode the paging cursor before querying the next page of direct replies.
@@ -985,14 +840,13 @@ export class CommentService {
 
     // Return the empty-state response when the parent comment has no visible replies.
     if (childComments.length === 0) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_comment.no_content,
-        {
+      return {
+        kind: 'no_content',
+        data: {
           comments: [],
           cursor: null,
         },
-      );
+      };
     }
 
     // Sign the next cursor from the last reply of the current page.
@@ -1001,9 +855,12 @@ export class CommentService {
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
 
     // Return the mapped direct replies in the same list response shape.
-    return sendResponse(HttpStatus.OK, message.content.get_comment.success, {
-      comments: childComments,
-      cursor: nextCursor,
-    });
+    return {
+      kind: 'success',
+      data: {
+        comments: childComments,
+        cursor: nextCursor,
+      },
+    };
   }
 }

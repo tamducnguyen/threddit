@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -29,6 +31,7 @@ import { UpdateCommentDTO } from './dtos/update-comment.dto';
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
+  @ResponseMessage({ success: message.content.comment.success })
   @HttpCode(HttpStatus.OK)
   @Post(':contentId/comment')
   async commentContent(
@@ -43,6 +46,10 @@ export class CommentController {
     );
   }
 
+  @ResponseMessage({
+    no_content: message.content.get_comment.no_content,
+    success: message.content.get_comment.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':contentId/comment')
   async getComments(
@@ -57,6 +64,7 @@ export class CommentController {
     );
   }
 
+  @ResponseMessage({ success: message.content.delete_comment.success })
   @HttpCode(HttpStatus.OK)
   @Delete('comment/:commentId')
   async deleteComment(
@@ -69,6 +77,7 @@ export class CommentController {
     );
   }
 
+  @ResponseMessage({ success: message.content.update_comment.success })
   @HttpCode(HttpStatus.OK)
   @Patch('comment/:commentId')
   async updateComment(
@@ -83,6 +92,10 @@ export class CommentController {
     );
   }
 
+  @ResponseMessage({
+    no_content: message.content.get_comment.no_content,
+    success: message.content.get_comment.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('comment/:commentId/replies')
   async getChildComments(
@@ -97,6 +110,7 @@ export class CommentController {
     );
   }
 
+  @ResponseMessage({ success: message.content.get_detail_comment.success })
   @HttpCode(HttpStatus.OK)
   @Get('comment/:commentId')
   async getDetailComment(

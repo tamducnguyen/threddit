@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Controller,
   Delete,
@@ -25,6 +27,10 @@ import { SkipThrottle } from '@nestjs/throttler';
 export class FriendshipController {
   constructor(private readonly friendshipService: FriendshipService) {}
 
+  @ResponseMessage({
+    friendship_accepted: message.friendship.send_request.friendship_accepted,
+    success: message.friendship.send_request.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Post('request/:username')
   async sendFriendRequest(
@@ -37,6 +43,9 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({
+    success: message.friendship.get_received_requests.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('request/received')
   async getReceivedFriendRequests(
@@ -51,6 +60,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.get_sent_requests.success })
   @HttpCode(HttpStatus.OK)
   @Get('request/sent')
   async getSentFriendRequests(
@@ -65,6 +75,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.accept_request.success })
   @HttpCode(HttpStatus.OK)
   @Post('request/:username/accept')
   async acceptFriendRequest(
@@ -77,6 +88,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.reject_request.success })
   @HttpCode(HttpStatus.OK)
   @Post('request/:username/reject')
   async rejectFriendRequest(
@@ -89,6 +101,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.cancel_request.success })
   @HttpCode(HttpStatus.OK)
   @Post('request/:username/cancel')
   async cancelFriendRequest(
@@ -101,6 +114,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.get_friend_list.success })
   @HttpCode(HttpStatus.OK)
   @Get('friend')
   async getFriends(
@@ -116,6 +130,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.get_friend_list.success })
   @HttpCode(HttpStatus.OK)
   @Get(':username/friend')
   async getUserFriends(
@@ -132,6 +147,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.get_friend_status.success })
   @HttpCode(HttpStatus.OK)
   @Get(':username/status')
   async getFriendStatus(
@@ -144,6 +160,7 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.unfriend.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':username')
   async unfriend(
@@ -156,6 +173,9 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({
+    success: message.friendship.get_mutual_friend_list.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':username/friend/mutual')
   async getMutualFriends(
@@ -170,6 +190,9 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({
+    success: message.friendship.get_mutual_friend_count.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':username/friend/mutual/count')
   async getMutualFriendCount(
@@ -182,12 +205,16 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({ success: message.friendship.get_friend_count.success })
   @HttpCode(HttpStatus.OK)
   @Get('friend/count')
   async getFriendCount(@CurrentUser() currentUser: AuthUser) {
     return await this.friendshipService.getFriendCount(currentUser);
   }
 
+  @ResponseMessage({
+    success: message.friendship.get_user_friend_count.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get(':username/friend/count')
   async getUserFriendCount(
@@ -200,12 +227,18 @@ export class FriendshipController {
     );
   }
 
+  @ResponseMessage({
+    success: message.friendship.get_sent_request_count.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('request/sent/count')
   async getSentFriendRequestCount(@CurrentUser() currentUser: AuthUser) {
     return await this.friendshipService.getSentFriendRequestCount(currentUser);
   }
 
+  @ResponseMessage({
+    success: message.friendship.get_received_request_count.success,
+  })
   @HttpCode(HttpStatus.OK)
   @Get('request/received/count')
   async getReceivedFriendRequestCount(@CurrentUser() currentUser: AuthUser) {

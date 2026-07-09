@@ -8,17 +8,21 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Inject, Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  StorageContentNotFoundException,
+  StorageInvalidContentTypeException,
+  StorageInvalidKeyException,
+  StorageInvalidMediaContentTypeException,
+  StorageInvalidMediaFileNumberException,
+  StorageInvalidMediaKeyException,
+  StorageInvalidUploadSessionIdException,
+  StorageMediaFileTooLargeException,
+  StorageObjectNotFoundException,
+  StorageStoryMustHaveOneMediaException,
+  StorageUploadFailedException,
+} from '../../common/exception';
 import { ConfigService } from '@nestjs/config';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { MediaType } from '../../enum/media-type.enum';
 import { ALLOWED_MEDIA_CONTENT_TYPES } from './helper/media-content-types.constant';
 import type { Cache } from 'cache-manager';
@@ -69,14 +73,7 @@ export class StorageService {
   async generateAvatarPresignUrl(userId: string, contentType: string) {
     // Only allow image content types for avatar uploads.
     if (!this.imageContentTypes.has(contentType)) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.invalid_content_type,
-          undefined,
-          errorCode.storage.invalid_content_type,
-        ),
-      );
+      throw new StorageInvalidContentTypeException();
     }
     const key = `temp/avatar/${userId}`;
     const cmd = new PutObjectCommand({
@@ -92,14 +89,7 @@ export class StorageService {
   async generateBackGroundImagePresignUrl(userId: string, contentType: string) {
     // Only allow image content types for background uploads.
     if (!this.imageContentTypes.has(contentType)) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.invalid_content_type,
-          undefined,
-          errorCode.storage.invalid_content_type,
-        ),
-      );
+      throw new StorageInvalidContentTypeException();
     }
     const key = `temp/background_image/${userId}`;
     const cmd = new PutObjectCommand({
@@ -151,14 +141,7 @@ export class StorageService {
         err?.$metadata?.httpStatusCode == 416 ||
         err?.name == 'InvalidRange'
       ) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.storage.upload_failed,
-            undefined,
-            errorCode.storage.upload_failed,
-          ),
-        );
+        throw new StorageUploadFailedException();
       }
       if (err?.$metadata?.httpStatusCode == 404 || err?.name == 'NotFound') {
         return null;
@@ -187,14 +170,7 @@ export class StorageService {
   async moveObject(sourceKey: string, destinationKey: string) {
     // Validate input keys.
     if (!sourceKey || !destinationKey) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.invalid_key,
-          undefined,
-          errorCode.storage.invalid_key,
-        ),
-      );
+      throw new StorageInvalidKeyException();
     }
 
     // Ensure source exists and capture metadata for copy.
@@ -212,14 +188,7 @@ export class StorageService {
         name?: string;
       };
       if (err?.$metadata?.httpStatusCode == 404 || err?.name == 'NotFound') {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.storage.object_not_found,
-            undefined,
-            errorCode.storage.object_not_found,
-          ),
-        );
+        throw new StorageObjectNotFoundException();
       }
       throw error;
     }
@@ -300,10 +269,13 @@ export class StorageService {
     );
 
     // Return upload urls with upload session id to the client.
-    return sendResponse(HttpStatus.OK, message.storage.request_upload_success, {
-      presignedMediaUrls,
-      uploadSessionId,
-    });
+    return {
+      kind: 'request_upload_success',
+      data: {
+        presignedMediaUrls,
+        uploadSessionId,
+      },
+    };
   }
   /**
    * Generates presigned upload URLs for appending media to an existing content.
@@ -334,14 +306,7 @@ export class StorageService {
   ) {
     // Validate requested number of new media files.
     if (!Number.isInteger(mediaFilesNumber) || mediaFilesNumber <= 0) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.invalid_media_file_number,
-          undefined,
-          errorCode.storage.invalid_media_file_number,
-        ),
-      );
+      throw new StorageInvalidMediaFileNumberException();
     }
 
     // Load content and current user in parallel to reduce latency.
@@ -352,14 +317,7 @@ export class StorageService {
 
     // Reject when target content does not exist.
     if (!content || content.author.id !== currentUserId) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.storage.content_not_found,
-          undefined,
-          errorCode.storage.content_not_found,
-        ),
-      );
+      throw new StorageContentNotFoundException();
     }
 
     // Fetch existing media list and keep deterministic order by sort order.
@@ -373,14 +331,7 @@ export class StorageService {
 
     // Enforce story rule: a story can contain at most one media file.
     if (content.type === ContentType.STORY && mediaFilesNumber > 1) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.story_must_have_one_media,
-          undefined,
-          errorCode.storage.story_must_have_one_media,
-        ),
-      );
+      throw new StorageStoryMustHaveOneMediaException();
     }
 
     // Compute next sort order offset from the last existing media item.
@@ -427,11 +378,14 @@ export class StorageService {
     );
 
     // Return upload context for client-side upload flow.
-    return sendResponse(HttpStatus.OK, message.storage.request_upload_success, {
-      uploadSessionId,
-      presignedUrls: presignedUrls,
-      mediaKeys: [...existingMediaKeys, ...newMediaKeys],
-    });
+    return {
+      kind: 'request_upload_success',
+      data: {
+        uploadSessionId,
+        presignedUrls: presignedUrls,
+        mediaKeys: [...existingMediaKeys, ...newMediaKeys],
+      },
+    };
   }
   /**
    * Resolves uploaded media keys from a cached upload session id.
@@ -468,14 +422,7 @@ export class StorageService {
           typeof cachedMediaKey === 'string' && cachedMediaKey.length > 0,
       )
     ) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.invalid_upload_session_id,
-          undefined,
-          errorCode.storage.invalid_upload_session_id,
-        ),
-      );
+      throw new StorageInvalidUploadSessionIdException();
     }
 
     // Remove duplicate keys to make downstream media processing deterministic.
@@ -495,14 +442,7 @@ export class StorageService {
       },
     );
     if (!areAllMediaKeysOwnedByCurrentUser) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.storage.invalid_upload_session_id,
-          undefined,
-          errorCode.storage.invalid_upload_session_id,
-        ),
-      );
+      throw new StorageInvalidUploadSessionIdException();
     }
     return dedupedMediaKeys;
   }
@@ -526,27 +466,13 @@ export class StorageService {
 
         // Reject when uploaded object is missing or unreadable.
         if (!mediaObjectSize || !mediaObjectHeadBytes) {
-          throw new NotFoundException(
-            sendResponse(
-              HttpStatus.NOT_FOUND,
-              message.storage.object_not_found,
-              undefined,
-              errorCode.storage.object_not_found,
-            ),
-          );
+          throw new StorageObjectNotFoundException();
         }
 
         // Enforce max file size and clean up invalid object from storage.
         if (mediaObjectSize > this.maxMediaFileSizeInBytes) {
           await this.deleteObject(mediaKey);
-          throw new BadRequestException(
-            sendResponse(
-              HttpStatus.BAD_REQUEST,
-              message.storage.media_file_too_large,
-              undefined,
-              errorCode.storage.media_file_too_large,
-            ),
-          );
+          throw new StorageMediaFileTooLargeException();
         }
 
         // Detect MIME type from magic bytes and ensure it is in allowed list.
@@ -558,14 +484,7 @@ export class StorageService {
         // Remove invalid object and reject when MIME type is unsupported.
         if (!isValidDetectedMimeType) {
           await this.deleteObject(mediaKey);
-          throw new BadRequestException(
-            sendResponse(
-              HttpStatus.BAD_REQUEST,
-              message.storage.invalid_media_content_type,
-              undefined,
-              errorCode.storage.invalid_media_content_type,
-            ),
-          );
+          throw new StorageInvalidMediaContentTypeException();
         }
 
         // Map detected MIME type to domain media type for persistence.
@@ -679,14 +598,7 @@ export class StorageService {
     if (mimeType.startsWith('image/')) return MediaType.IMAGE;
     if (mimeType.startsWith('video/')) return MediaType.VIDEO;
     if (mimeType.startsWith('audio/')) return MediaType.AUDIO;
-    throw new BadRequestException(
-      sendResponse(
-        HttpStatus.BAD_REQUEST,
-        message.storage.invalid_media_key,
-        undefined,
-        errorCode.storage.invalid_media_key,
-      ),
-    );
+    throw new StorageInvalidMediaKeyException();
   }
 
   isAllowedMediaContentType(mimeType: string): boolean {

@@ -1,15 +1,39 @@
-﻿import {
-  BadRequestException,
-  HttpStatus,
-  InternalServerErrorException,
-  Injectable,
-  Logger,
-  NotFoundException,
-  Inject,
-} from '@nestjs/common';
-import { message } from '../../common/helper/message.helper';
+﻿import { Injectable, Logger, Inject } from '@nestjs/common';
+import {
+  BaseServiceException,
+  ContentCreatePostConfirmMediaFailedException,
+  ContentCreatePostStoryMustHaveOneMediaException,
+  ContentCreatePostTextOrMediaRequiredException,
+  ContentCreatePostUserNotFoundException,
+  ContentDeleteContentNotFoundException,
+  ContentGetContentByKeyCursorInvalidException,
+  ContentGetContentNotFoundException,
+  ContentGetFriendStoryCursorInvalidException,
+  ContentGetMyCurrentStoryCursorInvalidException,
+  ContentGetMyStoryCursorInvalidException,
+  ContentGetOtherCurrentStoryCursorInvalidException,
+  ContentGetOtherCurrentStoryTargetUserBlockException,
+  ContentGetOtherCurrentStoryUserNotFoundException,
+  ContentGetPinnedStoryCursorInvalidException,
+  ContentGetPinnedStoryTargetUserBlockException,
+  ContentGetPinnedStoryUserNotFoundException,
+  ContentGetSavedContentCursorInvalidException,
+  ContentGetTimelineContentCursorInvalidException,
+  ContentGetTimelineContentTargetUserBlockException,
+  ContentGetTimelineContentUserNotFoundException,
+  ContentPinContentAlreadyPinnedException,
+  ContentPinContentNotFoundException,
+  ContentPinContentOnlyOnePostAllowedException,
+  ContentUnpinContentAlreadyUnpinnedException,
+  ContentUnpinContentNotFoundException,
+  ContentUpdateContentInvalidMediaKeyException,
+  ContentUpdateContentNoFieldToUpdateException,
+  ContentUpdateContentNotFoundException,
+  ContentUpdateContentStoryMustHaveOneMediaException,
+  ContentUpdateContentTextOrMediaRequiredException,
+  ServiceExceptionClass,
+} from '../../common/exception';
 import { JwtService } from '@nestjs/jwt';
-import { sendResponse } from '../../common/helper/response.helper';
 import type { Cache } from 'cache-manager';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -30,7 +54,6 @@ import { StorageService } from '../storage/storage.service';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CreateContentDTO } from './dtos/create-content.dto';
-import { errorCode } from '../../common/helper/errorcode.helper';
 import { ContentDetail } from './interface/content-detail.interface';
 import { UpdateContentDTO } from './dtos/update-content.dto';
 import { TimelineItem } from './interface/timeline-item.interface';
@@ -64,8 +87,8 @@ export class ContentService {
   private async validateNotBlocked(
     currentUserId: number,
     targetUserId: number,
-    blockedByTargetError: { message: string; errorCode: string },
-    selfBlockedTargetError: { message: string; errorCode: string },
+    BlockedByTargetException: ServiceExceptionClass,
+    SelfBlockedTargetException: ServiceExceptionClass,
   ): Promise<void> {
     if (currentUserId === targetUserId) return;
 
@@ -75,24 +98,10 @@ export class ContentService {
     ]);
 
     if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          blockedByTargetError.message,
-          undefined,
-          blockedByTargetError.errorCode,
-        ),
-      );
+      throw new BlockedByTargetException();
     }
     if (isTargetBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          selfBlockedTargetError.message,
-          undefined,
-          selfBlockedTargetError.errorCode,
-        ),
-      );
+      throw new SelfBlockedTargetException();
     }
   }
 
@@ -111,8 +120,7 @@ export class ContentService {
    */
   private async decodeCursor<T extends object>(
     cursor: string | undefined,
-    cursorInvalidMessage: string,
-    cursorInvalidErrorCode: string,
+    CursorInvalidException: ServiceExceptionClass,
     validate?: (payload: T) => boolean,
   ): Promise<T | undefined> {
     if (!cursor) return undefined;
@@ -123,14 +131,7 @@ export class ContentService {
       }
       return payload;
     } catch {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          cursorInvalidMessage,
-          undefined,
-          cursorInvalidErrorCode,
-        ),
-      );
+      throw new CursorInvalidException();
     }
   }
   async getSelfTimelineContents(currentUserId: number, cursor?: string) {
@@ -139,8 +140,7 @@ export class ContentService {
     if (cursor) {
       cursorDecoded = await this.decodeCursor<TimelineCursor>(
         cursor,
-        message.content.get_timeline_content.cursor_invalid,
-        errorCode.content.get_timeline_content.cursor_invalid,
+        ContentGetTimelineContentCursorInvalidException,
       );
     } else {
       cursorDecoded = undefined;
@@ -158,24 +158,25 @@ export class ContentService {
     const finalTimelineItem = timelineItems[timelineItems.length - 1];
     if (!finalTimelineItem) {
       if (cursor) {
-        return sendResponse(
-          HttpStatus.OK,
-          message.content.get_timeline_content.no_content,
-          { timelineItems: [], cursor: null },
-        );
+        return {
+          kind: 'no_content',
+          data: { timelineItems: [], cursor: null },
+        };
       }
       if ((pinnedContents?.length ?? 0) === 0) {
-        return sendResponse(
-          HttpStatus.OK,
-          message.content.get_timeline_content.no_content,
-          { pinnedContents: [], timelineItems: [], cursor: null },
-        );
+        return {
+          kind: 'no_content',
+          data: { pinnedContents: [], timelineItems: [], cursor: null },
+        };
       }
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_timeline_content.success,
-        { pinnedContents: pinnedContents, timelineItems: [], cursor: null },
-      );
+      return {
+        kind: 'success',
+        data: {
+          pinnedContents: pinnedContents,
+          timelineItems: [],
+          cursor: null,
+        },
+      };
     }
     //sign cursor
     const cursorPayload: TimelineCursor = {
@@ -191,24 +192,22 @@ export class ContentService {
     };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
     if (cursor) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_timeline_content.success,
-        {
+      return {
+        kind: 'success',
+        data: {
           timelineItems: timelineItems,
           cursor: nextCursor,
         },
-      );
+      };
     }
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_timeline_content.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         timelineItems: timelineItems,
         pinnedContents: pinnedContents ?? [],
         cursor: nextCursor,
       },
-    );
+    };
   }
   async getOtherTimelineContents(
     currentUserId: number,
@@ -220,14 +219,7 @@ export class ContentService {
       timelineOwnerUsername,
     );
     if (!timelineOwnerUser) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_timeline_content.user_not_found,
-          undefined,
-          errorCode.content.get_timeline_content.user_not_found,
-        ),
-      );
+      throw new ContentGetTimelineContentUserNotFoundException();
     }
     //check if get self timeline
     if (currentUserId === timelineOwnerUser.id) {
@@ -236,22 +228,15 @@ export class ContentService {
     await this.validateNotBlocked(
       currentUserId,
       timelineOwnerUser.id,
-      {
-        message: message.content.get_timeline_content.user_not_found,
-        errorCode: errorCode.content.get_timeline_content.user_not_found,
-      },
-      {
-        message: message.content.get_timeline_content.target_user_block,
-        errorCode: errorCode.content.get_timeline_content.target_user_block,
-      },
+      ContentGetTimelineContentUserNotFoundException,
+      ContentGetTimelineContentTargetUserBlockException,
     );
     let cursorDecoded: TimelineCursor | undefined;
     let pinnedContents: ContentDetail[] | undefined;
     if (cursor) {
       cursorDecoded = await this.decodeCursor<TimelineCursor>(
         cursor,
-        message.content.get_timeline_content.cursor_invalid,
-        errorCode.content.get_timeline_content.cursor_invalid,
+        ContentGetTimelineContentCursorInvalidException,
       );
     } else {
       cursorDecoded = undefined;
@@ -269,24 +254,25 @@ export class ContentService {
     const finalTimelineItem = timelineItems[timelineItems.length - 1];
     if (!finalTimelineItem) {
       if (cursor) {
-        return sendResponse(
-          HttpStatus.OK,
-          message.content.get_timeline_content.no_content,
-          { timelineItems: [], cursor: null },
-        );
+        return {
+          kind: 'no_content',
+          data: { timelineItems: [], cursor: null },
+        };
       }
       if ((pinnedContents?.length ?? 0) === 0) {
-        return sendResponse(
-          HttpStatus.OK,
-          message.content.get_timeline_content.no_content,
-          { pinnedContents: [], timelineItems: [], cursor: null },
-        );
+        return {
+          kind: 'no_content',
+          data: { pinnedContents: [], timelineItems: [], cursor: null },
+        };
       }
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_timeline_content.success,
-        { pinnedContents: pinnedContents, timelineItems: [], cursor: null },
-      );
+      return {
+        kind: 'success',
+        data: {
+          pinnedContents: pinnedContents,
+          timelineItems: [],
+          cursor: null,
+        },
+      };
     }
     //sign cursor
     const cursorPayload: TimelineCursor = {
@@ -302,24 +288,22 @@ export class ContentService {
     };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
     if (cursor) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_timeline_content.success,
-        {
+      return {
+        kind: 'success',
+        data: {
           timelineItems: timelineItems,
           cursor: nextCursor,
         },
-      );
+      };
     }
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_timeline_content.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         timelineItems: timelineItems,
         pinnedContents: pinnedContents ?? [],
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Returns recommended feed items for the current user.
@@ -366,9 +350,12 @@ export class ContentService {
 
     // Return no_content when there are no matching items.
     if (feedItems.length === 0) {
-      return sendResponse(HttpStatus.OK, message.content.get_feed.no_content, {
-        feedItems: [],
-      });
+      return {
+        kind: 'no_content',
+        data: {
+          feedItems: [],
+        },
+      };
     }
 
     // Resolve max number of ids stored in cache.
@@ -404,9 +391,12 @@ export class ContentService {
     );
 
     // Return successful feed response.
-    return sendResponse(HttpStatus.OK, message.content.get_feed.success, {
-      feedItems: feedItems,
-    });
+    return {
+      kind: 'success',
+      data: {
+        feedItems: feedItems,
+      },
+    };
   }
 
   /**
@@ -457,9 +447,12 @@ export class ContentService {
 
     // Return no_content when there are no matching reels.
     if (reelItems.length === 0) {
-      return sendResponse(HttpStatus.OK, message.content.get_reel.no_content, {
-        reelItems: [],
-      });
+      return {
+        kind: 'no_content',
+        data: {
+          reelItems: [],
+        },
+      };
     }
 
     // Resolve max number of ids stored in cache.
@@ -495,15 +488,17 @@ export class ContentService {
     );
 
     // Return successful reel response.
-    return sendResponse(HttpStatus.OK, message.content.get_reel.success, {
-      reelItems: reelItems,
-    });
+    return {
+      kind: 'success',
+      data: {
+        reelItems: reelItems,
+      },
+    };
   }
   async getSavedContents(currentUserId: number, cursor?: string) {
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_saved_content.cursor_invalid,
-      errorCode.content.get_saved_content.cursor_invalid,
+      ContentGetSavedContentCursorInvalidException,
     );
     //get saved contents
     const savedContents = await this.contentRepo.getSavedContents(
@@ -513,27 +508,21 @@ export class ContentService {
     //check if no content
     const finalItem = savedContents[savedContents.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_saved_content.no_content,
-        { savedContents: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { savedContents: [], cursor: null } };
     }
     //sign cursor
     const cursorPayload: Cursor = { id: finalItem.saveId };
     const cursorToken = await this.jwtService.signAsync(cursorPayload);
     //send response
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_saved_content.success,
-      { savedContents: savedContents, cursor: cursorToken },
-    );
+    return {
+      kind: 'success',
+      data: { savedContents: savedContents, cursor: cursorToken },
+    };
   }
   async searchContents(currentUserId: number, key: string, cursor?: string) {
     const cursorDecoded = await this.decodeCursor<SearchContentCursor>(
       cursor,
-      message.content.get_content_by_key.cursor_invalid,
-      errorCode.content.get_content_by_key.cursor_invalid,
+      ContentGetContentByKeyCursorInvalidException,
       (payload) =>
         Number.isInteger(payload.id) &&
         typeof payload.recommendationScore === 'number' &&
@@ -550,21 +539,16 @@ export class ContentService {
     );
     const finalItem = contents[contents.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_content_by_key.no_content,
-        { contents: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { contents: [], cursor: null } };
     }
     const nextCursor = await this.jwtService.signAsync({
       id: finalItem.id,
       recommendationScore: finalItem.recommendationScore,
       scoredAt: scoredAt,
     });
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_content_by_key.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         contents: contents.map(
           //just remove recommendationScore from searchContent
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -572,7 +556,7 @@ export class ContentService {
         ),
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Creates a content item (post or story) for the current user.
@@ -609,25 +593,11 @@ export class ContentService {
     const hasMedia = mediaKeys.length > 0;
     //Enforce bussiness rule: story must contain only one media
     if (type === ContentType.STORY && mediaKeys.length > 1) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.create_post.story_must_have_one_media,
-          undefined,
-          errorCode.content.create_post.story_must_have_one_media,
-        ),
-      );
+      throw new ContentCreatePostStoryMustHaveOneMediaException();
     }
     // Enforce business rule: post must contain text or media.
     if (!hasText && !hasMedia) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.create_post.text_or_media_required,
-          undefined,
-          errorCode.content.create_post.text_or_media_required,
-        ),
-      );
+      throw new ContentCreatePostTextOrMediaRequiredException();
     }
     // Validate text toxicity only when text exists.
     if (hasText) {
@@ -645,14 +615,7 @@ export class ContentService {
     // Ensure current user exists before creating post.
     const author = await this.contentRepo.findUserById(currentUserId);
     if (!author) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.create_post.user_not_found,
-          undefined,
-          errorCode.content.create_post.user_not_found,
-        ),
-      );
+      throw new ContentCreatePostUserNotFoundException();
     }
     // Persist post record first, then attach media.
     const insertedContent = await this.contentRepo.insertContent({
@@ -673,24 +636,14 @@ export class ContentService {
       });
     } catch (error) {
       await this.contentRepo.deleteContentById(insertedContent.id);
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
+      if (error instanceof BaseServiceException) {
         throw error;
       }
       this.logger.error(
         `Failed to create post ${insertedContent.id}.`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new InternalServerErrorException(
-        sendResponse(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          message.content.create_post.confirm_media_failed,
-          undefined,
-          errorCode.content.create_post.confirm_media_failed,
-        ),
-      );
+      throw new ContentCreatePostConfirmMediaFailedException();
     }
     // Clear upload session cache after successful media attachment.
     if (uploadSessionId) {
@@ -710,13 +663,12 @@ export class ContentService {
       insertedMediaFiles,
     );
     // Return created post response.
-    return sendResponse(
-      HttpStatus.CREATED,
-      message.content.create_post.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         createdPost: createdPost,
       },
-    );
+    };
   }
   /**
    * Updates a content owned by current user.
@@ -747,28 +699,14 @@ export class ContentService {
 
     // Reject request when client does not provide any mutable field.
     if (!hasTextField && !hasMentionedUsersField && !hasMediaFilesField) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_content.no_field_to_update,
-          undefined,
-          errorCode.content.update_content.no_field_to_update,
-        ),
-      );
+      throw new ContentUpdateContentNoFieldToUpdateException();
     }
 
     // Ensure target content exists and belongs to current user.
     const contentFound =
       await this.contentRepo.findContentWithDetailById(contentId);
     if (!contentFound || contentFound.author.id !== currentUserId) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_content.not_found,
-          undefined,
-          errorCode.content.update_content.not_found,
-        ),
-      );
+      throw new ContentUpdateContentNotFoundException();
     }
 
     // Load current media state for validation and media diff logic.
@@ -791,24 +729,10 @@ export class ContentService {
       ? (mediaFiles?.length ?? 0)
       : existingMediaFiles.length;
     if (contentFound.type === ContentType.STORY && finalMediaCount > 1) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_content.story_must_have_one_media,
-          undefined,
-          errorCode.content.update_content.story_must_have_one_media,
-        ),
-      );
+      throw new ContentUpdateContentStoryMustHaveOneMediaException();
     }
     if (!finalText && finalMediaCount === 0) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_content.text_or_media_required,
-          undefined,
-          errorCode.content.update_content.text_or_media_required,
-        ),
-      );
+      throw new ContentUpdateContentTextOrMediaRequiredException();
     }
 
     // Resolve mentioned users from friend list when client provides mention field.
@@ -879,14 +803,7 @@ export class ContentService {
 
       // Reject when client sends upload session id but does not append any new media key.
       if (uploadSessionId && newTempMediaKeys.length === 0) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.update_content.invalid_media_key,
-            undefined,
-            errorCode.content.update_content.invalid_media_key,
-          ),
-        );
+        throw new ContentUpdateContentInvalidMediaKeyException();
       }
 
       // Every new temp media key must belong to current user and appear in upload session.
@@ -896,14 +813,7 @@ export class ContentService {
           mediaOwnerId !== currentUserId ||
           !uploadedMediaKeySet.has(newTempMediaKey)
         ) {
-          throw new BadRequestException(
-            sendResponse(
-              HttpStatus.BAD_REQUEST,
-              message.content.update_content.invalid_media_key,
-              undefined,
-              errorCode.content.update_content.invalid_media_key,
-            ),
-          );
+          throw new ContentUpdateContentInvalidMediaKeyException();
         }
       }
 
@@ -914,14 +824,7 @@ export class ContentService {
           !uploadedMediaKeySet.has(requestedMediaKey),
       );
       if (hasInvalidRequestedMediaKey) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.update_content.invalid_media_key,
-            undefined,
-            errorCode.content.update_content.invalid_media_key,
-          ),
-        );
+        throw new ContentUpdateContentInvalidMediaKeyException();
       }
 
       // Validate uploaded temp objects and collect detected media type per key.
@@ -971,14 +874,7 @@ export class ContentService {
         const destinationKey = destinationKeyByTempKey.get(requestedMediaKey);
         const mediaType = mediaTypeByTempKey.get(requestedMediaKey);
         if (!destinationKey || !mediaType) {
-          throw new BadRequestException(
-            sendResponse(
-              HttpStatus.BAD_REQUEST,
-              message.content.update_content.invalid_media_key,
-              undefined,
-              errorCode.content.update_content.invalid_media_key,
-            ),
-          );
+          throw new ContentUpdateContentInvalidMediaKeyException();
         }
         return {
           targetType: MediaTargetType.CONTENT,
@@ -1042,14 +938,7 @@ export class ContentService {
       currentUserId,
     );
     if (!updatedContent) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_content.not_found,
-          undefined,
-          errorCode.content.update_content.not_found,
-        ),
-      );
+      throw new ContentUpdateContentNotFoundException();
     }
 
     // Enqueue mention notification only for newly mentioned users.
@@ -1065,9 +954,12 @@ export class ContentService {
     }
 
     // Return standardized update success response.
-    return sendResponse(HttpStatus.OK, message.content.update_content.success, {
-      content: updatedContent,
-    });
+    return {
+      kind: 'success',
+      data: {
+        content: updatedContent,
+      },
+    };
   }
 
   private parseTempMediaOwnerId(mediaKey: string) {
@@ -1186,8 +1078,7 @@ export class ContentService {
   async getMyCurrentStories(currentUserId: number, cursor?: string) {
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_my_current_story.cursor_invalid,
-      errorCode.content.get_my_current_story.cursor_invalid,
+      ContentGetMyCurrentStoryCursorInvalidException,
     );
     const stories: ContentDetail[] = await this.contentRepo.getCurrentStories(
       currentUserId,
@@ -1196,22 +1087,17 @@ export class ContentService {
     );
     const finalItem = stories[stories.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_my_current_story.no_content,
-        { stories: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { stories: [], cursor: null } };
     }
     const cursorPayload: Cursor = { id: finalItem.id };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_my_current_story.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         stories: stories,
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Returns stories (within last 24 hours) of a target user visible to current user.
@@ -1231,14 +1117,7 @@ export class ContentService {
     const targetUser =
       await this.contentRepo.findUserByUsername(targetUsername);
     if (!targetUser) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_other_current_story.user_not_found,
-          undefined,
-          errorCode.content.get_other_current_story.user_not_found,
-        ),
-      );
+      throw new ContentGetOtherCurrentStoryUserNotFoundException();
     }
     if (targetUser.id === currentUserId) {
       return await this.getMyCurrentStories(currentUserId, cursor);
@@ -1246,19 +1125,12 @@ export class ContentService {
     await this.validateNotBlocked(
       currentUserId,
       targetUser.id,
-      {
-        message: message.content.get_other_current_story.user_not_found,
-        errorCode: errorCode.content.get_other_current_story.user_not_found,
-      },
-      {
-        message: message.content.get_other_current_story.target_user_block,
-        errorCode: errorCode.content.get_other_current_story.target_user_block,
-      },
+      ContentGetOtherCurrentStoryUserNotFoundException,
+      ContentGetOtherCurrentStoryTargetUserBlockException,
     );
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_other_current_story.cursor_invalid,
-      errorCode.content.get_other_current_story.cursor_invalid,
+      ContentGetOtherCurrentStoryCursorInvalidException,
     );
     const stories: ContentDetail[] = await this.contentRepo.getCurrentStories(
       targetUser.id,
@@ -1267,22 +1139,17 @@ export class ContentService {
     );
     const finalItem = stories[stories.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_other_current_story.no_content,
-        { stories: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { stories: [], cursor: null } };
     }
     const cursorPayload: Cursor = { id: finalItem.id };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_other_current_story.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         stories: stories,
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Returns current user's stories with cursor pagination.
@@ -1294,8 +1161,7 @@ export class ContentService {
   async getMyStories(currentUserId: number, cursor?: string) {
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_my_story.cursor_invalid,
-      errorCode.content.get_my_story.cursor_invalid,
+      ContentGetMyStoryCursorInvalidException,
     );
     const stories: ContentDetail[] = await this.contentRepo.getMyStories(
       currentUserId,
@@ -1303,18 +1169,17 @@ export class ContentService {
     );
     const finalItem = stories[stories.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_my_story.no_content,
-        { stories: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { stories: [], cursor: null } };
     }
     const cursorPayload: Cursor = { id: finalItem.id };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(HttpStatus.OK, message.content.get_my_story.success, {
-      stories: stories,
-      cursor: nextCursor,
-    });
+    return {
+      kind: 'success',
+      data: {
+        stories: stories,
+        cursor: nextCursor,
+      },
+    };
   }
   /**
    * Returns paginated stories created by accepted friends.
@@ -1326,8 +1191,7 @@ export class ContentService {
   async getFriendStories(currentUserId: number, cursor?: string) {
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_friend_story.cursor_invalid,
-      errorCode.content.get_friend_story.cursor_invalid,
+      ContentGetFriendStoryCursorInvalidException,
     );
     const stories: ContentDetail[] = await this.contentRepo.getFriendStories(
       currentUserId,
@@ -1335,22 +1199,17 @@ export class ContentService {
     );
     const finalItem = stories[stories.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_friend_story.no_content,
-        { stories: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { stories: [], cursor: null } };
     }
     const cursorPayload: Cursor = { id: finalItem.id };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_friend_story.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         stories: stories,
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Returns paginated pinned stories of current user.
@@ -1362,8 +1221,7 @@ export class ContentService {
   async getPinnedStories(currentUserId: number, cursor?: string) {
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_pinned_story.cursor_invalid,
-      errorCode.content.get_pinned_story.cursor_invalid,
+      ContentGetPinnedStoryCursorInvalidException,
     );
     const pinnedStories: ContentDetail[] =
       await this.contentRepo.getPinnedStories(
@@ -1373,22 +1231,17 @@ export class ContentService {
       );
     const finalItem = pinnedStories[pinnedStories.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_pinned_story.no_content,
-        { pinnedStories: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { pinnedStories: [], cursor: null } };
     }
     const cursorPayload: Cursor = { id: finalItem.id };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_pinned_story.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         pinnedStories: pinnedStories,
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Returns paginated pinned stories of a target user visible to current user.
@@ -1418,14 +1271,7 @@ export class ContentService {
       await this.contentRepo.findUserByUsername(targetUsername);
     // Hide resource when target user does not exist.
     if (!targetUser) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_pinned_story.user_not_found,
-          undefined,
-          errorCode.content.get_pinned_story.user_not_found,
-        ),
-      );
+      throw new ContentGetPinnedStoryUserNotFoundException();
     }
     // Reuse self endpoint behavior when target is current user.
     if (targetUser.id === currentUserId) {
@@ -1434,20 +1280,13 @@ export class ContentService {
     await this.validateNotBlocked(
       currentUserId,
       targetUser.id,
-      {
-        message: message.content.get_pinned_story.user_not_found,
-        errorCode: errorCode.content.get_pinned_story.user_not_found,
-      },
-      {
-        message: message.content.get_pinned_story.target_user_block,
-        errorCode: errorCode.content.get_pinned_story.target_user_block,
-      },
+      ContentGetPinnedStoryUserNotFoundException,
+      ContentGetPinnedStoryTargetUserBlockException,
     );
     // Decode pagination cursor when provided by client.
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
-      message.content.get_pinned_story.cursor_invalid,
-      errorCode.content.get_pinned_story.cursor_invalid,
+      ContentGetPinnedStoryCursorInvalidException,
     );
     // Query pinned stories where owner is target user and viewer is current user.
     const pinnedStories: ContentDetail[] =
@@ -1459,23 +1298,18 @@ export class ContentService {
     // Return empty payload with null cursor when no more items.
     const finalItem = pinnedStories[pinnedStories.length - 1];
     if (!finalItem) {
-      return sendResponse(
-        HttpStatus.OK,
-        message.content.get_pinned_story.no_content,
-        { pinnedStories: [], cursor: null },
-      );
+      return { kind: 'no_content', data: { pinnedStories: [], cursor: null } };
     }
     // Generate next cursor from last item id for forward pagination.
     const cursorPayload: Cursor = { id: finalItem.id };
     const nextCursor = await this.jwtService.signAsync(cursorPayload);
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.get_pinned_story.success,
-      {
+    return {
+      kind: 'success',
+      data: {
         pinnedStories: pinnedStories,
         cursor: nextCursor,
       },
-    );
+    };
   }
   /**
    * Gets a single content detail by id for the current user.
@@ -1497,28 +1331,15 @@ export class ContentService {
 
     // If content does not exist, return not found.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_content.not_found,
-          undefined,
-          errorCode.content.get_content.not_found,
-        ),
-      );
+      throw new ContentGetContentNotFoundException();
     }
 
     // Check both block directions between current user and author.
     await this.validateNotBlocked(
       currentUserId,
       contentFound.author.id,
-      {
-        message: message.content.get_content.not_found,
-        errorCode: errorCode.content.get_content.not_found,
-      },
-      {
-        message: message.content.get_timeline_content.target_user_block,
-        errorCode: errorCode.content.get_timeline_content.target_user_block,
-      },
+      ContentGetContentNotFoundException,
+      ContentGetTimelineContentTargetUserBlockException,
     );
 
     // Load full content detail payload after passing access checks.
@@ -1529,20 +1350,16 @@ export class ContentService {
 
     // Safe fallback in case content is deleted between two queries.
     if (!content) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.get_content.not_found,
-          undefined,
-          errorCode.content.get_content.not_found,
-        ),
-      );
+      throw new ContentGetContentNotFoundException();
     }
 
     // Return successful content detail response.
-    return sendResponse(HttpStatus.OK, message.content.get_content.success, {
-      content,
-    });
+    return {
+      kind: 'success',
+      data: {
+        content,
+      },
+    };
   }
   async pinContent(currentUserId: number, contentId: number) {
     // Check if post exists and current user is its owner.
@@ -1551,43 +1368,22 @@ export class ContentService {
       currentUserId,
     );
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.pin_content.not_found,
-          undefined,
-          errorCode.content.pin_content.not_found,
-        ),
-      );
+      throw new ContentPinContentNotFoundException();
     }
     if (contentFound.isPinned) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.pin_content.already_pinned,
-          undefined,
-          errorCode.content.pin_content.already_pinned,
-        ),
-      );
+      throw new ContentPinContentAlreadyPinnedException();
     }
     // Enforce business rule: only one pinned post is allowed per user.
     if (contentFound.type === ContentType.POST) {
       const hasPinnedPost =
         await this.contentRepo.checkHasPinnedPost(currentUserId);
       if (hasPinnedPost) {
-        throw new BadRequestException(
-          sendResponse(
-            HttpStatus.BAD_REQUEST,
-            message.content.pin_content.only_one_post_allowed,
-            undefined,
-            errorCode.content.pin_content.only_one_post_allowed,
-          ),
-        );
+        throw new ContentPinContentOnlyOnePostAllowedException();
       }
     }
     // Pin post.
     await this.contentRepo.updateIsPinnedToTrue(contentId);
-    return sendResponse(HttpStatus.OK, message.content.pin_content.success);
+    return { kind: 'success' };
   }
   async unpinContent(currentUserId: number, contentId: number) {
     // Check if post exists and current user is its owner.
@@ -1596,28 +1392,14 @@ export class ContentService {
       currentUserId,
     );
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.unpin_content.not_found,
-          undefined,
-          errorCode.content.unpin_content.not_found,
-        ),
-      );
+      throw new ContentUnpinContentNotFoundException();
     }
     if (!contentFound.isPinned) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.unpin_content.already_unpinned,
-          undefined,
-          errorCode.content.unpin_content.already_unpinned,
-        ),
-      );
+      throw new ContentUnpinContentAlreadyUnpinnedException();
     }
     // Unpin post.
     await this.contentRepo.updateIsPinnedToFalse(contentId);
-    return sendResponse(HttpStatus.OK, message.content.unpin_content.success);
+    return { kind: 'success' };
   }
   /**
    * Deletes a post owned by current user.
@@ -1638,14 +1420,7 @@ export class ContentService {
       currentUserId,
     );
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.delete_content.not_found,
-          undefined,
-          errorCode.content.delete_content.not_found,
-        ),
-      );
+      throw new ContentDeleteContentNotFoundException();
     }
     // Capture media paths before DB delete to cleanup storage afterwards.
     const mediaFiles =
@@ -1658,6 +1433,6 @@ export class ContentService {
         await this.storageService.deleteObject(mediaFile.relativePath);
       }),
     );
-    return sendResponse(HttpStatus.OK, message.content.delete_content.success);
+    return { kind: 'success' };
   }
 }

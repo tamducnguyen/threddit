@@ -1,15 +1,11 @@
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { Injectable } from '@nestjs/common';
 import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { message } from '../../common/helper/message.helper';
-import { sendResponse } from '../../common/helper/response.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
+  HttpCheckToxicToxicException,
+  HttpCommonTimeOutException,
+} from '../../common/exception';
 import { ToxicResponse } from '../content/interface/toxicresponse.interface';
 @Injectable()
 export class HttpsService {
@@ -29,24 +25,10 @@ export class HttpsService {
     } catch (error) {
       data = undefined;
       console.log(error);
-      throw new InternalServerErrorException(
-        sendResponse(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          message.http.common.time_out,
-          undefined,
-          errorCode.http.common.time_out,
-        ),
-      );
+      throw new HttpCommonTimeOutException();
     }
     if (data && data.type !== 0) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.http.check_toxic.toxic,
-          undefined,
-          errorCode.http.check_toxic.toxic,
-        ),
-      );
+      throw new HttpCheckToxicToxicException();
     }
   }
 }

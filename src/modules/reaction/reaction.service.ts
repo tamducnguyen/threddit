@@ -1,13 +1,33 @@
-﻿import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { sendResponse } from '../../common/helper/response.helper';
-import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
+﻿import { Injectable, Logger } from '@nestjs/common';
+import {
+  ContentDeleteReactionCommentNotFoundException,
+  ContentDeleteReactionCommentNotReactedException,
+  ContentDeleteReactionCommentTargetUserBlockException,
+  ContentDeleteReactionCommentUserNotFoundException,
+  ContentDeleteReactionContentNotFoundException,
+  ContentDeleteReactionContentNotReactedException,
+  ContentDeleteReactionContentTargetUserBlockException,
+  ContentDeleteReactionContentUserNotFoundException,
+  ContentReactionCommentAlreadyException,
+  ContentReactionCommentNotFoundException,
+  ContentReactionCommentTargetUserBlockException,
+  ContentReactionCommentUserNotFoundException,
+  ContentReactionContentAlreadyException,
+  ContentReactionContentNotFoundException,
+  ContentReactionContentTargetUserBlockException,
+  ContentReactionContentUserNotFoundException,
+  ContentUpdateReactionCommentAlreadyException,
+  ContentUpdateReactionCommentNotFoundException,
+  ContentUpdateReactionCommentNotReactedException,
+  ContentUpdateReactionCommentTargetUserBlockException,
+  ContentUpdateReactionCommentUserNotFoundException,
+  ContentUpdateReactionContentAlreadyException,
+  ContentUpdateReactionContentNotFoundException,
+  ContentUpdateReactionContentNotReactedException,
+  ContentUpdateReactionContentTargetUserBlockException,
+  ContentUpdateReactionContentUserNotFoundException,
+  ServiceExceptionClass,
+} from '../../common/exception';
 import { ReactionRepository } from './reaction.repository';
 import { ReactionTypeDTO } from './dtos/reaction-type.dto';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -30,10 +50,8 @@ export class ReactionService {
   private async validateReactionAccess(
     currentUserId: number,
     targetUserId: number,
-    notFoundMessage: string,
-    notFoundErrorCode: string,
-    targetBlockedMessage: string,
-    targetBlockedErrorCode: string,
+    NotFoundException: ServiceExceptionClass,
+    TargetBlockedException: ServiceExceptionClass,
   ) {
     if (currentUserId === targetUserId) {
       return;
@@ -45,25 +63,11 @@ export class ReactionService {
     ]);
 
     if (isBlockedByTarget) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          notFoundMessage,
-          undefined,
-          notFoundErrorCode,
-        ),
-      );
+      throw new NotFoundException();
     }
 
     if (isTargetBlocked) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          targetBlockedMessage,
-          undefined,
-          targetBlockedErrorCode,
-        ),
-      );
+      throw new TargetBlockedException();
     }
   }
 
@@ -88,35 +92,19 @@ export class ReactionService {
 
     // Stop when user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.reaction_content.user_not_found,
-          undefined,
-          errorCode.content.reaction_content.user_not_found,
-        ),
-      );
+      throw new ContentReactionContentUserNotFoundException();
     }
 
     // Stop when content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.reaction_content.not_found,
-          undefined,
-          errorCode.content.reaction_content.not_found,
-        ),
-      );
+      throw new ContentReactionContentNotFoundException();
     }
 
     await this.validateReactionAccess(
       currentUserId,
       contentFound.author.id,
-      message.content.reaction_content.not_found,
-      errorCode.content.reaction_content.not_found,
-      message.content.reaction_content.target_user_block,
-      errorCode.content.reaction_content.target_user_block,
+      ContentReactionContentNotFoundException,
+      ContentReactionContentTargetUserBlockException,
     );
 
     // Reject duplicate reaction requests explicitly before insert.
@@ -125,14 +113,7 @@ export class ReactionService {
       currentUserId,
     );
     if (existingReaction) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.reaction_content.already,
-          undefined,
-          errorCode.content.reaction_content.already,
-        ),
-      );
+      throw new ContentReactionContentAlreadyException();
     }
 
     // Insert a new reaction row for this user and content.
@@ -150,38 +131,17 @@ export class ReactionService {
         this.reactionRepo.findContentById(contentId),
       ]);
       if (!currentUserStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.reaction_content.user_not_found,
-            undefined,
-            errorCode.content.reaction_content.user_not_found,
-          ),
-        );
+        throw new ContentReactionContentUserNotFoundException();
       }
       if (!contentStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.reaction_content.not_found,
-            undefined,
-            errorCode.content.reaction_content.not_found,
-          ),
-        );
+        throw new ContentReactionContentNotFoundException();
       }
       throw error;
     }
 
     // Insert returns false when the user already reacted before.
     if (!isCreated) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.reaction_content.already,
-          undefined,
-          errorCode.content.reaction_content.already,
-        ),
-      );
+      throw new ContentReactionContentAlreadyException();
     }
 
     // Load inserted reaction id for notification target payload.
@@ -212,10 +172,7 @@ export class ReactionService {
     }
 
     // Return success response.
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.reaction_content.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -239,35 +196,19 @@ export class ReactionService {
 
     // Stop when user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_reaction_content.user_not_found,
-          undefined,
-          errorCode.content.update_reaction_content.user_not_found,
-        ),
-      );
+      throw new ContentUpdateReactionContentUserNotFoundException();
     }
 
     // Stop when content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_reaction_content.not_found,
-          undefined,
-          errorCode.content.update_reaction_content.not_found,
-        ),
-      );
+      throw new ContentUpdateReactionContentNotFoundException();
     }
 
     await this.validateReactionAccess(
       currentUserId,
       contentFound.author.id,
-      message.content.update_reaction_content.not_found,
-      errorCode.content.update_reaction_content.not_found,
-      message.content.update_reaction_content.target_user_block,
-      errorCode.content.update_reaction_content.target_user_block,
+      ContentUpdateReactionContentNotFoundException,
+      ContentUpdateReactionContentTargetUserBlockException,
     );
 
     // Fetch current reaction to ensure this user already reacted.
@@ -278,26 +219,12 @@ export class ReactionService {
 
     // Cannot update when there is no existing reaction.
     if (!reactionFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_reaction_content.not_reacted,
-          undefined,
-          errorCode.content.update_reaction_content.not_reacted,
-        ),
-      );
+      throw new ContentUpdateReactionContentNotReactedException();
     }
 
     // Reject no-op updates when the new type equals current type.
     if (reactionFound.type === reactionTypeDTO.type) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_reaction_content.already,
-          undefined,
-          errorCode.content.update_reaction_content.already,
-        ),
-      );
+      throw new ContentUpdateReactionContentAlreadyException();
     }
 
     // Update the reaction type.
@@ -308,21 +235,11 @@ export class ReactionService {
 
     // Handle race condition where reaction is removed between read and update.
     if (!isUpdated) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_reaction_content.not_reacted,
-          undefined,
-          errorCode.content.update_reaction_content.not_reacted,
-        ),
-      );
+      throw new ContentUpdateReactionContentNotReactedException();
     }
 
     // Return success response.
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.update_reaction_content.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -341,35 +258,19 @@ export class ReactionService {
 
     // Stop when user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.delete_reaction_content.user_not_found,
-          undefined,
-          errorCode.content.delete_reaction_content.user_not_found,
-        ),
-      );
+      throw new ContentDeleteReactionContentUserNotFoundException();
     }
 
     // Stop when content does not exist.
     if (!contentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.delete_reaction_content.not_found,
-          undefined,
-          errorCode.content.delete_reaction_content.not_found,
-        ),
-      );
+      throw new ContentDeleteReactionContentNotFoundException();
     }
 
     await this.validateReactionAccess(
       currentUserId,
       contentFound.author.id,
-      message.content.delete_reaction_content.not_found,
-      errorCode.content.delete_reaction_content.not_found,
-      message.content.delete_reaction_content.target_user_block,
-      errorCode.content.delete_reaction_content.target_user_block,
+      ContentDeleteReactionContentNotFoundException,
+      ContentDeleteReactionContentTargetUserBlockException,
     );
 
     // Delete the reaction row for this user and content.
@@ -380,21 +281,11 @@ export class ReactionService {
 
     // Delete returns false when user has not reacted yet.
     if (!isDeleted) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.delete_reaction_content.not_reacted,
-          undefined,
-          errorCode.content.delete_reaction_content.not_reacted,
-        ),
-      );
+      throw new ContentDeleteReactionContentNotReactedException();
     }
 
     // Return success response.
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.delete_reaction_content.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -424,26 +315,12 @@ export class ReactionService {
 
     // Stop when current user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.reaction_comment.user_not_found,
-          undefined,
-          errorCode.content.reaction_comment.user_not_found,
-        ),
-      );
+      throw new ContentReactionCommentUserNotFoundException();
     }
 
     // Stop when target comment does not exist.
     if (!commentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.reaction_comment.not_found,
-          undefined,
-          errorCode.content.reaction_comment.not_found,
-        ),
-      );
+      throw new ContentReactionCommentNotFoundException();
     }
 
     // Enforce block rules against both the post author and comment owner.
@@ -455,10 +332,8 @@ export class ReactionService {
         this.validateReactionAccess(
           currentUserId,
           targetUserId,
-          message.content.reaction_comment.not_found,
-          errorCode.content.reaction_comment.not_found,
-          message.content.reaction_comment.target_user_block,
-          errorCode.content.reaction_comment.target_user_block,
+          ContentReactionCommentNotFoundException,
+          ContentReactionCommentTargetUserBlockException,
         ),
       ),
     );
@@ -469,14 +344,7 @@ export class ReactionService {
       currentUserId,
     );
     if (existingReaction) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.reaction_comment.already,
-          undefined,
-          errorCode.content.reaction_comment.already,
-        ),
-      );
+      throw new ContentReactionCommentAlreadyException();
     }
 
     // Insert the reaction row and remap race conditions into domain errors.
@@ -493,38 +361,17 @@ export class ReactionService {
         this.reactionRepo.findCommentById(commentId),
       ]);
       if (!currentUserStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.reaction_comment.user_not_found,
-            undefined,
-            errorCode.content.reaction_comment.user_not_found,
-          ),
-        );
+        throw new ContentReactionCommentUserNotFoundException();
       }
       if (!commentStillExists) {
-        throw new NotFoundException(
-          sendResponse(
-            HttpStatus.NOT_FOUND,
-            message.content.reaction_comment.not_found,
-            undefined,
-            errorCode.content.reaction_comment.not_found,
-          ),
-        );
+        throw new ContentReactionCommentNotFoundException();
       }
       throw error;
     }
 
     // Treat ignored inserts as "already reacted".
     if (!isCreated) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.reaction_comment.already,
-          undefined,
-          errorCode.content.reaction_comment.already,
-        ),
-      );
+      throw new ContentReactionCommentAlreadyException();
     }
 
     // Load the inserted reaction id for notification target payload.
@@ -555,10 +402,7 @@ export class ReactionService {
     }
 
     // Return success response after the reaction is persisted.
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.reaction_comment.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -588,26 +432,12 @@ export class ReactionService {
 
     // Stop when current user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_reaction_comment.user_not_found,
-          undefined,
-          errorCode.content.update_reaction_comment.user_not_found,
-        ),
-      );
+      throw new ContentUpdateReactionCommentUserNotFoundException();
     }
 
     // Stop when target comment does not exist.
     if (!commentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.update_reaction_comment.not_found,
-          undefined,
-          errorCode.content.update_reaction_comment.not_found,
-        ),
-      );
+      throw new ContentUpdateReactionCommentNotFoundException();
     }
 
     // Enforce block rules against both the post author and comment owner.
@@ -619,10 +449,8 @@ export class ReactionService {
         this.validateReactionAccess(
           currentUserId,
           targetUserId,
-          message.content.update_reaction_comment.not_found,
-          errorCode.content.update_reaction_comment.not_found,
-          message.content.update_reaction_comment.target_user_block,
-          errorCode.content.update_reaction_comment.target_user_block,
+          ContentUpdateReactionCommentNotFoundException,
+          ContentUpdateReactionCommentTargetUserBlockException,
         ),
       ),
     );
@@ -635,26 +463,12 @@ export class ReactionService {
 
     // Reject updates when the user has not reacted yet.
     if (!reactionFound) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_reaction_comment.not_reacted,
-          undefined,
-          errorCode.content.update_reaction_comment.not_reacted,
-        ),
-      );
+      throw new ContentUpdateReactionCommentNotReactedException();
     }
 
     // Reject no-op updates where the new type matches the stored type.
     if (reactionFound.type === reactionTypeDTO.type) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_reaction_comment.already,
-          undefined,
-          errorCode.content.update_reaction_comment.already,
-        ),
-      );
+      throw new ContentUpdateReactionCommentAlreadyException();
     }
 
     // Update the reaction type in place.
@@ -665,21 +479,11 @@ export class ReactionService {
 
     // Handle races where the reaction disappears before the update executes.
     if (!isUpdated) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.update_reaction_comment.not_reacted,
-          undefined,
-          errorCode.content.update_reaction_comment.not_reacted,
-        ),
-      );
+      throw new ContentUpdateReactionCommentNotReactedException();
     }
 
     // Return success response after the reaction type is updated.
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.update_reaction_comment.success,
-    );
+    return { kind: 'success' };
   }
 
   /**
@@ -703,26 +507,12 @@ export class ReactionService {
 
     // Stop when current user does not exist.
     if (!currentUserFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.delete_reaction_comment.user_not_found,
-          undefined,
-          errorCode.content.delete_reaction_comment.user_not_found,
-        ),
-      );
+      throw new ContentDeleteReactionCommentUserNotFoundException();
     }
 
     // Stop when target comment does not exist.
     if (!commentFound) {
-      throw new NotFoundException(
-        sendResponse(
-          HttpStatus.NOT_FOUND,
-          message.content.delete_reaction_comment.not_found,
-          undefined,
-          errorCode.content.delete_reaction_comment.not_found,
-        ),
-      );
+      throw new ContentDeleteReactionCommentNotFoundException();
     }
 
     // Enforce block rules against both the post author and comment owner.
@@ -734,10 +524,8 @@ export class ReactionService {
         this.validateReactionAccess(
           currentUserId,
           targetUserId,
-          message.content.delete_reaction_comment.not_found,
-          errorCode.content.delete_reaction_comment.not_found,
-          message.content.delete_reaction_comment.target_user_block,
-          errorCode.content.delete_reaction_comment.target_user_block,
+          ContentDeleteReactionCommentNotFoundException,
+          ContentDeleteReactionCommentTargetUserBlockException,
         ),
       ),
     );
@@ -750,20 +538,10 @@ export class ReactionService {
 
     // Reject deletes when the user has not reacted yet.
     if (!isDeleted) {
-      throw new BadRequestException(
-        sendResponse(
-          HttpStatus.BAD_REQUEST,
-          message.content.delete_reaction_comment.not_reacted,
-          undefined,
-          errorCode.content.delete_reaction_comment.not_reacted,
-        ),
-      );
+      throw new ContentDeleteReactionCommentNotReactedException();
     }
 
     // Return success response after the reaction is removed.
-    return sendResponse(
-      HttpStatus.OK,
-      message.content.delete_reaction_comment.success,
-    );
+    return { kind: 'success' };
   }
 }

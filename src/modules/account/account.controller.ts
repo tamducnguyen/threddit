@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -23,6 +25,7 @@ import { DeleteAccountDTO } from './dtos/deleteaccount.dto';
 @SkipThrottle({ public: true })
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
+  @ResponseMessage({ success: message.account.signout.success })
   @HttpCode(HttpStatus.OK)
   @Post('signout')
   async signOut(
@@ -31,6 +34,7 @@ export class AccountController {
   ) {
     return await this.accountService.signOut(currentUser, accessToken);
   }
+  @ResponseMessage({ success: message.account.update_password.success })
   @HttpCode(HttpStatus.OK)
   @Post('updatepassword')
   async updatePassword(
@@ -44,6 +48,7 @@ export class AccountController {
       accessToken,
     );
   }
+  @ResponseMessage({ success: message.account.update_username.success })
   @HttpCode(HttpStatus.OK)
   @Post('updateusername')
   async updateUsername(
@@ -55,17 +60,20 @@ export class AccountController {
       updateUsernameDTO,
     );
   }
+  @ResponseMessage({ success: message.account.get_user_info.success })
   @HttpCode(HttpStatus.OK)
   @SkipThrottle({ write: true })
   @Get('getuserinfo')
   async getUserInfo(@CurrentUser() currentUser: AuthUser) {
     return await this.accountService.getUserInfo(currentUser);
   }
+  @ResponseMessage({ mail_sent: message.account.delete_account.mail_sent })
   @HttpCode(HttpStatus.OK)
   @Post('deleteaccount/request')
   async requestDeleteAccount(@CurrentUser() currentUser: AuthUser) {
     return await this.accountService.requestDeleteAccount(currentUser);
   }
+  @ResponseMessage({ success: message.account.delete_account.success })
   @HttpCode(HttpStatus.OK)
   @Post('deleteaccount/verify')
   async verifyDeleteAccount(

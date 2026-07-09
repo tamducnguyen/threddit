@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -24,6 +26,7 @@ import { ShareContentDTO } from './dtos/share-content.dto';
 export class ShareController {
   constructor(private readonly shareService: ShareService) {}
 
+  @ResponseMessage({ success: message.content.share_content.success })
   @HttpCode(HttpStatus.OK)
   @Post(':contentId/share')
   async shareContent(
@@ -38,6 +41,7 @@ export class ShareController {
     );
   }
 
+  @ResponseMessage({ success: message.content.update_share_content.success })
   @HttpCode(HttpStatus.OK)
   @Patch(':contentId/share')
   async updateShareContent(
@@ -52,6 +56,7 @@ export class ShareController {
     );
   }
 
+  @ResponseMessage({ success: message.content.unshare_content.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':contentId/share')
   async unshareContent(

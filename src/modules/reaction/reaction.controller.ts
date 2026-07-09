@@ -1,3 +1,5 @@
+import { message } from '../../common/helper/message.helper';
+import { ResponseMessage } from '../../common/decorator/response-message.decorator';
 import {
   Body,
   Controller,
@@ -25,6 +27,7 @@ import { CommentIdDTO } from '../comment/dtos/comment-id.dto';
 export class ReactionController {
   constructor(private readonly reactionService: ReactionService) {}
 
+  @ResponseMessage({ success: message.content.reaction_content.success })
   @HttpCode(HttpStatus.OK)
   @Post(':contentId/reaction')
   async createContentReaction(
@@ -39,6 +42,7 @@ export class ReactionController {
     );
   }
 
+  @ResponseMessage({ success: message.content.update_reaction_content.success })
   @HttpCode(HttpStatus.OK)
   @Patch(':contentId/reaction')
   async updateContentReaction(
@@ -53,6 +57,7 @@ export class ReactionController {
     );
   }
 
+  @ResponseMessage({ success: message.content.delete_reaction_content.success })
   @HttpCode(HttpStatus.OK)
   @Delete(':contentId/reaction')
   async deleteContentReaction(
@@ -65,6 +70,7 @@ export class ReactionController {
     );
   }
 
+  @ResponseMessage({ success: message.content.reaction_comment.success })
   @HttpCode(HttpStatus.OK)
   @Post('comment/:commentId/reaction')
   async createCommentReaction(
@@ -79,6 +85,7 @@ export class ReactionController {
     );
   }
 
+  @ResponseMessage({ success: message.content.update_reaction_comment.success })
   @HttpCode(HttpStatus.OK)
   @Patch('comment/:commentId/reaction')
   async updateCommentReaction(
@@ -93,6 +100,7 @@ export class ReactionController {
     );
   }
 
+  @ResponseMessage({ success: message.content.delete_reaction_comment.success })
   @HttpCode(HttpStatus.OK)
   @Delete('comment/:commentId/reaction')
   async deleteCommentReaction(
