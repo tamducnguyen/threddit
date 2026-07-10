@@ -23,5 +23,6 @@ import { SessionModule } from '../token/session.module';
   ],
   controllers: [BlockController],
   providers: [BlockService, BlockRepository],
+  exports: [BlockService],
 })
 export class BlockModule {}

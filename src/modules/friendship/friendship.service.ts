@@ -3,26 +3,20 @@ import {
   FriendshipAcceptRequestRequestNotFoundException,
   FriendshipCancelRequestRequestNotFoundException,
   FriendshipGetFriendListCursorInvalidException,
-  FriendshipGetFriendListTargetUserBlockException,
   FriendshipGetFriendListUserNotFoundException,
   FriendshipGetFriendStatusCantSelfCheckException,
-  FriendshipGetFriendStatusTargetUserBlockException,
   FriendshipGetFriendStatusUserNotFoundException,
   FriendshipGetMutualFriendCountCantSelfGetException,
-  FriendshipGetMutualFriendCountTargetUserBlockException,
   FriendshipGetMutualFriendCountUserNotFoundException,
   FriendshipGetMutualFriendListCantSelfGetException,
   FriendshipGetMutualFriendListCursorInvalidException,
-  FriendshipGetMutualFriendListTargetUserBlockException,
   FriendshipGetMutualFriendListUserNotFoundException,
   FriendshipGetReceivedRequestsCursorInvalidException,
   FriendshipGetSentRequestsCursorInvalidException,
-  FriendshipGetUserFriendCountTargetUserBlockException,
   FriendshipGetUserFriendCountUserNotFoundException,
   FriendshipRejectRequestRequestNotFoundException,
   FriendshipSendRequestCantSelfRequestException,
   FriendshipSendRequestFriendshipExistsException,
-  FriendshipSendRequestRecipientBlockedException,
   FriendshipSendRequestRequestAlreadySentException,
   FriendshipSendRequestUserNotFoundException,
   FriendshipUnfriendCantSelfUnfriendException,
@@ -43,6 +37,7 @@ import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
+import { BlockService } from '../block/block.service';
 
 @Injectable()
 export class FriendshipService {
@@ -52,6 +47,7 @@ export class FriendshipService {
     private readonly notificationQueue: Queue,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly blockService: BlockService,
   ) {}
 
   private mapUser(user: {
@@ -127,23 +123,11 @@ export class FriendshipService {
       throw new FriendshipSendRequestRequestAlreadySentException();
     }
 
-    //check if current user is blocked by recipient
-    const isBlocked = await this.friendshipRepo.checkBlocked(
+    //check block relationship in both directions
+    await this.blockService.validateBlock(
       currentUserFound.id,
       recipientUserFound.id,
     );
-    if (isBlocked) {
-      throw new FriendshipSendRequestUserNotFoundException();
-    }
-
-    //check if current user blocked recipient
-    const isRecipientBlocked = await this.friendshipRepo.checkBlocked(
-      recipientUserFound.id,
-      currentUserFound.id,
-    );
-    if (isRecipientBlocked) {
-      throw new FriendshipSendRequestRecipientBlockedException();
-    }
 
     //check if recipient already sent request to current user -> auto-accept
     if (friendshipFromRecipient?.status === FriendshipStatus.PENDING) {
@@ -389,24 +373,8 @@ export class FriendshipService {
     if (!targetUserFound) {
       throw new FriendshipGetFriendListUserNotFoundException();
     }
-    //check if current user is blocked by target user
-    if (currentUserId !== targetUserFound.id) {
-      const isBlocked = await this.friendshipRepo.checkBlocked(
-        currentUserId,
-        targetUserFound.id,
-      );
-      if (isBlocked) {
-        throw new FriendshipGetFriendListUserNotFoundException();
-      }
-      //check if current user blocked target user
-      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
-        targetUserFound.id,
-        currentUserId,
-      );
-      if (isTargetUserBlocked) {
-        throw new FriendshipGetFriendListTargetUserBlockException();
-      }
-    }
+    //check block relationship in both directions
+    await this.blockService.validateBlock(currentUserId, targetUserFound.id);
     //check cursor and decode
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -471,22 +439,8 @@ export class FriendshipService {
     if (currentUser.sub === userFound.id) {
       throw new FriendshipGetFriendStatusCantSelfCheckException();
     }
-    //check if current user got blocked
-    const isBlocked = await this.friendshipRepo.checkBlocked(
-      currentUser.sub,
-      userFound.id,
-    );
-    if (isBlocked) {
-      throw new FriendshipGetFriendStatusUserNotFoundException();
-    }
-    //check if current user blocked target user
-    const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
-      userFound.id,
-      currentUser.sub,
-    );
-    if (isTargetUserBlocked) {
-      throw new FriendshipGetFriendStatusTargetUserBlockException();
-    }
+    //check block relationship in both directions
+    await this.blockService.validateBlock(currentUser.sub, userFound.id);
     const friendship = await this.friendshipRepo.findFriendshipBetween(
       currentUser.sub,
       userFound.id,
@@ -527,13 +481,10 @@ export class FriendshipService {
       throw new FriendshipUnfriendCantSelfUnfriendException();
     }
     //check if current user got blocked
-    const isBlocked = await this.friendshipRepo.checkBlocked(
+    await this.blockService.validateNotBlockedByTarget(
       currentUser.sub,
       userFound.id,
     );
-    if (isBlocked) {
-      throw new FriendshipUnfriendUserNotFoundException();
-    }
     //check friendship exist and accepted
     const friendship = await this.friendshipRepo.findFriendshipBetween(
       currentUser.sub,
@@ -566,24 +517,8 @@ export class FriendshipService {
     if (currentUser.sub === userFound.id) {
       throw new FriendshipGetMutualFriendListCantSelfGetException();
     }
-    //check if current user is blocked by target user
-    if (currentUser.sub !== userFound.id) {
-      const isBlocked = await this.friendshipRepo.checkBlocked(
-        currentUser.sub,
-        userFound.id,
-      );
-      if (isBlocked) {
-        throw new FriendshipGetMutualFriendListUserNotFoundException();
-      }
-      //check if current user blocked target user
-      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
-        userFound.id,
-        currentUser.sub,
-      );
-      if (isTargetUserBlocked) {
-        throw new FriendshipGetMutualFriendListTargetUserBlockException();
-      }
-    }
+    //check block relationship in both directions
+    await this.blockService.validateBlock(currentUser.sub, userFound.id);
     //check cursor and decode
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -644,24 +579,8 @@ export class FriendshipService {
     if (!userFound) {
       throw new FriendshipGetUserFriendCountUserNotFoundException();
     }
-    //check if current user got blocked
-    if (currentUser.sub !== userFound.id) {
-      const isBlocked = await this.friendshipRepo.checkBlocked(
-        currentUser.sub,
-        userFound.id,
-      );
-      if (isBlocked) {
-        throw new FriendshipGetUserFriendCountUserNotFoundException();
-      }
-      //check if current user blocked target user
-      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
-        userFound.id,
-        currentUser.sub,
-      );
-      if (isTargetUserBlocked) {
-        throw new FriendshipGetUserFriendCountTargetUserBlockException();
-      }
-    }
+    //check block relationship in both directions
+    await this.blockService.validateBlock(currentUser.sub, userFound.id);
     const friendCount = await this.friendshipRepo.countFriends(userFound.id);
     return { kind: 'success', data: { friendCount } };
   }
@@ -681,24 +600,8 @@ export class FriendshipService {
     if (currentUser.sub === userFound.id) {
       throw new FriendshipGetMutualFriendCountCantSelfGetException();
     }
-    //check if current user got blocked
-    if (currentUser.sub !== userFound.id) {
-      const isBlocked = await this.friendshipRepo.checkBlocked(
-        currentUser.sub,
-        userFound.id,
-      );
-      if (isBlocked) {
-        throw new FriendshipGetMutualFriendCountUserNotFoundException();
-      }
-      //check if current user blocked target user
-      const isTargetUserBlocked = await this.friendshipRepo.checkBlocked(
-        userFound.id,
-        currentUser.sub,
-      );
-      if (isTargetUserBlocked) {
-        throw new FriendshipGetMutualFriendCountTargetUserBlockException();
-      }
-    }
+    //check block relationship in both directions
+    await this.blockService.validateBlock(currentUser.sub, userFound.id);
     const mutualCount = await this.friendshipRepo.countMutualFriends(
       currentUser.sub,
       userFound.id,

@@ -6,7 +6,6 @@ import { ReactionEntity } from '../../entities/reaction.entity';
 import { ReactionTargetType } from '../../enum/reactiontargettype.enum';
 import { ReactionType } from '../../enum/reactiontype.enum';
 import { CommentEntity } from '../../entities/comment.entity';
-import { BlockEntity } from '../../entities/block.entity';
 
 export class ReactionRepository {
   constructor(
@@ -16,8 +15,6 @@ export class ReactionRepository {
     private readonly commentRepo: Repository<CommentEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
     @InjectRepository(ReactionEntity)
     private readonly reactionRepo: Repository<ReactionEntity>,
   ) {}
@@ -45,15 +42,6 @@ export class ReactionRepository {
     return await this.commentRepo.findOne({
       where: { id: commentId },
       relations: { commenter: true, content: { author: true } },
-    });
-  }
-
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.exists({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
     });
   }
 

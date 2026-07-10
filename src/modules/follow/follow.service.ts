@@ -2,20 +2,15 @@
 import {
   FollowDeleteFollowFollowNotFoundException,
   FollowDeleteFollowUserNotFoundException,
-  FollowGetFollowNumberTargetUserBlockException,
   FollowGetFollowNumberUserNotFoundException,
   FollowGetFollowStateCanNotSelfCheckException,
-  FollowGetFollowStateTargetUserBlockException,
   FollowGetFollowStateUserNotFoundException,
   FollowGetFollowerListCursorInvalidException,
-  FollowGetFollowerListTargetUserBlockException,
   FollowGetFollowerListUserNotFoundException,
   FollowGetFollowingListCursorInvalidException,
-  FollowGetFollowingListTargetUserBlockException,
   FollowGetFollowingListUserNotFoundException,
   FollowPostFollowCantSelfFollowException,
   FollowPostFollowFollowAlreadyException,
-  FollowPostFollowFolloweeBlockedException,
   FollowPostFollowUserNotFoundException,
 } from '../../common/exception';
 import { FollowRepository } from './follow.repository';
@@ -31,6 +26,7 @@ import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../token/authuser.interface';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
+import { BlockService } from '../block/block.service';
 
 @Injectable()
 export class FollowService {
@@ -40,6 +36,7 @@ export class FollowService {
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
     private readonly configService: ConfigService,
+    private readonly blockService: BlockService,
   ) {}
   private mapFollowerUser(user: {
     email: string;
@@ -90,22 +87,11 @@ export class FollowService {
       if (!getFollowNumberUserFound) {
         throw new FollowGetFollowNumberUserNotFoundException();
       }
-      //check if current user is blocked by whose username
-      const isBlocked = await this.followRepo.checkBlocked(
+      //check block relationship in both directions
+      await this.blockService.validateBlock(
         currentUser.sub,
         getFollowNumberUserFound.id,
       );
-      if (isBlocked) {
-        throw new FollowGetFollowNumberUserNotFoundException();
-      }
-      //check if current user blocked this user
-      const isTargetUserBlocked = await this.followRepo.checkBlocked(
-        getFollowNumberUserFound.id,
-        currentUser.sub,
-      );
-      if (isTargetUserBlocked) {
-        throw new FollowGetFollowNumberTargetUserBlockException();
-      }
       userId = getFollowNumberUserFound.id;
     }
     //get follow numbers
@@ -134,22 +120,8 @@ export class FollowService {
     if (!userFound) {
       throw new FollowGetFollowerListUserNotFoundException();
     }
-    //check if current user is blocked by whose username
-    const isBlocked = await this.followRepo.checkBlocked(
-      currentUserId,
-      userFound.id,
-    );
-    if (isBlocked) {
-      throw new FollowGetFollowerListUserNotFoundException();
-    }
-    //check if current user blocked this user
-    const isTargetUserBlocked = await this.followRepo.checkBlocked(
-      userFound.id,
-      currentUserId,
-    );
-    if (isTargetUserBlocked) {
-      throw new FollowGetFollowerListTargetUserBlockException();
-    }
+    // check block relationship in both directions
+    await this.blockService.validateBlock(currentUserId, userFound.id);
     //check if there is cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -215,22 +187,8 @@ export class FollowService {
     if (!userFound) {
       throw new FollowGetFollowingListUserNotFoundException();
     }
-    //check if current user is blocked by whose username
-    const isBlocked = await this.followRepo.checkBlocked(
-      currentUserId,
-      userFound.id,
-    );
-    if (isBlocked) {
-      throw new FollowGetFollowingListUserNotFoundException();
-    }
-    //check if current user blocked this user
-    const isTargetUserBlocked = await this.followRepo.checkBlocked(
-      userFound.id,
-      currentUserId,
-    );
-    if (isTargetUserBlocked) {
-      throw new FollowGetFollowingListTargetUserBlockException();
-    }
+    // check block relationship in both directions
+    await this.blockService.validateBlock(currentUserId, userFound.id);
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -297,22 +255,8 @@ export class FollowService {
     if (!userFound) {
       throw new FollowGetFollowerListUserNotFoundException();
     }
-    //check if current user is blocked by whose username
-    const isBlocked = await this.followRepo.checkBlocked(
-      currentUserId,
-      userFound.id,
-    );
-    if (isBlocked) {
-      throw new FollowGetFollowerListUserNotFoundException();
-    }
-    //check if current user blocked this user
-    const isTargetUserBlocked = await this.followRepo.checkBlocked(
-      userFound.id,
-      currentUserId,
-    );
-    if (isTargetUserBlocked) {
-      throw new FollowGetFollowerListTargetUserBlockException();
-    }
+    // check block relationship in both directions
+    await this.blockService.validateBlock(currentUserId, userFound.id);
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -380,22 +324,8 @@ export class FollowService {
     if (!userFound) {
       throw new FollowGetFollowingListUserNotFoundException();
     }
-    //check if current user is blocked by whose username
-    const isBlocked = await this.followRepo.checkBlocked(
-      currentUserId,
-      userFound.id,
-    );
-    if (isBlocked) {
-      throw new FollowGetFollowingListUserNotFoundException();
-    }
-    //check if current user blocked this user
-    const isTargetUserBlocked = await this.followRepo.checkBlocked(
-      userFound.id,
-      currentUserId,
-    );
-    if (isTargetUserBlocked) {
-      throw new FollowGetFollowingListTargetUserBlockException();
-    }
+    // check block relationship in both directions
+    await this.blockService.validateBlock(currentUserId, userFound.id);
     //check if has cursor -> verify cursor
     let cursorDecoded: Cursor | undefined;
     if (cursor) {
@@ -463,22 +393,12 @@ export class FollowService {
     if (currentUserFound.id === followeeUserFound.id) {
       throw new FollowPostFollowCantSelfFollowException();
     }
-    //check if current user is blocked by whose username
-    const isBlocked = await this.followRepo.checkBlocked(
+    console.log('run to this');
+    // check block relationship in both directions
+    await this.blockService.validateBlock(
       currentUserFound.id,
       followeeUserFound.id,
     );
-    if (isBlocked) {
-      throw new FollowPostFollowUserNotFoundException();
-    }
-    //check if current user block user
-    const isFolloweeBlocked = await this.followRepo.checkBlocked(
-      followeeUserFound.id,
-      currentUserFound.id,
-    );
-    if (isFolloweeBlocked) {
-      throw new FollowPostFollowFolloweeBlockedException();
-    }
     //check if current user already follow followee user
     const isFollowed = await this.followRepo.checkExistFollow(
       currentUserFound.id,
@@ -553,22 +473,11 @@ export class FollowService {
     if (currentUser.sub === getStateUserFound.id) {
       throw new FollowGetFollowStateCanNotSelfCheckException();
     }
-    //check if current user is blocked by whose username
-    const isBlocked = await this.followRepo.checkBlocked(
+    // check block relationship in both directions
+    await this.blockService.validateBlock(
       currentUser.sub,
       getStateUserFound.id,
     );
-    if (isBlocked) {
-      throw new FollowGetFollowStateUserNotFoundException();
-    }
-    //check if current user blocked this user
-    const isTargetUserBlocked = await this.followRepo.checkBlocked(
-      getStateUserFound.id,
-      currentUser.sub,
-    );
-    if (isTargetUserBlocked) {
-      throw new FollowGetFollowStateTargetUserBlockException();
-    }
     //get user's follow state
     const isFollowing = await this.followRepo.checkExistFollow(
       currentUser.sub,

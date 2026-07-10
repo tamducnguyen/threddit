@@ -5,7 +5,6 @@ import { CommentEntity } from '../../entities/comment.entity';
 import { Brackets, In, Repository } from 'typeorm';
 import { UserEntity } from '../../entities/user.entity';
 import { ContentEntity } from '../../entities/content.entity';
-import { BlockEntity } from '../../entities/block.entity';
 import { MediaFileEntity } from '../../entities/media-file.entity';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
@@ -38,8 +37,6 @@ export class CommentRepository {
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(ContentEntity)
     private readonly contentRepo: Repository<ContentEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
     @InjectRepository(MediaFileEntity)
     private readonly mediaFileRepo: Repository<MediaFileEntity>,
     @InjectRepository(FriendshipEntity)
@@ -694,15 +691,6 @@ export class CommentRepository {
       .filter((commentId) => Number.isInteger(commentId));
   }
 
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.findOne({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
-    });
-  }
-
   async findOwnedCommentWithRelationsById(
     commentId: number,
     currentUserId: number,
@@ -718,29 +706,6 @@ export class CommentRepository {
         content: { author: true },
         parentComment: { commenter: true },
       },
-    });
-  }
-
-  async isBlockedByAnyTarget(currentUserId: number, targetUserIds: number[]) {
-    if (targetUserIds.length === 0) return false;
-    return await this.blockRepo.exists({
-      where: targetUserIds.map((targetUserId) => ({
-        blockedUser: { id: currentUserId },
-        blocker: { id: targetUserId },
-      })),
-    });
-  }
-
-  async isAnyTargetBlockedByCurrentUser(
-    currentUserId: number,
-    targetUserIds: number[],
-  ) {
-    if (targetUserIds.length === 0) return false;
-    return await this.blockRepo.exists({
-      where: targetUserIds.map((targetUserId) => ({
-        blockedUser: { id: targetUserId },
-        blocker: { id: currentUserId },
-      })),
     });
   }
 

@@ -10,7 +10,7 @@ import { SessionEntity } from '../../entities/session.entity';
 import { SessionModule } from '../token/session.module';
 import { NotificationModule } from '../notification/notification.module';
 import { CommentEntity } from '../../entities/comment.entity';
-import { BlockEntity } from '../../entities/block.entity';
+import { BlockModule } from '../block/block.module';
 
 @Module({
   imports: [
@@ -18,12 +18,12 @@ import { BlockEntity } from '../../entities/block.entity';
       ContentEntity,
       CommentEntity,
       UserEntity,
-      BlockEntity,
       ReactionEntity,
       SessionEntity,
     ]),
     SessionModule,
     NotificationModule,
+    BlockModule,
   ],
   controllers: [ReactionController],
   providers: [ReactionService, ReactionRepository],

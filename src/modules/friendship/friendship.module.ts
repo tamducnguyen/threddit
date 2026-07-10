@@ -6,20 +6,16 @@ import { FriendshipRepository } from './friendship.repository';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { UserEntity } from '../../entities/user.entity';
 import { SessionEntity } from '../../entities/session.entity';
-import { BlockEntity } from '../../entities/block.entity';
 import { SessionModule } from '../token/session.module';
 import { NotificationModule } from '../notification/notification.module';
+import { BlockModule } from '../block/block.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      FriendshipEntity,
-      UserEntity,
-      SessionEntity,
-      BlockEntity,
-    ]),
+    TypeOrmModule.forFeature([FriendshipEntity, UserEntity, SessionEntity]),
     SessionModule,
     NotificationModule,
+    BlockModule,
   ],
   controllers: [FriendshipController],
   providers: [FriendshipService, FriendshipRepository],

@@ -7,7 +7,6 @@ import { TimelineItem } from './interface/timeline-item.interface';
 import { ReactionTargetType } from '../../enum/reactiontargettype.enum';
 import { MediaTargetType } from '../../enum/media-target-type.enum';
 import { TimelineCursor } from './interface/timeline-cursor.interface';
-import { BlockEntity } from '../../entities/block.entity';
 import { MediaFileEntity } from '../../entities/media-file.entity';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
@@ -25,8 +24,6 @@ export class ContentRepository {
     private readonly configService: ConfigService,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
     @InjectRepository(MediaFileEntity)
     private readonly mediaFileRepo: Repository<MediaFileEntity>,
     @InjectRepository(FriendshipEntity)
@@ -34,14 +31,6 @@ export class ContentRepository {
     @InjectRepository(FollowEntity)
     private readonly followRepo: Repository<FollowEntity>,
   ) {}
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.exists({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
-    });
-  }
   async getPinnedContents(timelineOwnerId: number, currentUserId: number) {
     const getPinnedContentsQuery = `
       SELECT

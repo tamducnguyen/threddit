@@ -8,26 +8,19 @@ import {
   ContentCommentContentNotFoundException,
   ContentCommentOnlyOneMediaAllowedException,
   ContentCommentParentCommentNotFoundException,
-  ContentCommentParentCommenterBlockException,
-  ContentCommentTargetUserBlockException,
   ContentCommentTextOrMediaRequiredException,
   ContentCommentUserNotFoundException,
   ContentDeleteCommentNotFoundException,
   ContentGetChildCommentsNotFoundException,
   ContentGetCommentContentNotFoundException,
   ContentGetCommentCursorInvalidException,
-  ContentGetCommentTargetUserBlockException,
   ContentGetDetailCommentNotFoundException,
-  ContentGetDetailCommentTargetUserBlockException,
   ContentUpdateCommentConfirmMediaFailedException,
   ContentUpdateCommentMediaActionConflictException,
   ContentUpdateCommentNoFieldToUpdateException,
   ContentUpdateCommentNotFoundException,
   ContentUpdateCommentOnlyOneMediaAllowedException,
-  ContentUpdateCommentParentCommenterBlockException,
-  ContentUpdateCommentTargetUserBlockException,
   ContentUpdateCommentTextOrMediaRequiredException,
-  ServiceExceptionClass,
 } from '../../common/exception';
 import type { Cache } from 'cache-manager';
 import { Queue } from 'bullmq';
@@ -45,6 +38,7 @@ import { CommentRepository } from './comment.repository';
 import { CommentContentDTO } from './dtos/comment-content.dto';
 import { Cursor } from '../../common/interface/cursor.interface';
 import { UpdateCommentDTO } from './dtos/update-comment.dto';
+import { BlockService } from '../block/block.service';
 
 @Injectable()
 export class CommentService {
@@ -58,50 +52,8 @@ export class CommentService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
+    private readonly blockService: BlockService,
   ) {}
-
-  /**
-   * Validates whether the current user is allowed to comment on the target
-   * author's post based on the block relationship between the two users.
-   *
-   * Rules:
-   * - if the author blocked the current user, hide the post via `NotFound`
-   * - if the current user blocked the author, reject via `BadRequest`
-   *
-   * @param currentUserId Current authenticated user id.
-   * @param targetUserId Target post author id.
-   * @param notFoundMessage Message used when the target user blocked current user.
-   * @param notFoundErrorCode Error code used when the target user blocked current user.
-   * @param targetBlockedMessage Message used when current user blocked the target user.
-   * @param targetBlockedErrorCode Error code used when current user blocked the target user.
-   */
-  private async validateCommentAccess(
-    currentUserId: number,
-    targetUserId: number,
-    NotFoundException: ServiceExceptionClass,
-    TargetBlockedException: ServiceExceptionClass,
-  ) {
-    // Skip block validation when the user comments on their own post.
-    if (currentUserId === targetUserId) {
-      return;
-    }
-
-    // Check both block directions in parallel to reduce database latency.
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.commentRepo.checkBlocked(currentUserId, targetUserId),
-      this.commentRepo.checkBlocked(targetUserId, currentUserId),
-    ]);
-
-    // Hide the post when the author has blocked the current user.
-    if (isBlockedByTarget) {
-      throw new NotFoundException();
-    }
-
-    // Reject the request when the current user already blocked the author.
-    if (isTargetBlocked) {
-      throw new TargetBlockedException();
-    }
-  }
 
   /**
    * Enqueues mention notifications for users mentioned in a comment.
@@ -204,40 +156,6 @@ export class CommentService {
   }
 
   /**
-   * Validates that every commenter present in a prefetched comment chain is
-   * visible to the current user.
-   *
-   * @param currentUserId Current authenticated user id.
-   * @param commenterIds Commenter ids collected from the loaded comment chain.
-   * @param notFoundMessage Message used when a commenter blocked current user.
-   * @param notFoundErrorCode Error code used when a commenter blocked current user.
-   * @param targetBlockedMessage Message used when current user blocked a commenter.
-   * @param targetBlockedErrorCode Error code used when current user blocked a commenter.
-   */
-  private async validateCommentChainVisibility(
-    currentUserId: number,
-    commenterIds: number[],
-    NotFoundException: ServiceExceptionClass,
-    TargetBlockedException: ServiceExceptionClass,
-  ) {
-    const [isBlockedByAnyCommenter, isAnyCommenterBlocked] = await Promise.all([
-      this.commentRepo.isBlockedByAnyTarget(currentUserId, commenterIds),
-      this.commentRepo.isAnyTargetBlockedByCurrentUser(
-        currentUserId,
-        commenterIds,
-      ),
-    ]);
-
-    if (isBlockedByAnyCommenter) {
-      throw new NotFoundException();
-    }
-
-    if (isAnyCommenterBlocked) {
-      throw new TargetBlockedException();
-    }
-  }
-
-  /**
    * Creates a new comment on a post.
    *
    * Business rules:
@@ -288,20 +206,16 @@ export class CommentService {
     }
 
     // Enforce access rules derived from the block relationship.
-    await this.validateCommentAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentCommentContentNotFoundException,
-      ContentCommentTargetUserBlockException,
     );
 
     // Apply the same block validation against the parent comment owner for replies.
     if (parentCommentFound?.commenter) {
-      await this.validateCommentAccess(
+      await this.blockService.validateBlock(
         currentUserId,
         parentCommentFound.commenter.id,
-        ContentCommentParentCommentNotFoundException,
-        ContentCommentParentCommenterBlockException,
       );
     }
 
@@ -473,20 +387,16 @@ export class CommentService {
     }
 
     // Re-apply post-author visibility rules before allowing the edit.
-    await this.validateCommentAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       ownedComment.content.author.id,
-      ContentUpdateCommentNotFoundException,
-      ContentUpdateCommentTargetUserBlockException,
     );
 
     // Re-apply parent-commenter visibility rules when the comment is a reply.
     if (ownedComment.parentComment?.commenter) {
-      await this.validateCommentAccess(
+      await this.blockService.validateBlock(
         currentUserId,
         ownedComment.parentComment.commenter.id,
-        ContentUpdateCommentNotFoundException,
-        ContentUpdateCommentParentCommenterBlockException,
       );
     }
 
@@ -703,12 +613,7 @@ export class CommentService {
     }
 
     // Check block relationships against every commenter present in the returned chain.
-    await this.validateCommentChainVisibility(
-      currentUserId,
-      commenterIds,
-      ContentGetDetailCommentNotFoundException,
-      ContentGetDetailCommentTargetUserBlockException,
-    );
+    await this.blockService.validateBlockMany(currentUserId, commenterIds);
 
     return {
       kind: 'success',
@@ -740,11 +645,9 @@ export class CommentService {
     }
 
     // Apply the same author-level block rules before exposing any comment list.
-    await this.validateCommentAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentGetCommentContentNotFoundException,
-      ContentGetCommentTargetUserBlockException,
     );
 
     // Decode the paging cursor before querying the next slice.
@@ -813,19 +716,15 @@ export class CommentService {
     }
 
     // Respect content-author visibility before exposing any reply list.
-    await this.validateCommentAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       parentCommentFound.content.author.id,
-      ContentGetDetailCommentNotFoundException,
-      ContentGetDetailCommentTargetUserBlockException,
     );
 
     // Respect parent-commenter visibility before exposing any direct reply list.
-    await this.validateCommentAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       parentCommentFound.commenter.id,
-      ContentCommentParentCommentNotFoundException,
-      ContentCommentParentCommenterBlockException,
     );
 
     // Decode the paging cursor before querying the next page of direct replies.

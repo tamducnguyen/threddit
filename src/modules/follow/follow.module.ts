@@ -9,6 +9,7 @@ import { SessionModule } from '../token/session.module';
 import { NotificationModule } from '../notification/notification.module';
 import { SessionEntity } from '../../entities/session.entity';
 import { BlockEntity } from '../../entities/block.entity';
+import { BlockModule } from '../block/block.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BlockEntity } from '../../entities/block.entity';
     ]),
     SessionModule,
     NotificationModule,
+    BlockModule,
   ],
   controllers: [FollowController],
   providers: [FollowService, FollowRepository],

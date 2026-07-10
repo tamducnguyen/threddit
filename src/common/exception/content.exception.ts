@@ -27,18 +27,6 @@ export class ContentCommentParentCommentNotFoundException extends BaseServiceExc
   readonly message = message.content.comment.parent_comment_not_found;
 }
 
-export class ContentCommentParentCommenterBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.comment.parent_commenter_block;
-  readonly message = message.content.comment.parent_commenter_block;
-}
-
-export class ContentCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.comment.target_user_block;
-  readonly message = message.content.comment.target_user_block;
-}
-
 export class ContentCommentTextOrMediaRequiredException extends BaseServiceException {
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.content.comment.text_or_media_required;
@@ -99,13 +87,6 @@ export class ContentDeleteReactionCommentNotReactedException extends BaseService
   readonly message = message.content.delete_reaction_comment.not_reacted;
 }
 
-export class ContentDeleteReactionCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.content.delete_reaction_comment.target_user_block;
-  readonly message = message.content.delete_reaction_comment.target_user_block;
-}
-
 export class ContentDeleteReactionCommentUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.delete_reaction_comment.user_not_found;
@@ -122,13 +103,6 @@ export class ContentDeleteReactionContentNotReactedException extends BaseService
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.content.delete_reaction_content.not_reacted;
   readonly message = message.content.delete_reaction_content.not_reacted;
-}
-
-export class ContentDeleteReactionContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.content.delete_reaction_content.target_user_block;
-  readonly message = message.content.delete_reaction_content.target_user_block;
 }
 
 export class ContentDeleteReactionContentUserNotFoundException extends BaseServiceException {
@@ -155,12 +129,6 @@ export class ContentGetCommentCursorInvalidException extends BaseServiceExceptio
   readonly message = message.content.get_comment.cursor_invalid;
 }
 
-export class ContentGetCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.get_comment.target_user_block;
-  readonly message = message.content.get_comment.target_user_block;
-}
-
 export class ContentGetContentNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.get_content.not_found;
@@ -173,41 +141,16 @@ export class ContentGetDetailCommentNotFoundException extends BaseServiceExcepti
   readonly message = message.content.get_detail_comment.not_found;
 }
 
-export class ContentGetDetailCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.get_detail_comment.target_user_block;
-  readonly message = message.content.get_detail_comment.target_user_block;
-}
-
-export class ContentGetOtherCurrentStoryTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.content.get_other_current_story.target_user_block;
-  readonly message = message.content.get_other_current_story.target_user_block;
-}
-
 export class ContentGetOtherCurrentStoryUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.get_other_current_story.user_not_found;
   readonly message = message.content.get_other_current_story.user_not_found;
 }
 
-export class ContentGetPinnedStoryTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.get_pinned_story.target_user_block;
-  readonly message = message.content.get_pinned_story.target_user_block;
-}
-
 export class ContentGetPinnedStoryUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.get_pinned_story.user_not_found;
   readonly message = message.content.get_pinned_story.user_not_found;
-}
-
-export class ContentGetTimelineContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.get_timeline_content.target_user_block;
-  readonly message = message.content.get_timeline_content.target_user_block;
 }
 
 export class ContentGetTimelineContentUserNotFoundException extends BaseServiceException {
@@ -246,12 +189,6 @@ export class ContentReactionCommentNotFoundException extends BaseServiceExceptio
   readonly message = message.content.reaction_comment.not_found;
 }
 
-export class ContentReactionCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.reaction_comment.target_user_block;
-  readonly message = message.content.reaction_comment.target_user_block;
-}
-
 export class ContentReactionCommentUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.reaction_comment.user_not_found;
@@ -268,12 +205,6 @@ export class ContentReactionContentNotFoundException extends BaseServiceExceptio
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.reaction_content.not_found;
   readonly message = message.content.reaction_content.not_found;
-}
-
-export class ContentReactionContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.reaction_content.target_user_block;
-  readonly message = message.content.reaction_content.target_user_block;
 }
 
 export class ContentReactionContentUserNotFoundException extends BaseServiceException {
@@ -310,12 +241,6 @@ export class ContentShareContentNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.share_content.not_found;
   readonly message = message.content.share_content.not_found;
-}
-
-export class ContentShareContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.share_content.target_user_block;
-  readonly message = message.content.share_content.target_user_block;
 }
 
 export class ContentShareContentUserNotFoundException extends BaseServiceException {
@@ -366,12 +291,6 @@ export class ContentUnshareContentNotShareException extends BaseServiceException
   readonly message = message.content.unshare_content.not_share;
 }
 
-export class ContentUnshareContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.unshare_content.target_user_block;
-  readonly message = message.content.unshare_content.target_user_block;
-}
-
 export class ContentUnshareContentUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.unshare_content.user_not_found;
@@ -406,18 +325,6 @@ export class ContentUpdateCommentOnlyOneMediaAllowedException extends BaseServic
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.content.update_comment.only_one_media_allowed;
   readonly message = message.content.update_comment.only_one_media_allowed;
-}
-
-export class ContentUpdateCommentParentCommenterBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.update_comment.parent_commenter_block;
-  readonly message = message.content.update_comment.parent_commenter_block;
-}
-
-export class ContentUpdateCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.update_comment.target_user_block;
-  readonly message = message.content.update_comment.target_user_block;
 }
 
 export class ContentUpdateCommentTextOrMediaRequiredException extends BaseServiceException {
@@ -475,13 +382,6 @@ export class ContentUpdateReactionCommentNotReactedException extends BaseService
   readonly message = message.content.update_reaction_comment.not_reacted;
 }
 
-export class ContentUpdateReactionCommentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.content.update_reaction_comment.target_user_block;
-  readonly message = message.content.update_reaction_comment.target_user_block;
-}
-
 export class ContentUpdateReactionCommentUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.content.update_reaction_comment.user_not_found;
@@ -504,13 +404,6 @@ export class ContentUpdateReactionContentNotReactedException extends BaseService
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.content.update_reaction_content.not_reacted;
   readonly message = message.content.update_reaction_content.not_reacted;
-}
-
-export class ContentUpdateReactionContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.content.update_reaction_content.target_user_block;
-  readonly message = message.content.update_reaction_content.target_user_block;
 }
 
 export class ContentUpdateReactionContentUserNotFoundException extends BaseServiceException {
@@ -536,12 +429,6 @@ export class ContentUpdateShareContentNotShareException extends BaseServiceExcep
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.content.update_share_content.not_share;
   readonly message = message.content.update_share_content.not_share;
-}
-
-export class ContentUpdateShareContentTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.content.update_share_content.target_user_block;
-  readonly message = message.content.update_share_content.target_user_block;
 }
 
 export class ContentUpdateShareContentUserNotFoundException extends BaseServiceException {

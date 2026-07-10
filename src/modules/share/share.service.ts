@@ -2,22 +2,19 @@ import { Injectable } from '@nestjs/common';
 import {
   ContentShareContentAlreadyException,
   ContentShareContentNotFoundException,
-  ContentShareContentTargetUserBlockException,
   ContentShareContentUserNotFoundException,
   ContentUnshareContentNotFoundException,
   ContentUnshareContentNotShareException,
-  ContentUnshareContentTargetUserBlockException,
   ContentUnshareContentUserNotFoundException,
   ContentUpdateShareContentNoFieldToUpdateException,
   ContentUpdateShareContentNotFoundException,
   ContentUpdateShareContentNotShareException,
-  ContentUpdateShareContentTargetUserBlockException,
   ContentUpdateShareContentUserNotFoundException,
-  ServiceExceptionClass,
 } from '../../common/exception';
 import { ShareRepository } from './share.repository';
 import { ShareContentDTO } from './dtos/share-content.dto';
 import { HttpsService } from '../http/http.service';
+import { BlockService } from '../block/block.service';
 
 /**
  * Handles share/unshare content business logic for users.
@@ -27,45 +24,8 @@ export class ShareService {
   constructor(
     private readonly shareRepo: ShareRepository,
     private readonly httpsService: HttpsService,
+    private readonly blockService: BlockService,
   ) {}
-
-  /**
-   * Validates block relationship before allowing share interactions.
-   *
-   * @param currentUserId Current authenticated user id.
-   * @param targetUserId Post author user id.
-   * @param notFoundMessage Message used when current user is blocked by target.
-   * @param notFoundErrorCode Error code used when current user is blocked by target.
-   * @param targetBlockedMessage Message used when current user has blocked target.
-   * @param targetBlockedErrorCode Error code used when current user has blocked target.
-   */
-  private async validateShareAccess(
-    currentUserId: number,
-    targetUserId: number,
-    NotFoundException: ServiceExceptionClass,
-    TargetBlockedException: ServiceExceptionClass,
-  ) {
-    // No block check is required when interacting with own post.
-    if (currentUserId === targetUserId) {
-      return;
-    }
-
-    // Check both block directions in parallel.
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.shareRepo.checkBlocked(currentUserId, targetUserId),
-      this.shareRepo.checkBlocked(targetUserId, currentUserId),
-    ]);
-
-    // Hide content when target user has blocked current user.
-    if (isBlockedByTarget) {
-      throw new NotFoundException();
-    }
-
-    // Reject request when current user has blocked target user.
-    if (isTargetBlocked) {
-      throw new TargetBlockedException();
-    }
-  }
 
   /**
    * Shares a content item for the current user.
@@ -102,11 +62,9 @@ export class ShareService {
     }
 
     // Enforce block policy before sharing target post.
-    await this.validateShareAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentShareContentNotFoundException,
-      ContentShareContentTargetUserBlockException,
     );
 
     // Prevent duplicate share operations.
@@ -188,11 +146,9 @@ export class ShareService {
     }
 
     // Enforce block policy before updating target share entry.
-    await this.validateShareAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentUpdateShareContentNotFoundException,
-      ContentUpdateShareContentTargetUserBlockException,
     );
 
     // Reject empty payload to avoid ambiguous update behavior.
@@ -268,11 +224,9 @@ export class ShareService {
     }
 
     // Enforce block policy before removing target share entry.
-    await this.validateShareAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentUnshareContentNotFoundException,
-      ContentUnshareContentTargetUserBlockException,
     );
 
     // Delete the share record for current user and content.

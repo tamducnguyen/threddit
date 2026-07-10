@@ -2,31 +2,24 @@
 import {
   ContentDeleteReactionCommentNotFoundException,
   ContentDeleteReactionCommentNotReactedException,
-  ContentDeleteReactionCommentTargetUserBlockException,
   ContentDeleteReactionCommentUserNotFoundException,
   ContentDeleteReactionContentNotFoundException,
   ContentDeleteReactionContentNotReactedException,
-  ContentDeleteReactionContentTargetUserBlockException,
   ContentDeleteReactionContentUserNotFoundException,
   ContentReactionCommentAlreadyException,
   ContentReactionCommentNotFoundException,
-  ContentReactionCommentTargetUserBlockException,
   ContentReactionCommentUserNotFoundException,
   ContentReactionContentAlreadyException,
   ContentReactionContentNotFoundException,
-  ContentReactionContentTargetUserBlockException,
   ContentReactionContentUserNotFoundException,
   ContentUpdateReactionCommentAlreadyException,
   ContentUpdateReactionCommentNotFoundException,
   ContentUpdateReactionCommentNotReactedException,
-  ContentUpdateReactionCommentTargetUserBlockException,
   ContentUpdateReactionCommentUserNotFoundException,
   ContentUpdateReactionContentAlreadyException,
   ContentUpdateReactionContentNotFoundException,
   ContentUpdateReactionContentNotReactedException,
-  ContentUpdateReactionContentTargetUserBlockException,
   ContentUpdateReactionContentUserNotFoundException,
-  ServiceExceptionClass,
 } from '../../common/exception';
 import { ReactionRepository } from './reaction.repository';
 import { ReactionTypeDTO } from './dtos/reaction-type.dto';
@@ -36,6 +29,7 @@ import {
   JobNotificationQueue,
   NameNotificationQueue,
 } from '../notification/helper/notification.helper';
+import { BlockService } from '../block/block.service';
 
 @Injectable()
 export class ReactionService {
@@ -45,31 +39,8 @@ export class ReactionService {
     private readonly reactionRepo: ReactionRepository,
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
+    private readonly blockService: BlockService,
   ) {}
-
-  private async validateReactionAccess(
-    currentUserId: number,
-    targetUserId: number,
-    NotFoundException: ServiceExceptionClass,
-    TargetBlockedException: ServiceExceptionClass,
-  ) {
-    if (currentUserId === targetUserId) {
-      return;
-    }
-
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.reactionRepo.checkBlocked(currentUserId, targetUserId),
-      this.reactionRepo.checkBlocked(targetUserId, currentUserId),
-    ]);
-
-    if (isBlockedByTarget) {
-      throw new NotFoundException();
-    }
-
-    if (isTargetBlocked) {
-      throw new TargetBlockedException();
-    }
-  }
 
   /**
    * Creates a new reaction for a content item.
@@ -100,11 +71,9 @@ export class ReactionService {
       throw new ContentReactionContentNotFoundException();
     }
 
-    await this.validateReactionAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentReactionContentNotFoundException,
-      ContentReactionContentTargetUserBlockException,
     );
 
     // Reject duplicate reaction requests explicitly before insert.
@@ -204,11 +173,9 @@ export class ReactionService {
       throw new ContentUpdateReactionContentNotFoundException();
     }
 
-    await this.validateReactionAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentUpdateReactionContentNotFoundException,
-      ContentUpdateReactionContentTargetUserBlockException,
     );
 
     // Fetch current reaction to ensure this user already reacted.
@@ -266,11 +233,9 @@ export class ReactionService {
       throw new ContentDeleteReactionContentNotFoundException();
     }
 
-    await this.validateReactionAccess(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentDeleteReactionContentNotFoundException,
-      ContentDeleteReactionContentTargetUserBlockException,
     );
 
     // Delete the reaction row for this user and content.
@@ -329,12 +294,7 @@ export class ReactionService {
     ];
     await Promise.all(
       createCommentTargetUserIds.map((targetUserId) =>
-        this.validateReactionAccess(
-          currentUserId,
-          targetUserId,
-          ContentReactionCommentNotFoundException,
-          ContentReactionCommentTargetUserBlockException,
-        ),
+        this.blockService.validateBlock(currentUserId, targetUserId),
       ),
     );
 
@@ -446,12 +406,7 @@ export class ReactionService {
     ];
     await Promise.all(
       updateCommentTargetUserIds.map((targetUserId) =>
-        this.validateReactionAccess(
-          currentUserId,
-          targetUserId,
-          ContentUpdateReactionCommentNotFoundException,
-          ContentUpdateReactionCommentTargetUserBlockException,
-        ),
+        this.blockService.validateBlock(currentUserId, targetUserId),
       ),
     );
 
@@ -521,12 +476,7 @@ export class ReactionService {
     ];
     await Promise.all(
       deleteCommentTargetUserIds.map((targetUserId) =>
-        this.validateReactionAccess(
-          currentUserId,
-          targetUserId,
-          ContentDeleteReactionCommentNotFoundException,
-          ContentDeleteReactionCommentTargetUserBlockException,
-        ),
+        this.blockService.validateBlock(currentUserId, targetUserId),
       ),
     );
 

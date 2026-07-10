@@ -91,8 +91,6 @@
     get_profile: {
       success: 'Lấy hồ sơ người dùng thành công',
       user_not_found: 'Người dùng không tồn tại',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để có thể xem trang cá nhân của họ',
     },
     search_profile: {
       success: 'Tìm kiếm hồ sơ người dùng thành công',
@@ -170,27 +168,20 @@
     get_follow_number: {
       success: 'Lấy thông tin số lượng theo dõi thành công',
       user_not_found: 'Người dùng không tồn tại',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem thông tin số lượng theo dõi',
     },
     get_follower_list: {
       user_not_found: 'Người dùng không tồn tại',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách người theo dõi',
       success: 'Lấy danh sách người theo dõi thành công',
       no_content: 'Không có người theo dõi hoặc đã hết danh sách',
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
     get_following_list: {
       user_not_found: 'Người dùng không tồn tại',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách theo dõi',
       no_content: 'Không có đang theo dõi hoặc đã hết danh sách',
       success: 'Lấy danh sách đang theo dõi thành công',
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
     post_follow: {
-      followee_blocked: 'Không thể theo dõi do bạn đã chặn người dùng này',
       user_not_found: 'Người dùng không tồn tại',
       follow_already: 'Đã theo dõi người dùng này',
       cant_self_follow: 'Không thể follow chính mình',
@@ -203,16 +194,12 @@
     },
     get_follow_state: {
       user_not_found: 'Người dùng không tồn tại',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem trạng thái theo dõi',
       can_not_self_check: 'Yêu cầu không hợp lệ',
       sucess: 'Lấy trạng thái theo dõi thành công',
     },
   },
   friendship: {
     send_request: {
-      recipient_blocked:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để gửi lời mời',
       cant_self_request: 'Không thể gửi lời mời kết bạn cho chính mình',
       user_not_found: 'Không tìm thấy người dùng này, hãy thử lại',
       friendship_exists: 'Bạn và người dùng này đã là bạn bè',
@@ -244,15 +231,11 @@
     get_friend_list: {
       success: 'Lấy danh sách bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách bạn bè',
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
     get_mutual_friend_list: {
       success: 'Lấy danh sách bạn bè chung thành công',
       user_not_found: 'Không tìm thấy người dùng',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách bạn bè chung',
       cursor_invalid: 'Con trỏ không hợp lệ',
       cant_self_get: 'Lấy danh sách bạn chung không hợp lệ',
     },
@@ -262,14 +245,10 @@
     get_user_friend_count: {
       success: 'Lấy số lượng bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem số lượng bạn bè',
     },
     get_friend_status: {
       success: 'Lấy trạng thái bạn bè thành công',
       user_not_found: 'Không tìm thấy người dùng',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem trạng thái bạn bè',
       cant_self_check: 'Lấy trạng thái không hợp lệ',
     },
     unfriend: {
@@ -281,8 +260,6 @@
     get_mutual_friend_count: {
       success: 'Lấy số lượng bạn chung thành công',
       user_not_found: 'Không tìm thấy người dùng',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem số lượng bạn bè chung',
       cant_self_get: 'Lấy số lượng bạn chung không hợp lệ',
     },
     get_sent_request_count: {
@@ -297,8 +274,6 @@
       user_not_found: 'Người dùng không tồn tại',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Không có bài đăng hoặc đã hết danh sách',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem danh sách hoạt động',
       success: 'Lấy danh sách hoạt thành công',
     },
     get_saved_content: {
@@ -327,16 +302,12 @@
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content:
         'Không có story hiện tại của người dùng này hoặc đã hết danh sách',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem story hiện tại',
       success: 'Lấy danh sách story hiện tại của người dùng thành công',
     },
     get_pinned_story: {
       user_not_found: 'Người dùng không tồn tại',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Không có story đã ghim hoặc đã hết danh sách',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem story đã ghim',
       success: 'Lấy danh sách story đã ghim thành công',
     },
     pin_content: {
@@ -383,16 +354,12 @@
     share_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để chia sẻ bài viết',
       success: 'Chia sẻ bài viết thành công',
       already: 'Bạn đã chia sẻ bài viết này',
     },
     update_share_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để cập nhật chia sẻ',
       success: 'Cập nhật chia sẻ bài viết thành công',
       not_share: 'Bạn chưa chia sẻ bài viết này',
       no_field_to_update: 'Không có nội dung để cập nhật',
@@ -400,8 +367,6 @@
     unshare_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để hủy chia sẻ',
       success: 'Hủy chia sẻ bài viết thành công',
       not_share: 'Bạn chưa chia sẻ bài viết này',
     },
@@ -410,8 +375,6 @@
       not_found: 'Không tìm thấy bài viết',
       success: 'Thả cảm xúc bài viết thành công',
       already: 'Bạn đã thả cảm xúc bài viết này trước đó',
-      target_user_block:
-        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để thả cảm xúc',
     },
     update_reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
@@ -419,24 +382,18 @@
       success: 'Cập nhật cảm xúc bài viết thành công',
       not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
       already: 'Bạn đã thả cảm xúc kiểu này',
-      target_user_block:
-        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để cập nhật cảm xúc',
     },
     delete_reaction_content: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bài viết',
       success: 'Bỏ cảm xúc bài viết thành công',
       not_reacted: 'Bạn chưa thả cảm xúc bài viết này',
-      target_user_block:
-        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để bỏ cảm xúc',
     },
     reaction_comment: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bình luận',
       success: 'Thả cảm xúc bình luận thành công',
       already: 'Bạn đã thả cảm xúc bình luận này trước đó',
-      target_user_block:
-        'Bạn đã chặn một trong những người dùng liên quan, hãy gỡ chặn để thả cảm xúc',
     },
     update_reaction_comment: {
       user_not_found: 'Không tìm thấy người dùng',
@@ -444,16 +401,12 @@
       success: 'Cập nhật cảm xúc bình luận thành công',
       not_reacted: 'Bạn chưa thả cảm xúc bình luận này',
       already: 'Bạn đã thả cảm xúc kiểu này',
-      target_user_block:
-        'Bạn đã chặn một trong những người dùng liên quan, hãy gỡ chặn để cập nhật cảm xúc',
     },
     delete_reaction_comment: {
       user_not_found: 'Không tìm thấy người dùng',
       not_found: 'Không tìm thấy bình luận',
       success: 'Bỏ cảm xúc bình luận thành công',
       not_reacted: 'Bạn chưa thả cảm xúc bình luận này',
-      target_user_block:
-        'Bạn đã chặn một trong những người dùng liên quan, hãy gỡ chặn để bỏ cảm xúc',
     },
     update_content: {
       not_found: 'Không tìm thấy nội dung của bạn',
@@ -493,10 +446,6 @@
       content_not_found: 'Không tìm thấy bài viết',
       parent_comment_not_found: 'Không tìm thấy bình luận cha',
       user_not_found: 'Không tìm thấy người dùng',
-      target_user_block:
-        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để bình luận',
-      parent_commenter_block:
-        'Bạn đã chặn người viết bình luận cha, hãy gỡ chặn để trả lời bình luận',
       text_or_media_required:
         'Bình luận phải có nội dung văn bản hoặc một tệp media',
       only_one_media_allowed: 'Bình luận chỉ được đính kèm một tệp media',
@@ -506,8 +455,6 @@
 
     get_comment: {
       content_not_found: 'Không tìm thấy bài viết',
-      target_user_block:
-        'Bạn đã chặn người dùng này, hãy gỡ chặn để xem bình luận',
       cursor_invalid: 'Con trỏ không hợp lệ',
       no_content: 'Đã hết bình luận hoặc không có bình luận',
       success: 'Lấy danh sách bình luận thành công',
@@ -520,7 +467,6 @@
 
     get_detail_comment: {
       not_found: 'Không tìm thấy bình luận',
-      target_user_block: 'Bạn đã chặn một trong những người bình luận này',
       success: 'Lấy bình luận thành công',
     },
     get_child_comments: {
@@ -529,15 +475,11 @@
     update_comment: {
       confirm_media_failed: 'Upload thất bại, vui lòng thử lại',
       no_field_to_update: 'Không có nội dung để cập nhật',
-      parent_commenter_block:
-        'Bạn đã chặn người viết bình luận cha, hãy gỡ chặn để trả lời bình luận',
       text_or_media_required:
         'Bình luận phải có nội dung văn bản hoặc một tệp media',
       only_one_media_allowed: 'Bình luận chỉ được đính kèm một tệp media',
       media_action_conflict:
         'Hành động cập nhập tệp phương tiện mâu thuẫn, chỉ được xóa hoặc cập nhật thay thế',
-      target_user_block:
-        'Bạn đã chặn tác giả bài viết, hãy gỡ chặn để bình luận',
       not_found: 'Không tìm thấy bình luận của bạn',
       success: 'Cập nhật bình luận thành công',
     },
@@ -575,6 +517,8 @@
     token_not_found: 'Không tìm thấy mã xác minh',
     account_not_activate:
       'Tài khoản của bạn đang không được kích hoạt! Vui lòng liên hệ với quản trị viên để biết lý do',
+    blocked_or_not_found: 'Người dùng không tồn tại',
+    self_blocked_target: 'Bạn đã chặn người dùng này',
   },
   http: {
     check_toxic: {

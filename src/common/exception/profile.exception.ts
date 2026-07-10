@@ -3,12 +3,6 @@ import { BaseServiceException } from './base-service.exception';
 import { message } from '../helper/message.helper';
 import { errorCode } from '../helper/errorcode.helper';
 
-export class ProfileGetProfileTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.profile.get_profile.target_user_block;
-  readonly message = message.profile.get_profile.target_user_block;
-}
-
 export class ProfileGetProfileUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.profile.get_profile.user_not_found;

@@ -12,14 +12,11 @@ import {
   ContentGetMyCurrentStoryCursorInvalidException,
   ContentGetMyStoryCursorInvalidException,
   ContentGetOtherCurrentStoryCursorInvalidException,
-  ContentGetOtherCurrentStoryTargetUserBlockException,
   ContentGetOtherCurrentStoryUserNotFoundException,
   ContentGetPinnedStoryCursorInvalidException,
-  ContentGetPinnedStoryTargetUserBlockException,
   ContentGetPinnedStoryUserNotFoundException,
   ContentGetSavedContentCursorInvalidException,
   ContentGetTimelineContentCursorInvalidException,
-  ContentGetTimelineContentTargetUserBlockException,
   ContentGetTimelineContentUserNotFoundException,
   ContentPinContentAlreadyPinnedException,
   ContentPinContentNotFoundException,
@@ -59,6 +56,7 @@ import { UpdateContentDTO } from './dtos/update-content.dto';
 import { TimelineItem } from './interface/timeline-item.interface';
 import { prefixCache, ttlCache } from '../../config/cache.config';
 import { SearchContentCursor } from './interface/search-content-cursor.interface';
+import { BlockService } from '../block/block.service';
 
 @Injectable()
 export class ContentService {
@@ -72,39 +70,8 @@ export class ContentService {
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly blockService: BlockService,
   ) {}
-  /**
-   * Enforce the bidirectional block rules between the current user and a
-   * target user before exposing target-scoped data.
-   *
-   * - When the target has blocked the current user, hide the resource via
-   *   `NotFound` so the user cannot probe the target's existence.
-   * - When the current user has blocked the target, reject the request via
-   *   `BadRequest` so the action is explicitly refused.
-   *
-   * Returns early for self-checks since a user cannot block themselves.
-   */
-  private async validateNotBlocked(
-    currentUserId: number,
-    targetUserId: number,
-    BlockedByTargetException: ServiceExceptionClass,
-    SelfBlockedTargetException: ServiceExceptionClass,
-  ): Promise<void> {
-    if (currentUserId === targetUserId) return;
-
-    const [isBlockedByTarget, isTargetBlocked] = await Promise.all([
-      this.contentRepo.checkBlocked(currentUserId, targetUserId),
-      this.contentRepo.checkBlocked(targetUserId, currentUserId),
-    ]);
-
-    if (isBlockedByTarget) {
-      throw new BlockedByTargetException();
-    }
-    if (isTargetBlocked) {
-      throw new SelfBlockedTargetException();
-    }
-  }
-
   /**
    * Decode a signed cursor token and validate its payload shape.
    *
@@ -225,12 +192,7 @@ export class ContentService {
     if (currentUserId === timelineOwnerUser.id) {
       return await this.getSelfTimelineContents(currentUserId, cursor);
     }
-    await this.validateNotBlocked(
-      currentUserId,
-      timelineOwnerUser.id,
-      ContentGetTimelineContentUserNotFoundException,
-      ContentGetTimelineContentTargetUserBlockException,
-    );
+    await this.blockService.validateBlock(currentUserId, timelineOwnerUser.id);
     let cursorDecoded: TimelineCursor | undefined;
     let pinnedContents: ContentDetail[] | undefined;
     if (cursor) {
@@ -1122,12 +1084,7 @@ export class ContentService {
     if (targetUser.id === currentUserId) {
       return await this.getMyCurrentStories(currentUserId, cursor);
     }
-    await this.validateNotBlocked(
-      currentUserId,
-      targetUser.id,
-      ContentGetOtherCurrentStoryUserNotFoundException,
-      ContentGetOtherCurrentStoryTargetUserBlockException,
-    );
+    await this.blockService.validateBlock(currentUserId, targetUser.id);
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
       ContentGetOtherCurrentStoryCursorInvalidException,
@@ -1277,12 +1234,7 @@ export class ContentService {
     if (targetUser.id === currentUserId) {
       return await this.getPinnedStories(currentUserId, cursor);
     }
-    await this.validateNotBlocked(
-      currentUserId,
-      targetUser.id,
-      ContentGetPinnedStoryUserNotFoundException,
-      ContentGetPinnedStoryTargetUserBlockException,
-    );
+    await this.blockService.validateBlock(currentUserId, targetUser.id);
     // Decode pagination cursor when provided by client.
     const cursorDecoded = await this.decodeCursor<Cursor>(
       cursor,
@@ -1335,11 +1287,9 @@ export class ContentService {
     }
 
     // Check both block directions between current user and author.
-    await this.validateNotBlocked(
+    await this.blockService.validateBlock(
       currentUserId,
       contentFound.author.id,
-      ContentGetContentNotFoundException,
-      ContentGetTimelineContentTargetUserBlockException,
     );
 
     // Load full content detail payload after passing access checks.

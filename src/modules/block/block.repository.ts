@@ -34,6 +34,29 @@ export class BlockRepository {
     });
   }
 
+  async isBlockedByAnyTarget(currentUserId: number, targetUserIds: number[]) {
+    if (targetUserIds.length === 0) return false;
+    return await this.blockRepo.exists({
+      where: targetUserIds.map((targetUserId) => ({
+        blockedUser: { id: currentUserId },
+        blocker: { id: targetUserId },
+      })),
+    });
+  }
+
+  async isAnyTargetBlockedByCurrentUser(
+    currentUserId: number,
+    targetUserIds: number[],
+  ) {
+    if (targetUserIds.length === 0) return false;
+    return await this.blockRepo.exists({
+      where: targetUserIds.map((targetUserId) => ({
+        blockedUser: { id: targetUserId },
+        blocker: { id: currentUserId },
+      })),
+    });
+  }
+
   async createBlockAndCleanup(blocker: UserEntity, blockedUser: UserEntity) {
     return await this.dataSource.transaction(async (manager) => {
       const blockRepo = manager.getRepository(BlockEntity);

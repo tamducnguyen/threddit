@@ -10,6 +10,8 @@ import {
   BlockPostBlockAlreadyBlockedException,
   BlockPostBlockCantSelfBlockException,
   BlockPostBlockUserNotFoundException,
+  BlockedOrNotFoundException,
+  SelfBlockedTargetException,
 } from '../../common/exception';
 import { BlockRepository } from './block.repository';
 import { AuthUser } from '../token/authuser.interface';
@@ -58,6 +60,81 @@ export class BlockService {
       dateOfBirth: user.dateOfBirth,
     };
   }
+  /**
+   * Enforce the bidirectional block rules between the current user and a
+   * target user before exposing target-scoped data.
+   *
+   * - When the target has blocked the current user, hide the resource via
+   *   `NotFound` so the user cannot probe the target's existence.
+   * - When the current user has blocked the target, reject the request via
+   *   `BadRequest` so the action is explicitly refused.
+   *
+   * Returns early for self-checks since a user cannot block themselves.
+   */
+  async validateBlock(
+    currentUserId: number,
+    targetUserId: number,
+  ): Promise<void> {
+    if (currentUserId === targetUserId) return;
+
+    const [isTargetBlocked, isBlockedByTarget] = await Promise.all([
+      this.blockRepo.checkBlocked(currentUserId, targetUserId),
+      this.blockRepo.checkBlocked(targetUserId, currentUserId),
+    ]);
+
+    if (isBlockedByTarget) {
+      throw new BlockedOrNotFoundException();
+    }
+    if (isTargetBlocked) {
+      throw new SelfBlockedTargetException();
+    }
+  }
+
+  /**
+   * Bulk variant of `validateBlock` for checking block relationships against
+   * a list of target users at once (e.g. every commenter in a comment chain).
+   */
+  async validateBlockMany(
+    currentUserId: number,
+    targetUserIds: number[],
+  ): Promise<void> {
+    const others = targetUserIds.filter((id) => id !== currentUserId);
+    if (others.length === 0) return;
+
+    const [isBlockedByAnyTarget, isAnyTargetBlocked] = await Promise.all([
+      this.blockRepo.isBlockedByAnyTarget(currentUserId, others),
+      this.blockRepo.isAnyTargetBlockedByCurrentUser(currentUserId, others),
+    ]);
+
+    if (isBlockedByAnyTarget) {
+      throw new BlockedOrNotFoundException();
+    }
+    if (isAnyTargetBlocked) {
+      throw new SelfBlockedTargetException();
+    }
+  }
+
+  /**
+   * One-directional variant of `validateBlock` — only hides the resource
+   * when the target has blocked the current user. Does not reject when the
+   * current user has blocked the target (e.g. unfriending someone you've
+   * blocked should still be allowed).
+   */
+  async validateNotBlockedByTarget(
+    currentUserId: number,
+    targetUserId: number,
+  ): Promise<void> {
+    if (currentUserId === targetUserId) return;
+
+    const isBlockedByTarget = await this.blockRepo.checkBlocked(
+      currentUserId,
+      targetUserId,
+    );
+    if (isBlockedByTarget) {
+      throw new BlockedOrNotFoundException();
+    }
+  }
+
   async block(currentUser: AuthUser, blockedUsername: string) {
     // ensure current user exists
     const blockerFound = await this.blockRepo.findUserById(currentUser.sub);

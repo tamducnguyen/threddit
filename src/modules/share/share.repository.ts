@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { UserEntity } from '../../entities/user.entity';
 import { ShareEntity } from '../../entities/share.entity';
 import { ContentType } from '../../enum/contenttype.enum';
-import { BlockEntity } from '../../entities/block.entity';
 
 export class ShareRepository {
   constructor(
@@ -14,8 +13,6 @@ export class ShareRepository {
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(ShareEntity)
     private readonly shareRepo: Repository<ShareEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
   ) {}
 
   async findUserById(userId: number) {
@@ -26,15 +23,6 @@ export class ShareRepository {
     return await this.contentRepo.findOne({
       where: { id: contentId, type: ContentType.POST },
       relations: { author: true },
-    });
-  }
-
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.exists({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
     });
   }
 

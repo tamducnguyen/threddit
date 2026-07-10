@@ -1,7 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../../entities/user.entity';
 import { Brackets, DataSource, Repository } from 'typeorm';
-import { BlockEntity } from '../../entities/block.entity';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
 import { ConfigService } from '@nestjs/config';
@@ -12,8 +11,6 @@ export class ProfileRepository {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
     @InjectRepository(FriendshipEntity)
     private readonly friendshipRepo: Repository<FriendshipEntity>,
     private readonly datasource: DataSource,
@@ -162,14 +159,6 @@ export class ProfileRepository {
       const updateResult = await userRepo.update(userId, updateInfo);
       const updatedProfile = await userRepo.findOne({ where: { id: userId } });
       return { updateResult, updatedProfile };
-    });
-  }
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.exists({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
     });
   }
 

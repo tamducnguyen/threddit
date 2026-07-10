@@ -8,8 +8,8 @@ import { UserEntity } from '../../entities/user.entity';
 import { ShareEntity } from '../../entities/share.entity';
 import { SessionEntity } from '../../entities/session.entity';
 import { SessionModule } from '../token/session.module';
-import { BlockEntity } from '../../entities/block.entity';
 import { HttpsModule } from '../http/http.module';
+import { BlockModule } from '../block/block.module';
 
 @Module({
   imports: [
@@ -17,11 +17,11 @@ import { HttpsModule } from '../http/http.module';
       ContentEntity,
       UserEntity,
       ShareEntity,
-      BlockEntity,
       SessionEntity,
     ]),
     SessionModule,
     HttpsModule,
+    BlockModule,
   ],
   controllers: [ShareController],
   providers: [ShareService, ShareRepository],

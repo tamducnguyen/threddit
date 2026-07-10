@@ -2,7 +2,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { UserEntity } from '../../entities/user.entity';
-import { BlockEntity } from '../../entities/block.entity';
 import { FriendshipStatus } from '../../enum/friendshipstatus.enum';
 import { Cursor } from '../../common/interface/cursor.interface';
 import { ConfigService } from '@nestjs/config';
@@ -14,8 +13,6 @@ export class FriendshipRepository {
     private readonly friendshipRepo: Repository<FriendshipEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -58,15 +55,6 @@ export class FriendshipRepository {
 
   async deleteFriendshipById(friendshipId: number) {
     return await this.friendshipRepo.delete({ id: friendshipId });
-  }
-
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.exists({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
-    });
   }
 
   async createFriendRequest(friendship: Partial<FriendshipEntity>) {

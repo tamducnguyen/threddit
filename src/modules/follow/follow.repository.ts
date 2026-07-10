@@ -12,8 +12,6 @@ export class FollowRepository {
     private readonly followRepo: Repository<FollowEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(BlockEntity)
-    private readonly blockRepo: Repository<BlockEntity>,
     private readonly configService: ConfigService,
   ) {}
   async findUserByUsername(username: string) {
@@ -245,13 +243,5 @@ export class FollowRepository {
   }
   async deleteFollow(followEntity: Partial<FollowEntity>) {
     return await this.followRepo.delete(followEntity);
-  }
-  async checkBlocked(blockedId: number, blockerId: number) {
-    return await this.blockRepo.exists({
-      where: {
-        blockedUser: { id: blockedId },
-        blocker: { id: blockerId },
-      },
-    });
   }
 }

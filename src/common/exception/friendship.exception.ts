@@ -21,12 +21,6 @@ export class FriendshipGetFriendListCursorInvalidException extends BaseServiceEx
   readonly message = message.friendship.get_friend_list.cursor_invalid;
 }
 
-export class FriendshipGetFriendListTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.friendship.get_friend_list.target_user_block;
-  readonly message = message.friendship.get_friend_list.target_user_block;
-}
-
 export class FriendshipGetFriendListUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.friendship.get_friend_list.user_not_found;
@@ -37,12 +31,6 @@ export class FriendshipGetFriendStatusCantSelfCheckException extends BaseService
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.friendship.get_friend_status.cant_self_check;
   readonly message = message.friendship.get_friend_status.cant_self_check;
-}
-
-export class FriendshipGetFriendStatusTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.friendship.get_friend_status.target_user_block;
-  readonly message = message.friendship.get_friend_status.target_user_block;
 }
 
 export class FriendshipGetFriendStatusUserNotFoundException extends BaseServiceException {
@@ -56,14 +44,6 @@ export class FriendshipGetMutualFriendCountCantSelfGetException extends BaseServ
   readonly errorCode =
     errorCode.friendship.get_mutual_friend_count.cant_self_get;
   readonly message = message.friendship.get_mutual_friend_count.cant_self_get;
-}
-
-export class FriendshipGetMutualFriendCountTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.friendship.get_mutual_friend_count.target_user_block;
-  readonly message =
-    message.friendship.get_mutual_friend_count.target_user_block;
 }
 
 export class FriendshipGetMutualFriendCountUserNotFoundException extends BaseServiceException {
@@ -87,14 +67,6 @@ export class FriendshipGetMutualFriendListCursorInvalidException extends BaseSer
   readonly message = message.friendship.get_mutual_friend_list.cursor_invalid;
 }
 
-export class FriendshipGetMutualFriendListTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.friendship.get_mutual_friend_list.target_user_block;
-  readonly message =
-    message.friendship.get_mutual_friend_list.target_user_block;
-}
-
 export class FriendshipGetMutualFriendListUserNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode =
@@ -113,13 +85,6 @@ export class FriendshipGetSentRequestsCursorInvalidException extends BaseService
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.friendship.get_sent_requests.cursor_invalid;
   readonly message = message.friendship.get_sent_requests.cursor_invalid;
-}
-
-export class FriendshipGetUserFriendCountTargetUserBlockException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode =
-    errorCode.friendship.get_user_friend_count.target_user_block;
-  readonly message = message.friendship.get_user_friend_count.target_user_block;
 }
 
 export class FriendshipGetUserFriendCountUserNotFoundException extends BaseServiceException {
@@ -145,12 +110,6 @@ export class FriendshipSendRequestFriendshipExistsException extends BaseServiceE
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.friendship.send_request.friendship_exists;
   readonly message = message.friendship.send_request.friendship_exists;
-}
-
-export class FriendshipSendRequestRecipientBlockedException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
-  readonly errorCode = errorCode.friendship.send_request.recipient_blocked;
-  readonly message = message.friendship.send_request.recipient_blocked;
 }
 
 export class FriendshipSendRequestRequestAlreadySentException extends BaseServiceException {

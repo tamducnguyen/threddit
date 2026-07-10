@@ -10,11 +10,11 @@ import { SessionEntity } from '../../entities/session.entity';
 import { SessionModule } from '../token/session.module';
 import { HttpsModule } from '../http/http.module';
 import { NotificationModule } from '../notification/notification.module';
-import { BlockEntity } from '../../entities/block.entity';
 import { MediaFileEntity } from '../../entities/media-file.entity';
 import { StorageModule } from '../storage/storage.module';
 import { FriendshipEntity } from '../../entities/friendship.entity';
 import { ReactionEntity } from '../../entities/reaction.entity';
+import { BlockModule } from '../block/block.module';
 
 @Module({
   imports: [
@@ -22,7 +22,6 @@ import { ReactionEntity } from '../../entities/reaction.entity';
       ContentEntity,
       UserEntity,
       CommentEntity,
-      BlockEntity,
       MediaFileEntity,
       SessionEntity,
       FriendshipEntity,
@@ -32,6 +31,7 @@ import { ReactionEntity } from '../../entities/reaction.entity';
     HttpsModule,
     NotificationModule,
     StorageModule,
+    BlockModule,
   ],
   controllers: [CommentController],
   providers: [CommentService, CommentRepository],

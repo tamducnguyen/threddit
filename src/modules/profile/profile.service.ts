@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import {
-  ProfileGetProfileTargetUserBlockException,
   ProfileGetProfileUserNotFoundException,
   ProfileSearchProfileCursorInvalidException,
   ProfileUpdateAvatarInvalidKeyException,
@@ -26,6 +25,7 @@ import { StorageService } from '../storage/storage.service';
 import { ConvertMediaRelativePathToUrl } from '../../common/helper/media-url.helper';
 import { JwtService } from '@nestjs/jwt';
 import { ProfileCursor } from './interfaces/profile-cursor.interface';
+import { BlockService } from '../block/block.service';
 
 @Injectable()
 export class ProfileService {
@@ -36,6 +36,7 @@ export class ProfileService {
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
     private readonly jwtService: JwtService,
+    private readonly blockService: BlockService,
   ) {
     this.avatarMaxSize =
       this.configService.getOrThrow<number>('AVATAR_MAX_SIZE');
@@ -102,22 +103,8 @@ export class ProfileService {
     if (!profileFound) {
       throw new ProfileGetProfileUserNotFoundException();
     }
-    //check if current user got blocked
-    const isBlocked = await this.profileRepo.checkBlocked(
-      currentUser.sub,
-      userFound.id,
-    );
-    if (isBlocked) {
-      throw new ProfileGetProfileUserNotFoundException();
-    }
-    //check if current user block target user
-    const isTargetUserBlocked = await this.profileRepo.checkBlocked(
-      userFound.id,
-      currentUser.sub,
-    );
-    if (isTargetUserBlocked) {
-      throw new ProfileGetProfileTargetUserBlockException();
-    }
+    //check block relationship in both directions
+    await this.blockService.validateBlock(currentUser.sub, userFound.id);
     return { kind: 'success', data: profileFound };
   }
 

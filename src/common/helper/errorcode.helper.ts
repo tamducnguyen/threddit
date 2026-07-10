@@ -64,7 +64,6 @@ export const errorCode = {
   profile: {
     get_profile: {
       user_not_found: '44',
-      target_user_block: '132',
     },
     search_profile: {
       cursor_invalid: '249',
@@ -105,6 +104,8 @@ export const errorCode = {
     session_revoked: '51',
     account_not_activate: '52',
     too_many_requests: '53',
+    blocked_or_not_found: '251',
+    self_blocked_target: '252',
   },
   http: {
     check_toxic: {
@@ -117,20 +118,16 @@ export const errorCode = {
   follow: {
     get_follow_number: {
       user_not_found: '64',
-      target_user_block: '75',
     },
     get_follower_list: {
       user_not_found: '65',
-      target_user_block: '76',
       cursor_invalid: '66',
     },
     get_following_list: {
       user_not_found: '67',
-      target_user_block: '77',
       cursor_invalid: '68',
     },
     post_follow: {
-      followee_blocked: '89',
       cant_self_follow: '69',
       user_not_found: '70',
       follow_already: '71',
@@ -141,12 +138,10 @@ export const errorCode = {
     },
     get_follow_state: {
       user_not_found: '74',
-      target_user_block: '78',
     },
   },
   friendship: {
     send_request: {
-      recipient_blocked: '100',
       cant_self_request: '90',
       user_not_found: '91',
       friendship_exists: '92',
@@ -171,12 +166,10 @@ export const errorCode = {
     },
     get_friend_list: {
       user_not_found: '106',
-      target_user_block: '133',
       cursor_invalid: '107',
     },
     get_mutual_friend_list: {
       user_not_found: '108',
-      target_user_block: '134',
       cursor_invalid: '109',
       cant_self_get: '120',
     },
@@ -185,11 +178,9 @@ export const errorCode = {
     },
     get_user_friend_count: {
       user_not_found: '111',
-      target_user_block: '135',
     },
     get_friend_status: {
       user_not_found: '115',
-      target_user_block: '136',
       cant_self_check: '116',
     },
     unfriend: {
@@ -199,7 +190,6 @@ export const errorCode = {
     },
     get_mutual_friend_count: {
       user_not_found: '112',
-      target_user_block: '137',
       cant_self_get: '121',
     },
     get_sent_request_count: {
@@ -213,7 +203,6 @@ export const errorCode = {
     get_timeline_content: {
       user_not_found: '138',
       cursor_invalid: '139',
-      target_user_block: '140',
     },
     get_saved_content: {
       cursor_invalid: '141',
@@ -233,65 +222,54 @@ export const errorCode = {
       user_not_found: '165',
       not_found: '166',
       already: '167',
-      target_user_block: '243',
     },
     update_reaction_content: {
       user_not_found: '168',
       not_found: '169',
       not_reacted: '170',
       already: '171',
-      target_user_block: '244',
     },
     delete_reaction_content: {
       user_not_found: '172',
       not_found: '173',
       not_reacted: '174',
-      target_user_block: '245',
     },
     reaction_comment: {
       user_not_found: '233',
       not_found: '234',
       already: '235',
-      target_user_block: '246',
     },
     update_reaction_comment: {
       user_not_found: '236',
       not_found: '237',
       not_reacted: '238',
       already: '239',
-      target_user_block: '247',
     },
     delete_reaction_comment: {
       user_not_found: '240',
       not_found: '241',
       not_reacted: '242',
-      target_user_block: '248',
     },
     share_content: {
       user_not_found: '175',
       not_found: '176',
-      target_user_block: '177',
       already: '178',
     },
     update_share_content: {
       user_not_found: '179',
       not_found: '180',
-      target_user_block: '181',
       no_field_to_update: '182',
       not_share: '183',
     },
     unshare_content: {
       user_not_found: '184',
       not_found: '185',
-      target_user_block: '186',
       not_share: '187',
     },
     comment: {
       content_not_found: '211',
       parent_comment_not_found: '217',
       user_not_found: '212',
-      target_user_block: '213',
-      parent_commenter_block: '220',
       text_or_media_required: '214',
       only_one_media_allowed: '215',
       confirm_media_failed: '216',
@@ -301,20 +279,16 @@ export const errorCode = {
     },
     get_comment: {
       content_not_found: '222',
-      target_user_block: '223',
       cursor_invalid: '224',
     },
     get_detail_comment: {
       not_found: '219',
-      target_user_block: '221',
     },
     get_child_comments: {
       not_found: '232',
     },
     update_comment: {
       not_found: '225',
-      target_user_block: '226',
-      parent_commenter_block: '227',
       no_field_to_update: '228',
       text_or_media_required: '229',
       only_one_media_allowed: '230',
@@ -345,12 +319,10 @@ export const errorCode = {
     get_other_current_story: {
       user_not_found: '207',
       cursor_invalid: '208',
-      target_user_block: '209',
     },
     get_pinned_story: {
       user_not_found: '191',
       cursor_invalid: '190',
-      target_user_block: '192',
     },
     get_content: {
       not_found: '147',

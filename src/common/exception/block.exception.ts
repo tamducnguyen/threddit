@@ -62,3 +62,22 @@ export class BlockPostBlockUserNotFoundException extends BaseServiceException {
   readonly errorCode = errorCode.block.post_block.user_not_found;
   readonly message = message.block.post_block.user_not_found;
 }
+
+/**
+ * Shared by BlockService.validateBlock() for both "target user does not
+ * exist" (when a caller does not pre-check existence) and "current user is
+ * blocked by target" (hidden as not-found so the target's existence cannot
+ * be probed).
+ */
+export class BlockedOrNotFoundException extends BaseServiceException {
+  readonly statusCode = HttpStatus.NOT_FOUND;
+  readonly errorCode = errorCode.common.blocked_or_not_found;
+  readonly message = message.common.blocked_or_not_found;
+}
+
+/** Shared by BlockService.validateBlock() when current user has blocked the target. */
+export class SelfBlockedTargetException extends BaseServiceException {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+  readonly errorCode = errorCode.common.self_blocked_target;
+  readonly message = message.common.self_blocked_target;
+}
