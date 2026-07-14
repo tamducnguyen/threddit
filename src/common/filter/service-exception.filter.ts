@@ -34,11 +34,11 @@ export class ServiceExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
-      if (body && typeof body === 'object' && 'statusCode' in body) {
-        response.status(status).json(body);
-        return;
-      }
-      response.status(status).json(sendResponse(status, exception.message));
+      const bodyMessage =
+        body && typeof body === 'object' && 'message' in body
+          ? (body as { message: string | string[] }).message
+          : exception.message;
+      response.status(status).json(sendResponse(status, bodyMessage));
       return;
     }
 
