@@ -14,3 +14,14 @@ export function sendResponse<T>(
     timestamp: new Date().toISOString(),
   };
 }
+export function sendWsResponse<T>(
+  message: string,
+  data?: T,
+  errorCode?: string,
+) {
+  return {
+    message,
+    errorCode,
+    data,
+  };
+}

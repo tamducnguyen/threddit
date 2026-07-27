@@ -10,4 +10,6 @@ export enum NotificationType {
   FRIEND_CONTENT_CREATION = 'friend_content_creation',
   FRIEND_REQUEST = 'friend_request',
   FRIEND_ACCEPTED = 'friend_accepted',
+  MENTION_IN_MESSAGE = 'mention_in_message',
+  NEW_MESSAGE = 'new_message',
 }

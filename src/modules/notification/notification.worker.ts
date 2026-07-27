@@ -331,6 +331,70 @@ export class NotificationWorker extends WorkerHost {
         );
         break;
       }
+      //send notification to mentioned users in a chat message
+      case String(JobNotificationQueue.MENTION_IN_MESSAGE): {
+        type SendMentionInMessageNotificationInterface = {
+          actorId: number;
+          conversationId: number;
+          messageId: number;
+          mentionedUsers: UserEntity[];
+        };
+        const data = job.data as SendMentionInMessageNotificationInterface;
+        const target: NotificationTarget = {
+          type: 'MENTION_IN_MESSAGE',
+          conversationId: data.conversationId,
+          messageId: data.messageId,
+          actorId: data.actorId,
+        };
+        const notifications: Partial<NotificationEntity>[] =
+          data.mentionedUsers.map((mentionedUser) => ({
+            owner: mentionedUser,
+            target: target,
+            type: NotificationType.MENTION_IN_MESSAGE,
+          }));
+        const insertedNotifications =
+          await this.notificationRepo.insertNotifications(notifications);
+        insertedNotifications.forEach((insertedNotification) =>
+          this.notificationService.notify(insertedNotification),
+        );
+        break;
+      }
+      //send notification to conversation members for a new chat message
+      case String(JobNotificationQueue.NEW_MESSAGE): {
+        type SendNewMessageNotificationInterface = {
+          senderId: number;
+          memberIds: number[];
+          conversationId: number;
+          messageId: number;
+        };
+        const data = job.data as SendNewMessageNotificationInterface;
+        const recipientIds = data.memberIds.filter(
+          (id) => id !== data.senderId,
+        );
+        if (recipientIds.length === 0) break;
+
+        const recipients =
+          await this.notificationRepo.findUsersByIds(recipientIds);
+        const target: NotificationTarget = {
+          type: 'NEW_MESSAGE',
+          conversationId: data.conversationId,
+          messageId: data.messageId,
+          actorId: data.senderId,
+        };
+        const notifications: Partial<NotificationEntity>[] = recipients.map(
+          (recipient) => ({
+            owner: recipient,
+            target: target,
+            type: NotificationType.NEW_MESSAGE,
+          }),
+        );
+        const insertedNotifications =
+          await this.notificationRepo.insertNotifications(notifications);
+        insertedNotifications.forEach((insertedNotification) =>
+          this.notificationService.notify(insertedNotification),
+        );
+        break;
+      }
       default: {
         console.log(`Job ${job.id} Not match any job cases`);
       }

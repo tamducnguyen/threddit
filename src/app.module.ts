@@ -25,6 +25,9 @@ import { SavedContentModule } from './modules/saved-content/saved-content.module
 import { ReactionModule } from './modules/reaction/reaction.module';
 import { ShareModule } from './modules/share/share.module';
 import { CommentModule } from './modules/comment/comment.module';
+import { ConversationModule } from './modules/conversation/conversation.module';
+import { MessageModule } from './modules/message/message.module';
+import { GatewayModule } from './modules/gateway/gateway.module';
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { CommentModule } from './modules/comment/comment.module';
     CommentModule,
     ProfileModule,
     BlockModule,
+    ConversationModule,
+    MessageModule,
+    GatewayModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -363,6 +363,87 @@ export const errorCode = {
       cant_self_check: '131',
     },
   },
+  chat: {
+    send_message: {
+      invalid_target: '251',
+      conversation_not_found: '252',
+      not_a_member: '253',
+      cant_message_self: '254',
+      text_or_media_required: '255',
+      user_not_found: '256',
+    },
+    get_messages: {
+      conversation_not_found: '257',
+      not_a_member: '258',
+      cursor_invalid: '259',
+    },
+    list_conversations: {
+      cursor_invalid: '260',
+    },
+    revoke_message: {
+      not_found: '261',
+      forbidden: '262',
+    },
+    react_message: {
+      not_found: '263',
+      already: '264',
+      not_reacted: '265',
+      not_a_member: '266',
+    },
+    create_group: {
+      min_member_required: '267',
+      user_not_found: '268',
+    },
+    member: {
+      conversation_not_found: '269',
+      not_a_group: '270',
+      user_not_found: '271',
+      forbidden: '272',
+      not_a_member: '273',
+      already_member: '274',
+      target_not_a_member: '275',
+      cannot_demote_last_admin: '288',
+    },
+    summarize: {
+      conversation_not_found: '278',
+      not_a_member: '279',
+    },
+    topics: {
+      conversation_not_found: '282',
+      not_a_member: '283',
+    },
+    pin: {
+      conversation_not_found: '280',
+      not_a_member: '281',
+      pin_limit_exceeded: '282',
+    },
+    mark_read: {
+      conversation_not_found: '286',
+    },
+    edit_message: {
+      not_found: '290',
+      forbidden: '291',
+      revoked: '292',
+      text_required: '293',
+    },
+    pin_message: {
+      not_found: '294',
+      forbidden: '295',
+      limit_exceeded: '296',
+      not_a_member: '297',
+    },
+    search_messages: {
+      conversation_not_found: '298',
+      cursor_invalid: '299',
+    },
+    rate_limit: {
+      send_message: '300',
+      typing: '301',
+    },
+    error: {
+      internal: '287',
+    },
+  },
   notification: {
     create_stream: {
       user_not_found: '81',

@@ -511,6 +511,136 @@
       success: 'Lấy số lượng người đã chặn thành công',
     },
   },
+  chat: {
+    connection: {
+      token_missing: 'Thiếu token xác thực',
+      token_invalid: 'Token không hợp lệ',
+    },
+    send_message: {
+      success: 'Gửi tin nhắn thành công',
+      text_or_media_required:
+        'Tin nhắn phải có nội dung văn bản hoặc một tệp media',
+      invalid_target:
+        'Yêu cầu phải có id cuộc trò chuyện hoặc id người nhận, không được cả hai',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      cant_message_self: 'Không thể nhắn tin cho chính mình',
+      user_not_found: 'Không tìm thấy người dùng',
+      conversation_exist:
+        'Giữa hai người dùng đã tồn tại cuộc trò chuyện hãy sủ dụng id của conversation để thay thế',
+    },
+    get_messages: {
+      success: 'Lấy danh sách tin nhắn thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    list_conversations: {
+      success: 'Lấy danh sách cuộc trò chuyện thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    search_conversations: {
+      success: 'Tìm kiếm cuộc trò chuyện thành công',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    unread_count: {
+      success: 'Lấy số tin nhắn chưa đọc thành công',
+    },
+    pin: {
+      pin_success: 'Ghim cuộc trò chuyện thành công',
+      unpin_success: 'Bỏ ghim cuộc trò chuyện thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+      pin_limit_exceeded: 'Bạn đã đạt giới hạn số cuộc trò chuyện được ghim',
+    },
+    revoke_message: {
+      success: 'Thu hồi tin nhắn thành công',
+      not_found: 'Không tìm thấy tin nhắn',
+      forbidden: 'Bạn không có quyền thu hồi tin nhắn này',
+    },
+    react_message: {
+      success: 'Thả cảm xúc tin nhắn thành công',
+      update_success: 'Cập nhật cảm xúc tin nhắn thành công',
+      remove_success: 'Bỏ cảm xúc tin nhắn thành công',
+      not_found: 'Không tìm thấy tin nhắn',
+      already: 'Bạn đã thả cảm xúc kiểu này',
+      not_reacted: 'Bạn chưa thả cảm xúc tin nhắn này',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+    },
+    create_group: {
+      success: 'Tạo nhóm trò chuyện thành công',
+      min_member_required: 'Nhóm phải có ít nhất 3 thành viên',
+      user_not_found: 'Không tìm thấy người dùng',
+    },
+    member: {
+      add_success: 'Thêm thành viên thành công',
+      remove_success: 'Xóa thành viên thành công',
+      leave_success: 'Rời nhóm thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      not_a_group: 'Cuộc trò chuyện này không phải là nhóm',
+      user_not_found: 'Không tìm thấy người dùng',
+      forbidden: 'Bạn không có quyền thực hiện hành động này',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+      already_member: 'Người dùng đã là thành viên của nhóm',
+      target_not_a_member: 'Người dùng không phải là thành viên của nhóm',
+      cannot_demote_last_admin:
+        'Nhóm phải có ít nhất một quản trị viên, hãy chỉ định người khác làm quản trị viên trước',
+      role_changed: 'Cập nhật vai trò thành viên thành công',
+    },
+    summarize: {
+      success: 'Tóm tắt cuộc trò chuyện thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+    },
+    topics: {
+      success: 'Phát hiện chủ đề thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+    },
+    mark_read: {
+      success: 'Đánh dấu đã đọc thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+    },
+    edit_message: {
+      success: 'Sửa tin nhắn thành công',
+      not_found: 'Không tìm thấy tin nhắn',
+      forbidden: 'Bạn không có quyền sửa tin nhắn này',
+      revoked: 'Không thể sửa tin nhắn đã bị thu hồi',
+      text_required: 'Nội dung tin nhắn không được để trống',
+    },
+    read_receipts: {
+      success: 'Lấy danh sách người đã đọc thành công',
+    },
+    pin_message: {
+      pin_success: 'Ghim tin nhắn thành công',
+      unpin_success: 'Bỏ ghim tin nhắn thành công',
+      list_success: 'Lấy danh sách tin nhắn đã ghim thành công',
+      not_found: 'Không tìm thấy tin nhắn',
+      forbidden: 'Bạn không có quyền ghim tin nhắn trong nhóm này',
+      limit_exceeded:
+        'Đã đạt giới hạn số tin nhắn được ghim trong hội thoại này',
+      not_a_member: 'Bạn không phải là thành viên của cuộc trò chuyện này',
+    },
+    search_messages: {
+      success: 'Tìm kiếm tin nhắn thành công',
+      conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
+      cursor_invalid: 'Con trỏ không hợp lệ',
+    },
+    rate_limit: {
+      send_message: 'Bạn đang gửi tin nhắn quá nhanh, vui lòng thử lại sau',
+      typing: 'Bạn đang gửi trạng thái nhập quá nhanh, vui lòng thử lại sau',
+    },
+    typing: {
+      relay: 'Trạng thái đang gõ phím',
+    },
+    presence: {
+      online: 'Người dùng đang online',
+      offline: 'Người dùng đã offline',
+      snapshot: 'Lấy trạng thái hoạt động thành công',
+    },
+    error: {
+      internal: 'Đã xảy ra lỗi, vui lòng thử lại',
+    },
+  },
   common: {
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',

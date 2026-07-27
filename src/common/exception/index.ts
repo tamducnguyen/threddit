@@ -2,6 +2,7 @@ export * from './base-service.exception';
 export * from './account.exception';
 export * from './auth.exception';
 export * from './block.exception';
+export * from './chat.exception';
 export * from './common.exception';
 export * from './content.exception';
 export * from './follow.exception';

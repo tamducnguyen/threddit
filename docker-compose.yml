@@ -15,6 +15,12 @@ services:
     volumes:
       - redis_data:/data
 
+  qdrant:
+    image: qdrant/qdrant:v1.18
+    container_name: qdrant
+    restart: always
+    volumes:
+      - qdrant_data:/qdrant/storage
 
   web:
     build: .
@@ -24,6 +30,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - qdrant
       - judger
     env_file:
       - .env.production
@@ -49,3 +56,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  qdrant_data:

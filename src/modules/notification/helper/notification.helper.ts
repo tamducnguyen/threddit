@@ -9,6 +9,8 @@
   FRIEND_ACCEPTED = 'sendFriendAcceptedNotification',
   MENTION_IN_COMMENT = 'sendMentionCommentNotification',
   REPLY_COMMENT = 'sendReplyCommentNotification',
+  MENTION_IN_MESSAGE = 'sendMentionInMessageNotification',
+  NEW_MESSAGE = 'sendNewMessageNotification',
 }
 
 export const NameNotificationQueue = 'notification';

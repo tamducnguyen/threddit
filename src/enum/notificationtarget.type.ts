@@ -61,4 +61,16 @@ export type NotificationTarget =
   | {
       type: 'FRIEND_ACCEPTED';
       actorId: number;
+    }
+  | {
+      type: 'MENTION_IN_MESSAGE';
+      conversationId: number;
+      messageId: number;
+      actorId: number;
+    }
+  | {
+      type: 'NEW_MESSAGE';
+      conversationId: number;
+      messageId: number;
+      actorId: number;
     };

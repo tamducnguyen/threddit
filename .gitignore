@@ -55,3 +55,12 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Agent setting
+.claude
+
+# Support tools for agent
+.codegraph
+
+# Docker local
+docker-compose.override.yml
