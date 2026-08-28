@@ -164,7 +164,7 @@ export class CommentRepository {
           SELECT 1
           FROM comments child
           INNER JOIN users child_commenter
-            ON child_commenter.id = child."commenter_user_id "
+            ON child_commenter.id = child."commenter_user_id"
           WHERE child.parent_comment_id = c.id
         ) as "hasChildComment",
         (
@@ -179,7 +179,7 @@ export class CommentRepository {
         COALESCE(muc.mentioned_users, '[]'::json) as "mentionedUsers"
       FROM comments c
       INNER JOIN users commenter
-        ON commenter.id = c."commenter_user_id "
+        ON commenter.id = c."commenter_user_id"
       LEFT JOIN LATERAL (
         SELECT
           COALESCE(
@@ -285,7 +285,7 @@ export class CommentRepository {
       INNER JOIN comments c
         ON c.id = comment_chain.id
       INNER JOIN users commenter
-        ON commenter.id = c."commenter_user_id "
+        ON commenter.id = c."commenter_user_id"
       LEFT JOIN LATERAL (
         SELECT
           COALESCE(
@@ -419,7 +419,7 @@ export class CommentRepository {
           SELECT 1
           FROM comments child
           INNER JOIN users child_commenter
-            ON child_commenter.id = child."commenter_user_id "
+            ON child_commenter.id = child."commenter_user_id"
           WHERE child.parent_comment_id = c.id
           AND NOT EXISTS(
             SELECT 1
@@ -446,7 +446,7 @@ export class CommentRepository {
         COALESCE(muc.mentioned_users, '[]'::json) as "mentionedUsers"
       FROM comments c
       INNER JOIN users commenter
-        ON commenter.id = c."commenter_user_id "
+        ON commenter.id = c."commenter_user_id"
       LEFT JOIN LATERAL (
         SELECT
           COALESCE(
@@ -550,7 +550,7 @@ export class CommentRepository {
           SELECT 1
           FROM comments child
           INNER JOIN users child_commenter
-            ON child_commenter.id = child."commenter_user_id "
+            ON child_commenter.id = child."commenter_user_id"
           WHERE child.parent_comment_id = c.id
           AND NOT EXISTS(
             SELECT 1
@@ -577,7 +577,7 @@ export class CommentRepository {
         COALESCE(muc.mentioned_users, '[]'::json) as "mentionedUsers"
       FROM comments c
       INNER JOIN users commenter
-        ON commenter.id = c."commenter_user_id "
+        ON commenter.id = c."commenter_user_id"
       LEFT JOIN LATERAL (
         SELECT
           COALESCE(

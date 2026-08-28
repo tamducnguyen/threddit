@@ -25,7 +25,7 @@ export class CommentEntity {
   @ManyToOne(() => UserEntity, (user) => user.createdComments, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'commenter_user_id ' })
+  @JoinColumn({ name: 'commenter_user_id' })
   commenter: UserEntity;
   @ManyToMany(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinTable({
