@@ -23,3 +23,6 @@ Dockerfile*
 docker-compose*
 # Nginx
 nginx.conf
+
+# Support tool for agents
+.codegraph
