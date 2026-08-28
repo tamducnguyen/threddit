@@ -18,11 +18,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "cross-env NODE_ENV=development jest --config ./test/jest-e2e.json",
-    "eval": "ts-node test/eval/evaluate.ts",
-    "eval:threshold-sweep": "ts-node test/eval/threshold-sweep.ts",
-    "seed:chat": "cross-env NODE_ENV=development NODE_PATH=. ts-node test/seed/seed-chat.ts",
-    "seed:chat:existing": "cross-env NODE_ENV=development NODE_PATH=. ts-node test/seed/seed-chat-existing-users.ts"
+    "test:e2e": "cross-env NODE_ENV=development jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
