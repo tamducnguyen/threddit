@@ -17,13 +17,15 @@ describe('ConversationInsightsService', () => {
 
   beforeEach(() => {
     messageRepo = {
-      findMessagesForRag: jest.fn(),
+      findConversationMessagesForRag: jest.fn(),
+      findUnreadMessagesForRag: jest.fn(),
     };
     conversationRepo = {
       findMembership: jest.fn(),
     };
     ragService = {
       summarizeConversation: jest.fn(),
+      detectTopics: jest.fn(),
     };
 
     service = new ConversationInsightsService(
@@ -38,35 +40,68 @@ describe('ConversationInsightsService', () => {
       // findMembership returns null for both cases, so both surface as 404.
       conversationRepo.findMembership.mockResolvedValue(null);
       await expect(
-        service.summarizeConversation(1, 99, 'tiến độ dự án'),
+        service.summarizeConversation(1, 99, 'project progress'),
       ).rejects.toBeInstanceOf(ChatSummarizeConversationNotFoundException);
       expect(ragService.summarizeConversation).not.toHaveBeenCalled();
     });
 
-    it('delegates to RagService and returns its summary for a member', async () => {
+    it('delegates whole-conversation messages to RagService for a member', async () => {
       conversationRepo.findMembership.mockResolvedValue({
         role: ConversationMemberRole.MEMBER,
       });
-      messageRepo.findMessagesForRag.mockResolvedValue([
+      messageRepo.findConversationMessagesForRag.mockResolvedValue([
         { sender: 'a', text: 'hi', isRevoked: false, createdAt: new Date() },
       ]);
       ragService.summarizeConversation.mockResolvedValue({
-        summary: 'Tóm tắt.',
+        summary: 'Summary.',
         retrievedChunkCount: 3,
       });
 
-      const result = await service.summarizeConversation(1, 5, 'tiến độ dự án');
+      const result = await service.summarizeConversation(
+        1,
+        5,
+        'project progress',
+      );
 
+      expect(messageRepo.findConversationMessagesForRag).toHaveBeenCalledWith(5);
+      expect(messageRepo.findUnreadMessagesForRag).not.toHaveBeenCalled();
       expect(ragService.summarizeConversation).toHaveBeenCalledWith(
         5,
-        'tiến độ dự án',
+        'project progress',
         expect.any(Array),
       );
       expect(result.data).toMatchObject({
         conversationId: 5,
-        topic: 'tiến độ dự án',
-        summary: 'Tóm tắt.',
+        topic: 'project progress',
+        summary: 'Summary.',
         retrievedChunkCount: 3,
+      });
+    });
+  });
+
+  describe('detectTopics', () => {
+    it('detects topics from unread messages only', async () => {
+      conversationRepo.findMembership.mockResolvedValue({
+        role: ConversationMemberRole.MEMBER,
+      });
+      messageRepo.findUnreadMessagesForRag.mockResolvedValue([
+        {
+          sender: 'a',
+          text: 'new update',
+          isRevoked: false,
+          createdAt: new Date(),
+        },
+      ]);
+      ragService.detectTopics.mockResolvedValue(['project progress']);
+
+      const result = await service.detectTopics(1, 5);
+
+      expect(messageRepo.findUnreadMessagesForRag).toHaveBeenCalledWith(5, 1);
+      expect(messageRepo.findConversationMessagesForRag).not.toHaveBeenCalled();
+      expect(ragService.detectTopics).toHaveBeenCalledWith(expect.any(Array));
+      expect(result.data).toMatchObject({
+        conversationId: 5,
+        topics: ['project progress'],
       });
     });
   });

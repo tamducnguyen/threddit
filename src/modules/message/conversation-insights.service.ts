@@ -25,8 +25,9 @@ export class ConversationInsightsService {
 
   /**
    * RAG topic summary for a conversation. Membership is required; a missing
-   * conversation and a non-member both surface as 404. Fetches the messages and
-   * delegates the pipeline to RagService.
+   * conversation and a non-member both surface as 404. Summaries are generated
+   * from the whole conversation, not the read pointer, so a prior topic-detect
+   * or mark-read event cannot accidentally hide the context to summarize.
    */
   async summarizeConversation(
     requesterId: number,
@@ -39,10 +40,8 @@ export class ConversationInsightsService {
       ChatSummarizeConversationNotFoundException,
     );
 
-    const messages = await this.messageRepo.findMessagesForRag(
-      conversationId,
-      requesterId,
-    );
+    const messages =
+      await this.messageRepo.findConversationMessagesForRag(conversationId);
     const { summary, retrievedChunkCount } =
       await this.ragService.summarizeConversation(
         conversationId,
@@ -59,8 +58,8 @@ export class ConversationInsightsService {
   }
 
   /**
-   * Detect the main discussion topics in a conversation. A missing conversation
-   * and a non-member both surface as 404.
+   * Detect the main discussion topics in unread messages. A missing
+   * conversation and a non-member both surface as 404.
    */
   async detectTopics(requesterId: number, conversationId: number) {
     await this.assertMember(
@@ -68,7 +67,7 @@ export class ConversationInsightsService {
       conversationId,
       ChatTopicsConversationNotFoundException,
     );
-    const messages = await this.messageRepo.findMessagesForRag(
+    const messages = await this.messageRepo.findUnreadMessagesForRag(
       conversationId,
       requesterId,
     );

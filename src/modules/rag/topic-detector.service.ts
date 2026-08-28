@@ -68,15 +68,16 @@ export class TopicDetectorService {
 
   private buildPrompt(joinedMessages: string): string {
     return [
-      'You are a conversation analysis assistant. Below is a group-chat excerpt:',
+      'Bạn là trợ lý phân tích hội thoại. Dưới đây là một đoạn trích từ group chat:',
       '',
       wrapUntrustedData(joinedMessages),
       '',
-      `List at most ${MAX_TOPICS} main topics discussed in this excerpt.`,
-      'Return the result as a JSON array of short strings (3-8 words per topic), for example:',
-      '["project progress", "task assignments", "budget"]',
+      `Hãy liệt kê tối đa ${MAX_TOPICS} chủ đề chính được thảo luận trong đoạn trích này.`,
+      'Trả về kết quả dưới dạng mảng JSON gồm các chuỗi ngắn (3-8 từ mỗi chủ đề), ví dụ:',
+      '["tiến độ dự án", "phân công công việc", "ngân sách"]',
+      'Viết các chủ đề bằng tiếng Việt.',
       INJECTION_GUARD_RULE,
-      'Return only the JSON array, with no extra explanation.',
+      'Chỉ trả về mảng JSON, không kèm bất kỳ giải thích nào khác.',
     ].join('\n');
   }
 

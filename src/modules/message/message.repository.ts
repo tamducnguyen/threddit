@@ -21,6 +21,7 @@ import { ReactionCount } from './interfaces/reaction-count.interface';
 
 /** Opaque cursor payload for paging message history (newest-first). */
 export interface MessageHistoryCursor {
+  createdAt: Date;
   id: number;
 }
 
@@ -28,6 +29,13 @@ export interface MessageHistoryCursor {
 export interface MessageSearchCursor {
   createdAt: string;
   id: number;
+}
+
+export interface RagMessageRow {
+  sender: string;
+  text: string | null;
+  isRevoked: boolean;
+  createdAt: Date;
 }
 
 export class MessageRepository {
@@ -331,8 +339,16 @@ export class MessageRepository {
     ];
     let cursorClause = '';
     if (cursor) {
-      params.push(cursor.id);
-      cursorClause = `AND m.id < $4::int`;
+      params.push(cursor.createdAt, cursor.id);
+      cursorClause = `
+    AND (
+      m.created_at < $4::timestamptz
+      OR (
+        m.created_at = $4::timestamptz
+        AND m.id < $5::int
+      )
+    )
+  `;
     }
     const limitParamIndex = params.length + 1;
     params.push(this.messageLimit);
@@ -527,17 +543,26 @@ export class MessageRepository {
    * rule used by the inbox. Revoked / null-text rows are kept here and filtered
    * downstream by the preprocessor so this stays a plain dump.
    */
-  async findMessagesForRag(
+  async findConversationMessagesForRag(
+    conversationId: number,
+  ): Promise<RagMessageRow[]> {
+    return await this.dataSource.query(
+      `SELECT s.display_name AS sender,
+              m.text,
+              m.is_revoked AS "isRevoked",
+              m.created_at AS "createdAt"
+         FROM messages m
+         INNER JOIN users s ON s.id = m.sender_user_id
+        WHERE m.conversation_id = $1
+        ORDER BY m.id ASC`,
+      [conversationId],
+    );
+  }
+
+  async findUnreadMessagesForRag(
     conversationId: number,
     userId: number,
-  ): Promise<
-    Array<{
-      sender: string;
-      text: string | null;
-      isRevoked: boolean;
-      createdAt: Date;
-    }>
-  > {
+  ): Promise<RagMessageRow[]> {
     return await this.dataSource.query(
       `SELECT s.display_name AS sender,
               m.text,

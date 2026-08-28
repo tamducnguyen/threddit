@@ -19,6 +19,30 @@ export class RagService {
   ) {}
 
   /**
+   * Refresh the searchable context for one conversation. Messages are embedded
+   * first so the chunker can group nearby semantic turns before chunk vectors
+   * are stored in Qdrant and the BM25 cache.
+   */
+  async indexConversation(
+    conversationId: number,
+    messages: RagSourceMessage[],
+  ): Promise<{ indexedChunkCount: number }> {
+    const clean = this.preprocessor.preprocess(messages);
+
+    const messageVectors =
+      clean.length > 0
+        ? await this.embedder.embedTexts(clean.map((m) => m.text))
+        : [];
+
+    const chunks = this.chunker.chunk(clean, messageVectors);
+    const embedded =
+      chunks.length > 0 ? await this.embedder.embedChunks(chunks) : [];
+    await this.retriever.indexChunks(embedded, conversationId);
+
+    return { indexedChunkCount: embedded.length };
+  }
+
+  /**
    * Full RAG pass for a topic over a conversation's raw messages:
    * preprocess → embed messages → semantic chunk → embed chunks
    * → index (Qdrant + BM25) → hybrid retrieve → summarize.
@@ -33,23 +57,11 @@ export class RagService {
     messages: RagSourceMessage[],
     vectorOnly = false,
   ): Promise<{ summary: string; retrievedChunkCount: number }> {
-    const clean = this.preprocessor.preprocess(messages);
-
-    // Embed individual messages for semantic boundary detection.
-    const messageVectors =
-      clean.length > 0
-        ? await this.embedder.embedTexts(clean.map((m) => m.text))
-        : [];
-
-    const chunks = this.chunker.chunk(clean, messageVectors);
-
     // Re-index unconditionally (even with zero chunks) so the conversation's
     // previously indexed chunks are cleared. Otherwise an empty/narrowed input
     // — e.g. the requester has read everything — would still retrieve stale,
     // already-read chunks left in the index by earlier calls.
-    const embedded =
-      chunks.length > 0 ? await this.embedder.embedChunks(chunks) : [];
-    await this.retriever.indexChunks(embedded, conversationId);
+    await this.indexConversation(conversationId, messages);
 
     const retrieved = await this.retriever.retrieve(
       topic,

@@ -11,6 +11,7 @@ import { MessageRepository } from './message.repository';
 import { ConversationRepository } from '../conversation/conversation.repository';
 import { ConversationService } from '../conversation/conversation.service';
 import { StorageService } from '../storage/storage.service';
+import { RagService } from '../rag/rag.service';
 import { JwtService } from '@nestjs/jwt';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
@@ -29,11 +30,19 @@ describe('MessageService', () => {
   let service: MessageService;
   let messageRepo: Record<string, jest.Mock>;
   let conversationRepo: Record<string, jest.Mock>;
+  let conversationService: Record<string, jest.Mock>;
+  let storageService: Record<string, jest.Mock>;
   let jwtService: jest.Mocked<Pick<JwtService, 'signAsync' | 'verifyAsync'>>;
   let notificationQueue: Record<string, jest.Mock>;
+  let ragService: Record<string, jest.Mock>;
 
   beforeEach(() => {
     messageRepo = {
+      createMessage: jest.fn(),
+      deleteMessageById: jest.fn(),
+      insertMessageMedias: jest.fn(),
+      insertMessageMentions: jest.fn(),
+      findSentMessageById: jest.fn(),
       findMessagesPage: jest.fn(),
       findMessageContext: jest.fn(),
       revokeMessageById: jest.fn(),
@@ -42,10 +51,22 @@ describe('MessageService', () => {
       updateMessageReactionType: jest.fn(),
       deleteMessageReaction: jest.fn(),
       getMessageReactionCounts: jest.fn(),
+      findConversationMessagesForRag: jest.fn(),
     };
     conversationRepo = {
       findMembership: jest.fn(),
+      findUsersByUsernames: jest.fn(),
       updateConversationLastMessage: jest.fn(),
+    };
+    conversationService = {
+      resolveDirectConversation: jest.fn(),
+      resolveConversationForMember: jest.fn(),
+    };
+    storageService = {
+      validateAndResolveMediaKeysFromUploadSession: jest
+        .fn()
+        .mockResolvedValue([]),
+      attachUploadedMedia: jest.fn().mockResolvedValue(undefined),
     };
     jwtService = {
       signAsync: jest.fn().mockResolvedValue('SIGNED_CURSOR'),
@@ -60,14 +81,18 @@ describe('MessageService', () => {
     notificationQueue = {
       add: jest.fn().mockResolvedValue(undefined),
     };
+    ragService = {
+      indexConversation: jest.fn().mockResolvedValue({ indexedChunkCount: 0 }),
+    };
 
     service = new MessageService(
       messageRepo as unknown as MessageRepository,
       conversationRepo as unknown as ConversationRepository,
-      {} as unknown as ConversationService,
-      {} as unknown as StorageService,
+      conversationService as unknown as ConversationService,
+      storageService as unknown as StorageService,
       jwtService as unknown as JwtService,
       configService as unknown as ConfigService,
+      ragService as unknown as RagService,
       notificationQueue as unknown as Queue,
     );
   });
@@ -89,6 +114,52 @@ describe('MessageService', () => {
       await expect(service.sendMessage(1, dto)).rejects.toBeInstanceOf(
         ChatSendMessageInvalidTargetException,
       );
+    });
+
+    it('refreshes the RAG index in the background after persisting a message', async () => {
+      const sender = { id: 1 };
+      const conversation = { id: 5 };
+      const ragRows = [
+        {
+          sender: 'Alice',
+          text: 'project update',
+          isRevoked: false,
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+      ];
+      const sentMessage = {
+        id: 10,
+        text: 'project update',
+        conversation,
+      };
+
+      conversationService.resolveConversationForMember.mockResolvedValue({
+        sender,
+        conversation,
+        memberIds: [1, 2],
+        isNewConversation: false,
+      });
+      messageRepo.createMessage.mockResolvedValue({ id: 10 });
+      messageRepo.findConversationMessagesForRag.mockResolvedValue(ragRows);
+      messageRepo.findSentMessageById.mockResolvedValue(sentMessage);
+
+      const result = await service.sendMessage(1, {
+        conversationId: 5,
+        text: ' project update ',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(messageRepo.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sender,
+          conversation,
+          text: 'project update',
+        }),
+      );
+      expect(messageRepo.findConversationMessagesForRag).toHaveBeenCalledWith(5);
+      expect(ragService.indexConversation).toHaveBeenCalledWith(5, ragRows);
+      expect(result.sentMessage).toBe(sentMessage);
     });
   });
 
@@ -130,6 +201,7 @@ describe('MessageService', () => {
       // "full" page must return exactly that many rows for a cursor to be issued.
       const page = Array.from({ length: 20 }, (_, index) => ({
         id: index + 1,
+        createdAt: new Date(`2026-01-01T00:00:${index.toString().padStart(2, '0')}Z`),
         sender: {} as never,
         mediaFiles: [],
         isRevoked: false,
@@ -139,7 +211,10 @@ describe('MessageService', () => {
 
       const result = await service.getMessages(1, 5);
 
-      expect(jwtService.signAsync).toHaveBeenCalledWith({ id: 20 });
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        createdAt: page[19].createdAt,
+        id: 20,
+      });
       expect(result.data?.cursor).toBe('SIGNED_CURSOR');
     });
 
@@ -147,12 +222,16 @@ describe('MessageService', () => {
       conversationRepo.findMembership.mockResolvedValue({
         role: ConversationMemberRole.MEMBER,
       });
-      jwtService.verifyAsync.mockResolvedValue({ id: 10 } as never);
+      const cursorPayload = {
+        createdAt: new Date('2026-01-01T00:00:10.000Z'),
+        id: 10,
+      };
+      jwtService.verifyAsync.mockResolvedValue(cursorPayload as never);
       messageRepo.findMessagesPage.mockResolvedValue([]);
 
       await service.getMessages(1, 5, 'SOME_CURSOR');
 
-      expect(messageRepo.findMessagesPage).toHaveBeenCalledWith(5, { id: 10 });
+      expect(messageRepo.findMessagesPage).toHaveBeenCalledWith(5, cursorPayload);
     });
 
     it('rejects an invalid cursor with BadRequest', async () => {

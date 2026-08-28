@@ -117,16 +117,17 @@ export class SummarizerService {
 
   private buildPrompt(topic: string, labelledChunkTexts: string): string {
     return [
-      `You are a conversation summarization assistant. Below are group-chat excerpts related to the topic "${topic}", each labelled with a source tag of the form [number]:`,
+      `Bạn là trợ lý tóm tắt hội thoại. Dưới đây là các đoạn trích từ group chat liên quan đến chủ đề "${topic}", mỗi đoạn được gắn nhãn nguồn dạng [số]:`,
       '',
       wrapUntrustedData(labelledChunkTexts),
       '',
-      `Write a concise, coherent summary of the main content related to the topic "${topic}".`,
-      'Mandatory rules:',
+      `Hãy viết một bản tóm tắt ngắn gọn, mạch lạc về nội dung chính liên quan đến chủ đề "${topic}".`,
+      'Các quy tắc bắt buộc:',
       INJECTION_GUARD_RULE,
-      '- Summarize only what appears in the excerpts above; never add outside information.',
-      '- After each claim, append the corresponding source tag [number] (e.g. "The team agreed to meet on Friday [2].").',
-      `- If the excerpts do NOT discuss the topic "${topic}", return exactly one line: ${ABSTAIN_SENTINEL}`,
+      '- Viết bản tóm tắt bằng tiếng Việt.',
+      '- Chỉ tóm tắt những gì xuất hiện trong các đoạn trích trên; tuyệt đối không thêm thông tin bên ngoài.',
+      '- Sau mỗi ý, hãy gắn nhãn nguồn tương ứng dạng [số] (ví dụ: "Cả nhóm thống nhất họp vào thứ Sáu [2].").',
+      `- Nếu các đoạn trích KHÔNG đề cập đến chủ đề "${topic}", chỉ trả về đúng một dòng: ${ABSTAIN_SENTINEL}`,
     ].join('\n');
   }
 }

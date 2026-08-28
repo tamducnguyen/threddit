@@ -11,6 +11,7 @@ import {
 import { ConversationRepository } from '../conversation/conversation.repository';
 import { ConversationService } from '../conversation/conversation.service';
 import { StorageService } from '../storage/storage.service';
+import { RagService } from '../rag/rag.service';
 import {
   JobNotificationQueue,
   NameNotificationQueue,
@@ -59,6 +60,7 @@ export class MessageService {
     private readonly storageService: StorageService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly ragService: RagService,
     @InjectQueue(NameNotificationQueue)
     private readonly notificationQueue: Queue,
   ) {
@@ -200,6 +202,13 @@ export class MessageService {
         );
       });
 
+    this.refreshConversationRagIndex(conversation.id).catch((error) => {
+      this.logger.warn(
+        `Failed to refresh RAG index for conversation ${conversation.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
+
     // Single round-trip that joins users / conversations / media files and
     // builds URLs via SQL CONCAT, so the row comes back already shaped.
     const sentMessage = await this.messageRepo.findSentMessageById(
@@ -241,9 +250,11 @@ export class MessageService {
     );
 
     const nextCursor =
-      items.length === limit
+      items.length == limit
         ? await this.jwtService.signAsync(this.toMessageCursor(items))
         : null;
+    console.log(items);
+    console.log(items.length == limit);
 
     return sendResponse(HttpStatus.OK, message.chat.get_messages.success, {
       items,
@@ -461,6 +472,12 @@ export class MessageService {
 
   // --- internal helpers ---
 
+  private async refreshConversationRagIndex(conversationId: number) {
+    const messages =
+      await this.messageRepo.findConversationMessagesForRag(conversationId);
+    await this.ragService.indexConversation(conversationId, messages);
+  }
+
   /** Resolve a message + verify the requester may react (is a member). */
   private async assertMessageReactable(
     userId: number,
@@ -481,7 +498,14 @@ export class MessageService {
   }
 
   /** Build the next-page cursor payload from the last item of a history page. */
-  private toMessageCursor(items: Array<{ id: number }>): MessageHistoryCursor {
-    return { id: items[items.length - 1].id };
+  private toMessageCursor(
+    items: Array<{ id: number; createdAt: Date }>,
+  ): MessageHistoryCursor {
+    const last = items[items.length - 1];
+
+    return {
+      createdAt: last.createdAt,
+      id: last.id,
+    };
   }
 }
