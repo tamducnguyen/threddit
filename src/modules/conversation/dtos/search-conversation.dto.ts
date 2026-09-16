@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
@@ -8,6 +9,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
  * `whitelist + forbidNonWhitelisted` (see main.ts) rejects it as unknown.
  */
 export class SearchConversationDTO {
+  @Transform(({ value }: { value: string }) => value.trim())
   @IsString({ message: 'Từ khóa là một chuỗi' })
   @IsNotEmpty({ message: 'Từ khóa không được để rỗng' })
   key: string;

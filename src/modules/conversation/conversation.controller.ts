@@ -58,7 +58,7 @@ export class ConversationController {
   ) {
     return await this.conversationService.searchConversations(
       currentUser.sub,
-      searchDTO.key.trim(),
+      searchDTO.key,
       searchDTO.cursor,
     );
   }
