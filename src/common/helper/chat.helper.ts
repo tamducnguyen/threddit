@@ -1,5 +1,4 @@
 export const chatEvent = {
-  ERROR: 'error',
   // Inbound: client sends a new message.
   SEND_MESSAGE: 'send_message',
   // Outbound: server broadcasts a new message to the conversation.
@@ -40,8 +39,6 @@ export const chatEvent = {
   PRESENCE_ONLINE: 'presence_online',
   // Outbound: server announces a user just went offline (carries lastSeen).
   PRESENCE_OFFLINE: 'presence_offline',
-  // Inbound: client marks messages as read up to a given message id.
-  MARK_READ: 'mark_read',
   // Outbound: server broadcasts a read receipt to the rest of the conversation.
   READ_RECEIPT: 'read_receipt',
 };

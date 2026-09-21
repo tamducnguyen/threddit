@@ -157,7 +157,9 @@ describe('MessageService', () => {
           text: 'project update',
         }),
       );
-      expect(messageRepo.findConversationMessagesForRag).toHaveBeenCalledWith(5);
+      expect(messageRepo.findConversationMessagesForRag).toHaveBeenCalledWith(
+        5,
+      );
       expect(ragService.indexConversation).toHaveBeenCalledWith(5, ragRows);
       expect(result.sentMessage).toBe(sentMessage);
     });
@@ -201,7 +203,9 @@ describe('MessageService', () => {
       // "full" page must return exactly that many rows for a cursor to be issued.
       const page = Array.from({ length: 20 }, (_, index) => ({
         id: index + 1,
-        createdAt: new Date(`2026-01-01T00:00:${index.toString().padStart(2, '0')}Z`),
+        createdAt: new Date(
+          `2026-01-01T00:00:${index.toString().padStart(2, '0')}Z`,
+        ),
         sender: {} as never,
         mediaFiles: [],
         isRevoked: false,
@@ -231,7 +235,10 @@ describe('MessageService', () => {
 
       await service.getMessages(1, 5, 'SOME_CURSOR');
 
-      expect(messageRepo.findMessagesPage).toHaveBeenCalledWith(5, cursorPayload);
+      expect(messageRepo.findMessagesPage).toHaveBeenCalledWith(
+        5,
+        cursorPayload,
+      );
     });
 
     it('rejects an invalid cursor with BadRequest', async () => {

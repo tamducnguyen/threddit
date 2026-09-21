@@ -1,7 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
-import { BaseServiceException } from './base-service.exception';
+import { WsBaseServiceException } from './ws-base-service.exception';
 import { message } from '../helper/message.helper';
 import { errorCode } from '../helper/errorcode.helper';
+import { BaseServiceException } from './base-service.exception';
 
 export class ChatPinConversationNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
@@ -75,50 +76,46 @@ export class ChatMemberCannotDemoteLastAdminException extends BaseServiceExcepti
   readonly message = message.chat.member.cannot_demote_last_admin;
 }
 
-export class ChatEditMessageNotFoundException extends BaseServiceException {
+export class ChatEditMessageNotFoundException extends WsBaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.chat.edit_message.not_found;
   readonly message = message.chat.edit_message.not_found;
 }
 
-export class ChatEditMessageForbiddenException extends BaseServiceException {
+export class ChatEditMessageForbiddenException extends WsBaseServiceException {
   readonly statusCode = HttpStatus.FORBIDDEN;
   readonly errorCode = errorCode.chat.edit_message.forbidden;
   readonly message = message.chat.edit_message.forbidden;
 }
 
-export class ChatEditMessageRevokedException extends BaseServiceException {
+export class ChatEditMessageRevokedException extends WsBaseServiceException {
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.chat.edit_message.revoked;
   readonly message = message.chat.edit_message.revoked;
 }
 
-export class ChatEditMessageTextRequiredException extends BaseServiceException {
+export class ChatEditMessageTextRequiredException extends WsBaseServiceException {
   readonly statusCode = HttpStatus.BAD_REQUEST;
   readonly errorCode = errorCode.chat.edit_message.text_required;
   readonly message = message.chat.edit_message.text_required;
 }
 
-export class ChatPinMessageNotFoundException extends BaseServiceException {
-  readonly statusCode = HttpStatus.NOT_FOUND;
+export class ChatPinMessageNotFoundException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.pin_message.not_found;
   readonly message = message.chat.pin_message.not_found;
 }
 
-export class ChatPinMessageForbiddenException extends BaseServiceException {
-  readonly statusCode = HttpStatus.FORBIDDEN;
+export class ChatPinMessageForbiddenException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.pin_message.forbidden;
   readonly message = message.chat.pin_message.forbidden;
 }
 
-export class ChatPinMessageLimitExceededException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
+export class ChatPinMessageLimitExceededException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.pin_message.limit_exceeded;
   readonly message = message.chat.pin_message.limit_exceeded;
 }
 
-export class ChatPinMessageNotAMemberException extends BaseServiceException {
-  readonly statusCode = HttpStatus.FORBIDDEN;
+export class ChatPinMessageNotAMemberException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.pin_message.not_a_member;
   readonly message = message.chat.pin_message.not_a_member;
 }
@@ -135,14 +132,12 @@ export class ChatSearchMessagesCursorInvalidException extends BaseServiceExcepti
   readonly message = message.chat.search_messages.cursor_invalid;
 }
 
-export class ChatSendMessageRateLimitedException extends BaseServiceException {
-  readonly statusCode = HttpStatus.TOO_MANY_REQUESTS;
+export class ChatSendMessageRateLimitedException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.rate_limit.send_message;
   readonly message = message.chat.rate_limit.send_message;
 }
 
-export class ChatTypingRateLimitedException extends BaseServiceException {
-  readonly statusCode = HttpStatus.TOO_MANY_REQUESTS;
+export class ChatTypingRateLimitedException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.rate_limit.typing;
   readonly message = message.chat.rate_limit.typing;
 }
@@ -153,32 +148,27 @@ export class ChatMarkReadConversationNotFoundException extends BaseServiceExcept
   readonly message = message.chat.mark_read.conversation_not_found;
 }
 
-export class ChatSendMessageInvalidTargetException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
+export class ChatSendMessageInvalidTargetException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.send_message.invalid_target;
   readonly message = message.chat.send_message.invalid_target;
 }
 
-export class ChatSendMessageTextOrMediaRequiredException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
+export class ChatSendMessageTextOrMediaRequiredException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.send_message.text_or_media_required;
   readonly message = message.chat.send_message.text_or_media_required;
 }
 
-export class ChatSendMessageUserNotFoundException extends BaseServiceException {
-  readonly statusCode = HttpStatus.NOT_FOUND;
+export class ChatSendMessageUserNotFoundException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.send_message.user_not_found;
   readonly message = message.chat.send_message.user_not_found;
 }
 
-export class ChatSendMessageCantMessageSelfException extends BaseServiceException {
-  readonly statusCode = HttpStatus.BAD_REQUEST;
+export class ChatSendMessageCantMessageSelfException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.send_message.cant_message_self;
   readonly message = message.chat.send_message.cant_message_self;
 }
 
-export class ChatSendMessageConversationNotFoundException extends BaseServiceException {
-  readonly statusCode = HttpStatus.NOT_FOUND;
+export class ChatSendMessageConversationNotFoundException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.send_message.conversation_not_found;
   readonly message = message.chat.send_message.conversation_not_found;
 }
@@ -201,26 +191,22 @@ export class ChatListConversationsCursorInvalidException extends BaseServiceExce
   readonly message = message.chat.list_conversations.cursor_invalid;
 }
 
-export class ChatRevokeMessageNotFoundException extends BaseServiceException {
-  readonly statusCode = HttpStatus.NOT_FOUND;
+export class ChatRevokeMessageNotFoundException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.revoke_message.not_found;
   readonly message = message.chat.revoke_message.not_found;
 }
 
-export class ChatRevokeMessageForbiddenException extends BaseServiceException {
-  readonly statusCode = HttpStatus.FORBIDDEN;
+export class ChatRevokeMessageForbiddenException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.revoke_message.forbidden;
   readonly message = message.chat.revoke_message.forbidden;
 }
 
-export class ChatReactMessageNotFoundException extends BaseServiceException {
-  readonly statusCode = HttpStatus.NOT_FOUND;
+export class ChatReactMessageNotFoundException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.react_message.not_found;
   readonly message = message.chat.react_message.not_found;
 }
 
-export class ChatReactMessageNotAMemberException extends BaseServiceException {
-  readonly statusCode = HttpStatus.FORBIDDEN;
+export class ChatReactMessageNotAMemberException extends WsBaseServiceException {
   readonly errorCode = errorCode.chat.react_message.not_a_member;
   readonly message = message.chat.react_message.not_a_member;
 }

@@ -78,9 +78,7 @@ export class RagService {
    * Detect the main discussion topics in a conversation without requiring
    * the user to supply a topic upfront.
    */
-  async detectTopics(
-    messages: RagSourceMessage[],
-  ): Promise<string[]> {
+  async detectTopics(messages: RagSourceMessage[]): Promise<string[]> {
     const clean = this.preprocessor.preprocess(messages);
     return this.topicDetector.detectTopics(clean);
   }

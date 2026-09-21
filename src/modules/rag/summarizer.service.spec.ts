@@ -63,9 +63,7 @@ describe('SummarizerService', () => {
     httpPost.mockReturnValue(
       of({
         data: {
-          candidates: [
-            { content: { parts: [{ text: ABSTAIN_SENTINEL }] } },
-          ],
+          candidates: [{ content: { parts: [{ text: ABSTAIN_SENTINEL }] } }],
         },
       }),
     );
@@ -80,7 +78,11 @@ describe('SummarizerService', () => {
       of({
         data: {
           candidates: [
-            { content: { parts: [{ text: 'Một bản tóm tắt không trích dẫn.' }] } },
+            {
+              content: {
+                parts: [{ text: 'Một bản tóm tắt không trích dẫn.' }],
+              },
+            },
           ],
         },
       }),
@@ -95,9 +97,7 @@ describe('SummarizerService', () => {
     httpPost.mockReturnValue(
       of({
         data: {
-          candidates: [
-            { content: { parts: [{ text: 'Bịa đặt [9].' }] } },
-          ],
+          candidates: [{ content: { parts: [{ text: 'Bịa đặt [9].' }] } }],
         },
       }),
     );
@@ -124,9 +124,11 @@ describe('SummarizerService', () => {
     });
 
     const sentPrompt = (): string =>
-      (httpPost.mock.calls[0][1] as {
-        contents: Array<{ parts: Array<{ text: string }> }>;
-      }).contents[0].parts[0].text;
+      (
+        httpPost.mock.calls[0][1] as {
+          contents: Array<{ parts: Array<{ text: string }> }>;
+        }
+      ).contents[0].parts[0].text;
 
     it('fences the chunk data and includes the injection guard rule', async () => {
       httpPost.mockReturnValue(okResponse);

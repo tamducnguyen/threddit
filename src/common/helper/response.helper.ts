@@ -10,18 +10,21 @@ export function sendResponse<T>(
     success: Number(statusCode) >= 200 && Number(statusCode) < 300,
     message,
     data,
-    ...(errorCode ? { errorCode } : {}),
+    errorCode,
     timestamp: new Date().toISOString(),
   };
 }
 export function sendWsResponse<T>(
-  message: string,
+  success: boolean,
+  message: string | string[],
   data?: T,
   errorCode?: string,
 ) {
   return {
+    success,
     message,
-    errorCode,
     data,
+    errorCode,
+    timestamp: new Date().toISOString(),
   };
 }

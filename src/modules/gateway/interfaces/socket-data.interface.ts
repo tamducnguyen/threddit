@@ -2,6 +2,7 @@
 export interface ChatSocketUser {
   sub: number;
   username: string;
+  displayName: string;
 }
 
 /** Shape of the per-socket `client.data` bag the chat gateway maintains. */

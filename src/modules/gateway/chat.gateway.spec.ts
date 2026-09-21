@@ -25,7 +25,9 @@ describe('ChatGateway', () => {
   let gatewayService: Record<string, jest.Mock>;
   let gatewayWorker: Record<string, jest.Mock>;
   let to: jest.Mock;
-  let client: { data: { user: { sub: number; username: string } } } & {
+  let client: {
+    data: { user: { sub: number; username: string; displayName: string } };
+  } & {
     broadcast: { to: jest.Mock };
   };
   let broadcastEmit: jest.Mock;
@@ -73,7 +75,9 @@ describe('ChatGateway', () => {
 
     broadcastEmit = jest.fn();
     client = {
-      data: { user: { sub: 1, username: 'alice' } },
+      data: {
+        user: { sub: 1, username: 'alice', displayName: 'TamNguyenDuc' },
+      },
       broadcast: { to: jest.fn().mockReturnValue({ emit: broadcastEmit }) },
     };
   });
@@ -143,8 +147,8 @@ describe('ChatGateway', () => {
     );
   });
 
-  it('relays user_typing to the rest of the room via broadcast', () => {
-    gateway.handleTyping(client as never, {
+  it('relays user_typing to the rest of the room via broadcast', async () => {
+    await gateway.handleTyping(client as never, {
       conversationId: 5,
       isTyping: true,
     });
@@ -155,8 +159,7 @@ describe('ChatGateway', () => {
       expect.objectContaining({
         data: {
           conversationId: 5,
-          userId: 1,
-          username: 'alice',
+          userDisplayName: 'TamNguyenDuc',
           isTyping: true,
         },
       }),

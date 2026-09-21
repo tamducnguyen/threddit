@@ -7,7 +7,6 @@ import {
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
-  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,11 +18,6 @@ import { cookieOptions } from '../../common/helper/cookie.helper';
 import { chatEvent, chatRoom } from '../../common/helper/chat.helper';
 import { sendWsResponse } from '../../common/helper/response.helper';
 import { message } from '../../common/helper/message.helper';
-import { errorCode } from '../../common/helper/errorcode.helper';
-import {
-  BaseServiceException,
-  ChatMarkReadConversationNotFoundException,
-} from '../../common/exception';
 import { SendMessageDTO } from '../message/dtos/send-message.dto';
 import { GetPresenceDTO } from './dtos/get-presence.dto';
 import { RevokeMessageDTO } from '../message/dtos/revoke-message.dto';
@@ -32,7 +26,6 @@ import { PinMessageDTO } from '../message/dtos/pin-message.dto';
 import { ReactMessageDTO } from '../message/dtos/react-message.dto';
 import { UnreactMessageDTO } from '../message/dtos/unreact-message.dto';
 import { TypingDTO } from './dtos/typing.dto';
-import { WsMarkReadDTO } from './dtos/ws-mark-read.dto';
 import { MessageService } from '../message/message.service';
 import { ConversationService } from '../conversation/conversation.service';
 import { GatewayService } from './gateway.service';
@@ -45,6 +38,9 @@ import {
   ChatSendMessageRateLimitedException,
   ChatTypingRateLimitedException,
 } from '../../common/exception';
+import { Logger, UseFilters, UsePipes } from '@nestjs/common';
+import { WsServiceExceptionFilter } from 'src/common/filter/ws-service-exception.filter';
+import { WsValidation } from 'src/common/pipe/ws-validation.pipe';
 
 @WebSocketGateway({
   cors: {
@@ -52,6 +48,8 @@ import {
     credentials: true,
   },
 })
+@UseFilters(WsServiceExceptionFilter)
+@UsePipes(WsValidation)
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -62,7 +60,7 @@ export class ChatGateway
   private readonly sendMessageRateWindowMs: number;
   private readonly typingRateLimit: number;
   private readonly typingRateWindowMs: number;
-
+  private readonly logger: Logger;
   constructor(
     private readonly sessionService: SessionService,
     @InjectRepository(UserEntity)
@@ -85,21 +83,12 @@ export class ChatGateway
     this.typingRateWindowMs = configService.getOrThrow(
       'CHAT_TYPING_RATE_WINDOW_MS',
     );
+    this.logger = new Logger(ChatGateway.name);
   }
 
   /**
-   * Hand the Socket.IO server to the gateway worker so REST-triggered
-   * actions (member add/remove) can adjust room membership and broadcast
-   * over WebSocket asynchronously, off the request path.
-   *
-   * Also registers the auth middleware here rather than in `handleConnection`.
-   * Socket.IO runs `server.use` middleware to completion — and only then sends
-   * the client its CONNECT ack — before any message from that socket is
-   * dispatched to a `@SubscribeMessage` handler. `handleConnection` runs on
-   * the same lifecycle but is just an event listener Nest doesn't wait on, so
-   * doing the (async) auth work there left a window where a client could fire
-   * a message right after its local `connect` event and race ahead of
-   * `client.data.user` actually being set, crashing the handler.
+   * When client start to connect, they must be authenticated, their token must be valid and they must be exist
+   * @param server - websocket server
    */
   afterInit(server: Server) {
     this.gatewayWorker.setServer(server);
@@ -111,40 +100,56 @@ export class ChatGateway
   }
 
   /**
-   * Resolve the connecting socket's user from its auth token and attach it to
-   * `socket.data`. Throws to reject the connection (surfaced to the client as
+   * Extract the auth token from the Authorization header, falling back to the auth cookie.
+   * @param client - The socket whose handshake is inspected.
+   * @returns The auth token, or null when none is present.
+   */
+  private extractToken(client: Socket): string | null {
+    // Prefer the bearer token from the Authorization header.
+    const authHeader = client.handshake.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
+
+    // Fall back to the auth cookie sent during the handshake.
+    const cookieHeader = client.handshake.headers.cookie;
+    if (cookieHeader) {
+      const cookies: Record<string, string | undefined> =
+        parseCookie(cookieHeader);
+      const token = cookies[cookieOptions.name.THREDDIT_AUTH];
+      if (token) return token;
+    }
+    return null;
+  }
+
+  /**
+   * Resolve the connecting socket's user from its auth token and attach user information to
+   * socket.data to use in other events. Throws to reject the connection (surfaced to the client as
    * `connect_error`) when the token is missing/invalid or the user no longer exists.
    * @param socket - The connecting socket, pre-accept.
    */
   private async authenticate(socket: Socket): Promise<void> {
     const token = this.extractToken(socket);
     if (!token) {
-      console.log(`[Chat] connection rejected: missing token (${socket.id})`);
       throw new Error(message.chat.connection.token_missing);
     }
 
-    try {
-      // Validate the session (cache first, DB fallback) to get the user id.
-      const payload = await this.sessionService.validateSession(token);
+    // Validate the session (cache first, DB fallback) to get the user id.
+    const payload = await this.sessionService.validateSession(token);
 
-      // Resolve the username once at connection time for typing broadcasts.
-      const userFound = await this.userRepository.findOne({
-        where: { id: payload.sub },
-        select: { id: true, username: true },
-      });
-      if (!userFound) {
-        throw new Error(`user ${payload.sub} not found`);
-      }
-
-      const data = socket.data as ChatSocketData;
-      data.user = { sub: payload.sub, username: userFound.username };
-    } catch (error) {
-      console.log(
-        `[Chat] connection rejected: invalid token (${socket.id})`,
-        error instanceof Error ? error.message : error,
-      );
-      throw new Error(message.chat.connection.token_invalid);
+    // Resolve the username once at connection time for typing broadcasts. /////////////////////////////
+    const userFound = await this.userRepository.findOne({
+      where: { id: payload.sub },
+      select: { id: true, username: true, displayName: true },
+    });
+    if (!userFound) {
+      throw new Error(message.common.user_not_found);
     }
+
+    const data = socket.data as ChatSocketData;
+    data.user = {
+      sub: payload.sub,
+      username: userFound.username,
+      displayName: userFound.displayName,
+    };
   }
 
   /**
@@ -154,10 +159,9 @@ export class ChatGateway
    * @param client - The connecting socket.
    */
   async handleConnection(client: Socket) {
-    const { user } = client.data as ChatSocketData;
-    console.log(`[Chat] connected: userId=${user.sub} socket=${client.id}`);
-
     try {
+      const { user } = client.data as ChatSocketData;
+
       // Join the user's personal room for targeted emits.
       await client.join(chatRoom.user(user.sub));
 
@@ -166,9 +170,6 @@ export class ChatGateway
       const conversationIds =
         await this.conversationService.findConversationIdsOfUser(user.sub);
       (client.data as ChatSocketData).conversationIds = conversationIds;
-      console.log(
-        `[Chat] userId=${user.sub} joined ${conversationIds.length} conversation room(s): [${conversationIds.join(',')}]`,
-      );
       if (conversationIds.length > 0) {
         await client.join(
           conversationIds.map((conversationId) =>
@@ -182,9 +183,6 @@ export class ChatGateway
       // them (excluding this socket via `broadcast`).
       const becameOnline = await this.presenceService.addConnection(user.sub);
       if (becameOnline && conversationIds.length > 0) {
-        console.log(
-          `[Chat] broadcasting PRESENCE_ONLINE for userId=${user.sub} to ${conversationIds.length} room(s)`,
-        );
         client.broadcast
           .to(
             conversationIds.map((conversationId) =>
@@ -193,7 +191,7 @@ export class ChatGateway
           )
           .emit(
             chatEvent.PRESENCE_ONLINE,
-            sendWsResponse(message.chat.presence.online, {
+            sendWsResponse(true, message.chat.presence.online, {
               userId: user.sub,
             }),
           );
@@ -207,9 +205,7 @@ export class ChatGateway
         void this.presenceService.refreshConnection(user.sub);
       });
     } catch (error) {
-      // A failure here leaves the socket connected but not fully joined/
-      // registered — disconnect it rather than leave it silently half-live.
-      this.emitError(client, 'handleConnection', error);
+      this.logger.log(error);
       client.disconnect(true);
     }
   }
@@ -225,39 +221,25 @@ export class ChatGateway
     const { user, conversationIds } = client.data as Partial<ChatSocketData>;
     // Sockets rejected during connection never got a user attached.
     if (!user) {
-      console.log(`[Chat] disconnected: unauthenticated socket=${client.id}`);
       return;
     }
-    console.log(`[Chat] disconnected: userId=${user.sub} socket=${client.id}`);
 
-    try {
-      const { becameOffline, lastSeen } =
-        await this.presenceService.removeConnection(user.sub);
-      if (becameOffline && conversationIds && conversationIds.length > 0) {
-        console.log(
-          `[Chat] broadcasting PRESENCE_OFFLINE for userId=${user.sub} lastSeen=${lastSeen} to ${conversationIds.length} room(s)`,
+    const { becameOffline, lastSeen } =
+      await this.presenceService.removeConnection(user.sub);
+    if (becameOffline && conversationIds && conversationIds.length > 0) {
+      this.server
+        .to(
+          conversationIds.map((conversationId) =>
+            chatRoom.conversation(conversationId),
+          ),
+        )
+        .emit(
+          chatEvent.PRESENCE_OFFLINE,
+          sendWsResponse(true, message.chat.presence.offline, {
+            userId: user.sub,
+            lastSeen,
+          }),
         );
-        this.server
-          .to(
-            conversationIds.map((conversationId) =>
-              chatRoom.conversation(conversationId),
-            ),
-          )
-          .emit(
-            chatEvent.PRESENCE_OFFLINE,
-            sendWsResponse(message.chat.presence.offline, {
-              userId: user.sub,
-              lastSeen,
-            }),
-          );
-      }
-    } catch (error) {
-      // The socket is already gone by this point, so there's no client left
-      // to notify — just log so a stuck presence counter is diagnosable.
-      console.error(
-        `[Chat] handleDisconnect failed for userId=${user.sub}`,
-        error instanceof Error ? error.stack : String(error),
-      );
     }
   }
 
@@ -276,24 +258,17 @@ export class ChatGateway
     @MessageBody() getPresenceDTO: GetPresenceDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const userIds =
-        getPresenceDTO.userIds && getPresenceDTO.userIds.length > 0
-          ? getPresenceDTO.userIds
-          : await this.conversationService.findChatPartnerIds(user.sub);
+    const userIds =
+      getPresenceDTO.userIds && getPresenceDTO.userIds.length > 0
+        ? getPresenceDTO.userIds
+        : await this.conversationService.findChatPartnerIds(user.sub);
 
-      const presence = await this.presenceService.getPresence(userIds);
-      console.log(
-        `[Chat] GET_PRESENCE by userId=${user.sub} for ${userIds.length} user(s) -> ${presence.filter((p) => p.isOnline).length} online`,
-      );
+    const presence = await this.presenceService.getPresence(userIds);
 
-      client.emit(
-        chatEvent.PRESENCE_SNAPSHOT,
-        sendWsResponse(message.chat.presence.snapshot, presence),
-      );
-    } catch (error) {
-      this.emitError(client, 'GET_PRESENCE', error);
-    }
+    client.emit(
+      chatEvent.PRESENCE_SNAPSHOT,
+      sendWsResponse(true, message.chat.presence.snapshot, presence),
+    );
   }
 
   /**
@@ -309,60 +284,47 @@ export class ChatGateway
     @MessageBody() sendMessageDTO: SendMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    console.log(
-      `[Chat] SEND_MESSAGE from userId=${user.sub} target=${sendMessageDTO.conversationId ? `conversation:${sendMessageDTO.conversationId}` : `username:${sendMessageDTO.username}`}`,
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    const allowed = await this.chatRateLimiterService.checkLimit(
+      chatEvent.SEND_MESSAGE,
+      user.sub,
+      this.sendMessageRateLimit,
+      this.sendMessageRateWindowMs,
     );
+    ///////////////////////////////////////////////////////////////////////////////
+    if (!allowed) {
+      throw new ChatSendMessageRateLimitedException();
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    const { sentMessage, memberIds, isNewConversation } =
+      await this.messageService.sendMessage(user.sub, sendMessageDTO);
 
-    try {
-      const allowed = await this.chatRateLimiterService.checkLimit(
-        chatEvent.SEND_MESSAGE,
-        user.sub,
-        this.sendMessageRateLimit,
-        this.sendMessageRateWindowMs,
-      );
-      if (!allowed) {
-        throw new ChatSendMessageRateLimitedException();
-      }
+    const broadcast = {
+      event: chatEvent.NEW_MESSAGE,
+      message: message.chat.send_message.success,
+      data: sentMessage,
+    };
 
-      const { sentMessage, memberIds, isNewConversation } =
-        await this.messageService.sendMessage(user.sub, sendMessageDTO);
-
-      const conversationRoom = chatRoom.conversation(
+    // Only force-join member sockets when the conversation was just created
+    // in this request (first message of a new direct conversation). For every
+    // other case members are already in the conversation room — joined on
+    // connection for existing convs, or via JOIN_CONVERSATION when added to
+    // a group later. Routed through the same queued job the REST-triggered
+    // member-add flow uses (see ConversationService), so message delivery
+    // gets the same retry/durability instead of a same-process-only emit.
+    if (isNewConversation) {
+      await this.gatewayService.joinMembersToRoom(
+        memberIds,
         sentMessage.conversation.id,
+        broadcast,
       );
-      console.log(
-        `[Chat] NEW_MESSAGE id=${sentMessage.id} -> ${conversationRoom} (newConversation=${isNewConversation}, members=${memberIds.length})`,
+    } else {
+      await this.gatewayService.broadcastToConversation(
+        sentMessage.conversation.id,
+        broadcast.event,
+        broadcast.message,
+        broadcast.data,
       );
-
-      const broadcast = {
-        event: chatEvent.NEW_MESSAGE,
-        message: message.chat.send_message.success,
-        data: sentMessage,
-      };
-
-      // Only force-join member sockets when the conversation was just created
-      // in this request (first message of a new direct conversation). For every
-      // other case members are already in the conversation room — joined on
-      // connection for existing convs, or via JOIN_CONVERSATION when added to
-      // a group later. Routed through the same queued job the REST-triggered
-      // member-add flow uses (see ConversationService), so message delivery
-      // gets the same retry/durability instead of a same-process-only emit.
-      if (isNewConversation) {
-        await this.gatewayService.joinMembersToRoom(
-          memberIds,
-          sentMessage.conversation.id,
-          broadcast,
-        );
-      } else {
-        await this.gatewayService.broadcastToConversation(
-          sentMessage.conversation.id,
-          broadcast.event,
-          broadcast.message,
-          broadcast.data,
-        );
-      }
-    } catch (error) {
-      this.emitError(client, 'SEND_MESSAGE', error);
     }
   }
 
@@ -376,21 +338,17 @@ export class ChatGateway
     @MessageBody() revokeMessageDTO: RevokeMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const { messageId, conversationId } =
-        await this.messageService.revokeMessage(
-          user.sub,
-          revokeMessageDTO.messageId,
-        );
-      await this.gatewayService.broadcastToConversation(
-        conversationId,
-        chatEvent.MESSAGE_REVOKED,
-        message.chat.revoke_message.success,
-        { messageId, conversationId },
+    const { messageId, conversationId } =
+      await this.messageService.revokeMessage(
+        user.sub,
+        revokeMessageDTO.messageId,
       );
-    } catch (error) {
-      this.emitError(client, 'REVOKE_MESSAGE', error);
-    }
+    await this.gatewayService.broadcastToConversation(
+      conversationId,
+      chatEvent.MESSAGE_REVOKED,
+      message.chat.revoke_message.success,
+      { messageId, conversationId },
+    );
   }
 
   /**
@@ -403,22 +361,18 @@ export class ChatGateway
     @MessageBody() editMessageDTO: EditMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const { messageId, conversationId, text, editedAt } =
-        await this.messageService.editMessage(
-          user.sub,
-          editMessageDTO.messageId,
-          editMessageDTO.text,
-        );
-      await this.gatewayService.broadcastToConversation(
-        conversationId,
-        chatEvent.MESSAGE_EDITED,
-        message.chat.edit_message.success,
-        { messageId, conversationId, text, editedAt },
+    const { messageId, conversationId, text, editedAt } =
+      await this.messageService.editMessage(
+        user.sub,
+        editMessageDTO.messageId,
+        editMessageDTO.text,
       );
-    } catch (error) {
-      this.emitError(client, 'EDIT_MESSAGE', error);
-    }
+    await this.gatewayService.broadcastToConversation(
+      conversationId,
+      chatEvent.MESSAGE_EDITED,
+      message.chat.edit_message.success,
+      { messageId, conversationId, text, editedAt },
+    );
   }
 
   /**
@@ -431,24 +385,21 @@ export class ChatGateway
     @MessageBody() pinMessageDTO: PinMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const { messageId, conversationId, pinned } =
-        await this.messageService.setMessagePinned(
-          user.sub,
-          pinMessageDTO.messageId,
-          pinMessageDTO.pinned,
-        );
-      await this.gatewayService.broadcastToConversation(
-        conversationId,
-        chatEvent.MESSAGE_PIN_CHANGED,
-        pinned
-          ? message.chat.pin_message.pin_success
-          : message.chat.pin_message.unpin_success,
-        { messageId, conversationId, pinned },
+
+    const { messageId, conversationId, pinned } =
+      await this.messageService.setMessagePinned(
+        user.sub,
+        pinMessageDTO.messageId,
+        pinMessageDTO.pinned,
       );
-    } catch (error) {
-      this.emitError(client, 'PIN_MESSAGE', error);
-    }
+    await this.gatewayService.broadcastToConversation(
+      conversationId,
+      chatEvent.MESSAGE_PIN_CHANGED,
+      pinned
+        ? message.chat.pin_message.pin_success
+        : message.chat.pin_message.unpin_success,
+      { messageId, conversationId, pinned },
+    );
   }
 
   /**
@@ -461,22 +412,19 @@ export class ChatGateway
     @MessageBody() reactMessageDTO: ReactMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const { conversationId, reactions } =
-        await this.messageService.setMessageReaction(
-          user.sub,
-          reactMessageDTO.messageId,
-          reactMessageDTO.type,
-        );
-      await this.gatewayService.broadcastToConversation(
-        conversationId,
-        chatEvent.REACTION_UPDATED,
-        message.chat.react_message.success,
-        { messageId: reactMessageDTO.messageId, conversationId, reactions },
+
+    const { conversationId, reactions } =
+      await this.messageService.setMessageReaction(
+        user.sub,
+        reactMessageDTO.messageId,
+        reactMessageDTO.type,
       );
-    } catch (error) {
-      this.emitError(client, 'REACT_MESSAGE', error);
-    }
+    await this.gatewayService.broadcastToConversation(
+      conversationId,
+      chatEvent.REACTION_UPDATED,
+      message.chat.react_message.success,
+      { messageId: reactMessageDTO.messageId, conversationId, reactions },
+    );
   }
 
   /** Remove the requester's reaction from a message and broadcast new counts. */
@@ -486,21 +434,18 @@ export class ChatGateway
     @MessageBody() unreactMessageDTO: UnreactMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const { conversationId, reactions } =
-        await this.messageService.removeMessageReaction(
-          user.sub,
-          unreactMessageDTO.messageId,
-        );
-      await this.gatewayService.broadcastToConversation(
-        conversationId,
-        chatEvent.REACTION_UPDATED,
-        message.chat.react_message.remove_success,
-        { messageId: unreactMessageDTO.messageId, conversationId, reactions },
+
+    const { conversationId, reactions } =
+      await this.messageService.removeMessageReaction(
+        user.sub,
+        unreactMessageDTO.messageId,
       );
-    } catch (error) {
-      this.emitError(client, 'UNREACT_MESSAGE', error);
-    }
+    await this.gatewayService.broadcastToConversation(
+      conversationId,
+      chatEvent.REACTION_UPDATED,
+      message.chat.react_message.remove_success,
+      { messageId: unreactMessageDTO.messageId, conversationId, reactions },
+    );
   }
 
   /**
@@ -513,124 +458,24 @@ export class ChatGateway
     @MessageBody() typingDTO: TypingDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    try {
-      const allowed = await this.chatRateLimiterService.checkLimit(
-        chatEvent.TYPING,
-        user.sub,
-        this.typingRateLimit,
-        this.typingRateWindowMs,
-      );
-      if (!allowed) {
-        throw new ChatTypingRateLimitedException();
-      }
 
-      client.broadcast.to(chatRoom.conversation(typingDTO.conversationId)).emit(
-        chatEvent.USER_TYPING,
-        sendWsResponse(message.chat.typing.relay, {
-          conversationId: typingDTO.conversationId,
-          userId: user.sub,
-          username: user.username,
-          isTyping: typingDTO.isTyping,
-        }),
-      );
-    } catch (error) {
-      this.emitError(client, 'TYPING', error);
-    }
-  }
-
-  /**
-   * Mark messages as read up to `lastReadMessageId` and broadcast a read
-   * receipt to the rest of the conversation room so other members can render
-   * seen indicators. No-op for non-members (silently dropped).
-   */
-  @SubscribeMessage(chatEvent.MARK_READ)
-  async handleMarkRead(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() markReadDTO: WsMarkReadDTO,
-  ) {
-    const { user } = client.data as ChatSocketData;
-    try {
-      try {
-        await this.conversationService.markConversationRead(
-          user.sub,
-          markReadDTO.conversationId,
-          markReadDTO.lastReadMessageId,
-        );
-      } catch (error) {
-        // Preserve the previous silent no-op for non-members instead of
-        // surfacing the 404 that markConversationRead's HTTP callers expect.
-        if (error instanceof ChatMarkReadConversationNotFoundException) return;
-        throw error;
-      }
-
-      client.broadcast
-        .to(chatRoom.conversation(markReadDTO.conversationId))
-        .emit(
-          chatEvent.READ_RECEIPT,
-          sendWsResponse(message.chat.mark_read.success, {
-            userId: user.sub,
-            conversationId: markReadDTO.conversationId,
-            lastReadMessageId: markReadDTO.lastReadMessageId,
-          }),
-        );
-    } catch (error) {
-      this.emitError(client, 'MARK_READ', error);
-    }
-  }
-
-  /**
-   * Report a failed socket action back to the client that triggered it,
-   * so a thrown error never fails silently. `WsException`/`BaseServiceException`
-   * carry a client-safe message; anything else is logged server-side and
-   * reduced to a generic message so internals never leak to the client.
-   * @param client - The socket that triggered the failing action.
-   * @param context - Short label for the action, used in server-side logs.
-   * @param error - The error caught from the action's handler.
-   */
-  private emitError(client: Socket, context: string, error: unknown) {
-    if (error instanceof WsException) {
-      client.emit(chatEvent.ERROR, error.getError());
-      return;
-    }
-    if (error instanceof BaseServiceException) {
-      client.emit(
-        chatEvent.ERROR,
-        sendWsResponse(error.message, undefined, error.errorCode),
-      );
-      return;
-    }
-    console.error(
-      `[Chat] ${context} failed`,
-      error instanceof Error ? error.stack : String(error),
+    const allowed = await this.chatRateLimiterService.checkLimit(
+      chatEvent.TYPING,
+      user.sub,
+      this.typingRateLimit,
+      this.typingRateWindowMs,
     );
-    client.emit(
-      chatEvent.ERROR,
-      sendWsResponse(
-        message.chat.error.internal,
-        undefined,
-        errorCode.chat.error.internal,
-      ),
-    );
-  }
-
-  /**
-   * Extract the auth token from the Authorization header, falling back to the auth cookie.
-   * @param client - The socket whose handshake is inspected.
-   * @returns The auth token, or `null` when none is present.
-   */
-  private extractToken(client: Socket): string | null {
-    // Prefer the bearer token from the Authorization header.
-    const authHeader = client.handshake.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
-
-    // Fall back to the auth cookie sent during the handshake.
-    const cookieHeader = client.handshake.headers.cookie;
-    if (cookieHeader) {
-      const cookies: Record<string, string | undefined> =
-        parseCookie(cookieHeader);
-      const token = cookies[cookieOptions.name.THREDDIT_AUTH];
-      if (token) return token;
+    if (!allowed) {
+      throw new ChatTypingRateLimitedException();
     }
-    return null;
+
+    client.broadcast.to(chatRoom.conversation(typingDTO.conversationId)).emit(
+      chatEvent.USER_TYPING,
+      sendWsResponse(true, message.chat.typing.relay, {
+        conversationId: typingDTO.conversationId,
+        userDisplayName: user.displayName,
+        isTyping: typingDTO.isTyping,
+      }),
+    );
   }
 }

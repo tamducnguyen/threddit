@@ -63,7 +63,9 @@ describe('ConversationInsightsService', () => {
         'project progress',
       );
 
-      expect(messageRepo.findConversationMessagesForRag).toHaveBeenCalledWith(5);
+      expect(messageRepo.findConversationMessagesForRag).toHaveBeenCalledWith(
+        5,
+      );
       expect(messageRepo.findUnreadMessagesForRag).not.toHaveBeenCalled();
       expect(ragService.summarizeConversation).toHaveBeenCalledWith(
         5,

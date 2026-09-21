@@ -106,6 +106,7 @@ export const errorCode = {
     too_many_requests: '53',
     blocked_or_not_found: '251',
     self_blocked_target: '252',
+    internal_server_error: '302',
   },
   http: {
     check_toxic: {

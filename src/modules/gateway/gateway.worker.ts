@@ -79,7 +79,10 @@ export class GatewayWorker extends WorkerHost {
     if (!broadcast || !this.server) return;
     this.server
       .to(chatRoom.conversation(conversationId))
-      .emit(broadcast.event, sendWsResponse(broadcast.message, broadcast.data));
+      .emit(
+        broadcast.event,
+        sendWsResponse(true, broadcast.message, broadcast.data),
+      );
   }
 
   @OnWorkerEvent('completed')

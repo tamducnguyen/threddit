@@ -490,6 +490,12 @@ export class ConversationService {
       requesterId,
       lastReadMessageId,
     );
+    await this.gatewayService.broadcastToConversation(
+      conversationId,
+      chatEvent.READ_RECEIPT,
+      message.chat.mark_read.success,
+      { userId: requesterId, conversationId, lastReadMessageId },
+    );
     return {
       kind: 'success',
       data: { conversationId, lastReadMessageId },

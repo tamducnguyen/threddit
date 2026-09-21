@@ -32,7 +32,9 @@ describe('prompt.helper', () => {
     });
 
     it('leaves ordinary text untouched', () => {
-      expect(sanitizeForPrompt('họp lúc 9h thứ Sáu')).toBe('họp lúc 9h thứ Sáu');
+      expect(sanitizeForPrompt('họp lúc 9h thứ Sáu')).toBe(
+        'họp lúc 9h thứ Sáu',
+      );
     });
   });
 
@@ -61,7 +63,9 @@ describe('prompt.helper', () => {
     });
 
     it('strips the abstain sentinel and fence tokens', () => {
-      const result = sanitizeTopic(`${ABSTAIN_SENTINEL} ${DATA_CLOSE} ngân sách`);
+      const result = sanitizeTopic(
+        `${ABSTAIN_SENTINEL} ${DATA_CLOSE} ngân sách`,
+      );
 
       expect(result).toBe('ngân sách');
     });

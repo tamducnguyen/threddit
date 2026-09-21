@@ -645,10 +645,12 @@
     too_many_requests: 'Thao tác quá nhanh, vui lòng thử lại sau.',
     session_revoked: 'Phiên đã hết hạn, vui lòng đăng nhập lại',
     token_not_found: 'Không tìm thấy mã xác minh',
+    user_not_found: 'Không tìm người dùng',
     account_not_activate:
       'Tài khoản của bạn đang không được kích hoạt! Vui lòng liên hệ với quản trị viên để biết lý do',
     blocked_or_not_found: 'Người dùng không tồn tại',
     self_blocked_target: 'Bạn đã chặn người dùng này',
+    internal_server_error: 'Lỗi hệ thống nội bộ',
   },
   http: {
     check_toxic: {
