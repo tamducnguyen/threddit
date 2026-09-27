@@ -40,49 +40,49 @@ jobs:
           retention-days: 1
 
   security-scan:
-  name: Trivy Docker Security Scan
-  needs: build
-  runs-on: ubuntu-latest
+    name: Trivy Docker Security Scan
+    needs: build
+    runs-on: ubuntu-latest
 
-  permissions:
-    contents: read
-    actions: read
-    security-events: write
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
 
-  steps:
-    - name: Download image artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: docker-image
-        path: /tmp
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
 
-    - name: Load Docker image
-      run: docker load --input /tmp/${{ env.IMAGE_NAME }}.tar
+      - name: Load Docker image
+        run: docker load --input /tmp/${{ env.IMAGE_NAME }}.tar
 
-    - name: Run Trivy vulnerability scan
-      uses: aquasecurity/trivy-action@v0.36.0
-      with:
-        image-ref: ${{ needs.build.outputs.image-tag }}
-        format: 'table'
-        severity: 'CRITICAL,HIGH'
-        exit-code: '1'
-        ignore-unfixed: true
-        vuln-type: 'os,library'
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ needs.build.outputs.image-tag }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
 
-    - name: Run Trivy scan (SARIF)
-      if: always()
-      uses: aquasecurity/trivy-action@v0.36.0
-      with:
-        image-ref: ${{ needs.build.outputs.image-tag }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH'
+      - name: Run Trivy scan (SARIF)
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ needs.build.outputs.image-tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
 
-    - name: Upload Trivy results to GitHub Security tab
-      if: always()
-      uses: github/codeql-action/upload-sarif@v4
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   push:
     name: Push to ECR
