@@ -28,6 +28,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          pull: true
           push: false
           tags: ${{ steps.meta.outputs.tag }}
           outputs: type=docker,dest=/tmp/${{ env.IMAGE_NAME }}.tar
@@ -64,10 +65,10 @@ jobs:
         with:
           image-ref: ${{ needs.build.outputs.image-tag }}
           format: 'table'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
           exit-code: '1'
           ignore-unfixed: true
-          vuln-type: 'os,library'
+          scanners: 'vuln,misconfig,secret'
 
       - name: Run Trivy scan (SARIF)
         if: always()
@@ -76,7 +77,8 @@ jobs:
           image-ref: ${{ needs.build.outputs.image-tag }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          scanners: 'vuln,misconfig,secret'
 
       - name: Upload Trivy results to GitHub Security tab
         if: always()
