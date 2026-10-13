@@ -625,10 +625,6 @@
       conversation_not_found: 'Không tìm thấy cuộc trò chuyện',
       cursor_invalid: 'Con trỏ không hợp lệ',
     },
-    rate_limit: {
-      send_message: 'Bạn đang gửi tin nhắn quá nhanh, vui lòng thử lại sau',
-      typing: 'Bạn đang gửi trạng thái nhập quá nhanh, vui lòng thử lại sau',
-    },
     typing: {
       relay: 'Trạng thái đang gõ phím',
     },

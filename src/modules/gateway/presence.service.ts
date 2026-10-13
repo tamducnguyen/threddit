@@ -1,27 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { CHAT_REDIS } from './chat.redis.provider';
 import { UserPresence } from './interfaces/user-presence.interface';
-
-// Per-user count of currently open sockets. The source of truth for whether a
-// user is online; ref-counted so multiple tabs/devices don't flip each other.
-const connKey = (userId: number) => `presence:conn:${userId}`;
-// Epoch-ms timestamp written when a user's last socket disconnects.
-const lastSeenKey = (userId: number) => `presence:lastseen:${userId}`;
-// Derived index: bit `userId` is set while the user is online. Lets a single
-// BITCOUNT return the global online total cheaply.
-const ONLINE_BITMAP_KEY = 'presence:online';
-
-// Safety net so a crashed server's connection counters self-expire instead of
-// pinning users online forever. Comfortably exceeds Socket.IO's heartbeat
-// window (pingInterval + pingTimeout), and is refreshed on every heartbeat, so
-// it only lapses once the socket is genuinely gone.
-const CONN_TTL_SECONDS = 90;
+import {
+  CONN_TTL_SECONDS,
+  connKey,
+  lastSeenKey,
+  ONLINE_BITMAP_KEY,
+} from './constants/key.constant';
+import { REDIS_PROVIDER } from './constants/provider.constant';
 
 @Injectable()
 export class PresenceService {
-  constructor(@Inject(CHAT_REDIS) private readonly redis: Redis) {}
+  private readonly logger: Logger;
 
+  constructor(@Inject(REDIS_PROVIDER) private readonly redis: Redis) {
+    this.logger = new Logger(PresenceService.name);
+  }
   /**
    * Register a newly connected socket for `userId`.
    * @returns `true` when this connection transitioned the user 0 → 1 (i.e. the
@@ -31,13 +25,12 @@ export class PresenceService {
     const key = connKey(userId);
     const count = await this.redis.incr(key);
     await this.redis.expire(key, CONN_TTL_SECONDS);
-    console.log(
-      `[Presence] addConnection userId=${userId} connections=${count}${count === 1 ? ' (ONLINE)' : ''}`,
-    );
     if (count === 1) {
+      this.logger.log(`userId: ${userId} online`);
       await this.redis.setbit(ONLINE_BITMAP_KEY, userId, 1);
       return true;
     }
+    this.logger.log(`userId: ${userId} new connection: ${count}`);
     return false;
   }
 
@@ -59,11 +52,10 @@ export class PresenceService {
   ): Promise<{ becameOffline: boolean; lastSeen: number | null }> {
     const key = connKey(userId);
     const count = await this.redis.decr(key);
-    console.log(
-      `[Presence] removeConnection userId=${userId} connections=${Math.max(count, 0)}${count <= 0 ? ' (OFFLINE)' : ''}`,
-    );
+    this.logger.log(`remove connection userId: ${userId} `);
     if (count <= 0) {
       const lastSeen = Date.now();
+      this.logger.log(`userId: ${userId} offline`);
       await this.redis
         .multi()
         .del(key)
@@ -92,11 +84,8 @@ export class PresenceService {
     const results = await pipeline.exec();
 
     return userIds.map((userId, index) => {
-      const onlineBit = results?.[index * 2]?.[1] as number | undefined;
-      const lastSeenRaw = results?.[index * 2 + 1]?.[1] as
-        | string
-        | null
-        | undefined;
+      const onlineBit = results?.[index * 2]?.[1] as number;
+      const lastSeenRaw = results?.[index * 2 + 1]?.[1] as string;
       return {
         userId,
         isOnline: onlineBit === 1,

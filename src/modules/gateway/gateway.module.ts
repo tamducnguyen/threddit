@@ -5,13 +5,14 @@ import { ChatGateway } from './chat.gateway';
 import { GatewayService } from './gateway.service';
 import { GatewayWorker } from './gateway.worker';
 import { PresenceService } from './presence.service';
-import { ChatRateLimiterService } from './chat-rate-limiter.service';
-import { chatRedisProvider } from './chat.redis.provider';
 import { NameGatewayQueue } from './helper/gateway-queue.helper';
 import { UserEntity } from '../../entities/user.entity';
 import { SessionModule } from '../token/session.module';
 import { ConversationModule } from '../conversation/conversation.module';
 import { MessageModule } from '../message/message.module';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
+import { REDIS_PROVIDER } from './constants/provider.constant';
 
 /**
  * Realtime transport layer: the Socket.IO gateway, presence tracking, and the
@@ -36,8 +37,12 @@ import { MessageModule } from '../message/message.module';
   providers: [
     ChatGateway,
     PresenceService,
-    ChatRateLimiterService,
-    chatRedisProvider,
+    {
+      provide: REDIS_PROVIDER,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        new Redis(configService.getOrThrow<string>('REDIS_URL')),
+    },
     GatewayService,
     GatewayWorker,
   ],

@@ -131,17 +131,10 @@ export class ChatSearchMessagesCursorInvalidException extends BaseServiceExcepti
   readonly errorCode = errorCode.chat.search_messages.cursor_invalid;
   readonly message = message.chat.search_messages.cursor_invalid;
 }
-
-export class ChatSendMessageRateLimitedException extends WsBaseServiceException {
-  readonly errorCode = errorCode.chat.rate_limit.send_message;
-  readonly message = message.chat.rate_limit.send_message;
+export class ChatRateLimitException extends WsBaseServiceException {
+  readonly errorCode = errorCode.common.too_many_requests;
+  readonly message = message.common.too_many_requests;
 }
-
-export class ChatTypingRateLimitedException extends WsBaseServiceException {
-  readonly errorCode = errorCode.chat.rate_limit.typing;
-  readonly message = message.chat.rate_limit.typing;
-}
-
 export class ChatMarkReadConversationNotFoundException extends BaseServiceException {
   readonly statusCode = HttpStatus.NOT_FOUND;
   readonly errorCode = errorCode.chat.mark_read.conversation_not_found;

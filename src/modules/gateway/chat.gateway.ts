@@ -31,16 +31,12 @@ import { ConversationService } from '../conversation/conversation.service';
 import { GatewayService } from './gateway.service';
 import { GatewayWorker } from './gateway.worker';
 import { PresenceService } from './presence.service';
-import { ChatRateLimiterService } from './chat-rate-limiter.service';
 import { ChatSocketData } from './interfaces/socket-data.interface';
-import { ConfigService } from '@nestjs/config';
-import {
-  ChatSendMessageRateLimitedException,
-  ChatTypingRateLimitedException,
-} from '../../common/exception';
-import { Logger, UseFilters, UsePipes } from '@nestjs/common';
+import { Logger, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
 import { WsServiceExceptionFilter } from 'src/common/filter/ws-service-exception.filter';
 import { WsValidation } from 'src/common/pipe/ws-validation.pipe';
+import { WsThrottlerGuard } from 'src/common/guard/ws-throttler.guard';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @WebSocketGateway({
   cors: {
@@ -56,10 +52,6 @@ export class ChatGateway
   @WebSocketServer()
   server: Server;
 
-  private readonly sendMessageRateLimit: number;
-  private readonly sendMessageRateWindowMs: number;
-  private readonly typingRateLimit: number;
-  private readonly typingRateWindowMs: number;
   private readonly logger: Logger;
   constructor(
     private readonly sessionService: SessionService,
@@ -70,19 +62,7 @@ export class ChatGateway
     private readonly gatewayService: GatewayService,
     private readonly presenceService: PresenceService,
     private readonly gatewayWorker: GatewayWorker,
-    private readonly chatRateLimiterService: ChatRateLimiterService,
-    configService: ConfigService,
   ) {
-    this.sendMessageRateLimit = configService.getOrThrow(
-      'CHAT_SEND_MESSAGE_RATE_LIMIT',
-    );
-    this.sendMessageRateWindowMs = configService.getOrThrow(
-      'CHAT_SEND_MESSAGE_RATE_WINDOW_MS',
-    );
-    this.typingRateLimit = configService.getOrThrow('CHAT_TYPING_RATE_LIMIT');
-    this.typingRateWindowMs = configService.getOrThrow(
-      'CHAT_TYPING_RATE_WINDOW_MS',
-    );
     this.logger = new Logger(ChatGateway.name);
   }
 
@@ -135,7 +115,7 @@ export class ChatGateway
     // Validate the session (cache first, DB fallback) to get the user id.
     const payload = await this.sessionService.validateSession(token);
 
-    // Resolve the username once at connection time for typing broadcasts. /////////////////////////////
+    // Resolve the username once at connection time for typing broadcasts.
     const userFound = await this.userRepository.findOne({
       where: { id: payload.sub },
       select: { id: true, username: true, displayName: true },
@@ -201,7 +181,7 @@ export class ChatGateway
       // transport emits `heartbeat` on each ping/pong (~pingInterval), well
       // within the counter's TTL, so the counter only lapses if the server
       // crashes — letting Redis reclaim it instead of pinning the user online.
-      client.conn.on('heartbeat', () => {
+      client.conn.on(chatEvent.HEARTBEAT, () => {
         void this.presenceService.refreshConnection(user.sub);
       });
     } catch (error) {
@@ -278,24 +258,14 @@ export class ChatGateway
    * @param client - The authenticated socket sending the message.
    * @param sendMessageDTO - The message payload.
    */
+  @UseGuards(WsThrottlerGuard)
+  @SkipThrottle({ public: true })
   @SubscribeMessage(chatEvent.SEND_MESSAGE)
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() sendMessageDTO: SendMessageDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    const allowed = await this.chatRateLimiterService.checkLimit(
-      chatEvent.SEND_MESSAGE,
-      user.sub,
-      this.sendMessageRateLimit,
-      this.sendMessageRateWindowMs,
-    );
-    ///////////////////////////////////////////////////////////////////////////////
-    if (!allowed) {
-      throw new ChatSendMessageRateLimitedException();
-    }
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
     const { sentMessage, memberIds, isNewConversation } =
       await this.messageService.sendMessage(user.sub, sendMessageDTO);
 
@@ -452,22 +422,14 @@ export class ChatGateway
    * Relay a typing indicator to the rest of the conversation room. No DB write;
    * `broadcast` excludes the sender's own socket.
    */
+  @UseGuards(WsThrottlerGuard)
+  @SkipThrottle({ public: true })
   @SubscribeMessage(chatEvent.TYPING)
-  async handleTyping(
+  handleTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() typingDTO: TypingDTO,
   ) {
     const { user } = client.data as ChatSocketData;
-
-    const allowed = await this.chatRateLimiterService.checkLimit(
-      chatEvent.TYPING,
-      user.sub,
-      this.typingRateLimit,
-      this.typingRateWindowMs,
-    );
-    if (!allowed) {
-      throw new ChatTypingRateLimitedException();
-    }
 
     client.broadcast.to(chatRoom.conversation(typingDTO.conversationId)).emit(
       chatEvent.USER_TYPING,

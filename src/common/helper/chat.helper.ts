@@ -41,6 +41,7 @@ export const chatEvent = {
   PRESENCE_OFFLINE: 'presence_offline',
   // Outbound: server broadcasts a read receipt to the rest of the conversation.
   READ_RECEIPT: 'read_receipt',
+  HEARTBEAT: 'heartbeat',
 };
 
 export const chatRoom = {
