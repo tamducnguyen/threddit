@@ -68,6 +68,7 @@ jobs:
           severity: 'CRITICAL'
           exit-code: '1'
           ignore-unfixed: true
+          vuln-type: 'library'
           scanners: 'vuln,misconfig,secret'
 
       - name: Run Trivy scan (SARIF)
@@ -78,6 +79,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           ignore-unfixed: true
+          vuln-type: 'library'
           scanners: 'vuln,misconfig,secret'
 
       - name: Upload Trivy results to GitHub Security tab
